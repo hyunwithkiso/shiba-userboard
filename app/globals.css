@@ -1,26 +1,275 @@
-@import "tailwindcss";
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css");
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --radius: 0.625rem;
+  /* Light Mode Blue */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.08 0.01 238.47);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.08 0.01 238.47);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.08 0.01 238.47);
+  --primary: oklch(0.55 0.18 240); /* 밝은 파란색 */
+  --primary-foreground: oklch(1 0 0); /* 흰색 */
+  --secondary: oklch(0.94 0.02 240); /* 매우 옅은 파란색 */
+  --secondary-foreground: oklch(0.08 0.01 238.47);
+  --muted: oklch(0.94 0.02 240);
+  --muted-foreground: oklch(0.45 0.03 240); /* 조금 더 진한 회색-파랑 */
+  --accent: oklch(0.94 0.02 240);
+  --accent-foreground: oklch(0.08 0.01 238.47);
+  --destructive: oklch(0.577 0.245 27.325); /* 기존 유지 */
+  --border: oklch(0.9 0.03 240); /* 옅은 파란색 테두리 */
+  --input: oklch(0.9 0.03 240);
+  --ring: oklch(0.65 0.15 240); /* 기본 파란색보다 약간 연하게 */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-primary: oklch(0.21 0.006 285.885);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.967 0.001 286.375);
+  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-border: oklch(0.92 0.004 286.32);
+  --sidebar-ring: oklch(0.705 0.015 286.067);
+}
+
+.dark {
+  /* Dark Mode Blue */
+  --background: oklch(0.12 0.02 240); /* 매우 어두운 파란색 */
+  --foreground: oklch(0.98 0.01 240); /* 매우 옅은 파란색 */
+  --card: oklch(0.18 0.03 240); /* 어두운 파란색 */
+  --card-foreground: oklch(0.98 0.01 240);
+  --popover: oklch(0.18 0.03 240);
+  --popover-foreground: oklch(0.98 0.01 240);
+  --primary: oklch(0.65 0.15 240); /* 기본 파란색 */
+  --primary-foreground: oklch(0.08 0.01 238.47); /* 어두운 파란색 */
+  --secondary: oklch(0.25 0.04 240); /* 약간 더 밝은 어두운 파란색 */
+  --secondary-foreground: oklch(0.98 0.01 240);
+  --muted: oklch(0.25 0.04 240);
+  --muted-foreground: oklch(0.65 0.03 240); /* 중간 톤 회색-파랑 */
+  --accent: oklch(0.25 0.04 240);
+  --accent-foreground: oklch(0.98 0.01 240);
+  --destructive: oklch(0.704 0.191 22.216); /* 기존 유지 */
+  --border: oklch(0.3 0.05 240); /* 어두운 파란색 테두리 */
+  --input: oklch(0.3 0.05 240);
+  --ring: oklch(0.55 0.18 240); /* 밝은 파란색 */
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.552 0.016 285.938);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Prose (Markdown) 스타일 커스터마이징 - Notion 스타일 */
+  .prose {
+    /* 기본 텍스트 */
+    @apply text-foreground;
+
+    /* 링크 */
+    a {
+      @apply text-primary font-medium no-underline hover:underline;
+    }
+
+    /* 제목 */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      @apply font-semibold tracking-tight text-foreground;
+    }
+    h1 {
+      @apply text-3xl font-bold mt-8 mb-4;
+    }
+    h2 {
+      @apply text-2xl font-semibold mt-6 mb-3 border-b border-border pb-2;
+    }
+    h3 {
+      @apply text-xl font-semibold mt-5 mb-2;
+    }
+    h4 {
+      @apply text-lg font-semibold mt-4 mb-1;
+    }
+
+    /* 본문 단락 */
+    p {
+      @apply leading-relaxed my-4;
+    }
+
+    /* 목록 */
+    ul,
+    ol {
+      @apply my-4 ml-6;
+    }
+    li {
+      @apply my-2;
+    }
+    ul > li::before {
+      @apply bg-foreground;
+    }
+    ol > li::before {
+      @apply text-muted-foreground;
+    }
+
+    /* 인용구 */
+    blockquote {
+      @apply border-l-4 border-primary pl-4 italic text-muted-foreground my-6;
+    }
+    blockquote p {
+      @apply my-0;
+    }
+
+    /* 코드 */
+    code {
+      @apply px-1 py-0.5 bg-muted rounded text-sm font-mono text-foreground;
+    }
+    pre {
+      @apply bg-muted p-4 rounded-md overflow-x-auto my-6;
+    }
+    pre code {
+      @apply bg-transparent p-0 text-sm;
+    }
+
+    /* 테이블 */
+    table {
+      @apply my-6 w-full;
+    }
+    thead {
+      @apply border-b border-border;
+    }
+    th {
+      @apply px-4 py-2 text-left font-semibold text-foreground;
+    }
+    tbody tr {
+      @apply border-b border-border;
+    }
+    td {
+      @apply px-4 py-3 text-muted-foreground;
+    }
+
+    /* 구분선 */
+    hr {
+      @apply my-8 border-border;
+    }
+  }
+
+  /* 다크 모드 Prose 스타일 */
+  .dark .prose {
+    @apply text-foreground; /* 다크모드 기본 텍스트 */
+
+    a {
+      @apply text-primary;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      @apply text-foreground;
+    }
+    h2 {
+      @apply border-border;
+    }
+
+    blockquote {
+      @apply border-primary text-muted-foreground;
+    }
+
+    code {
+      @apply bg-muted text-foreground;
+    }
+    pre {
+      @apply bg-muted;
+    }
+    pre code {
+      @apply bg-transparent;
+    }
+
+    thead {
+      @apply border-border;
+    }
+    th {
+      @apply text-foreground;
+    }
+    tbody tr {
+      @apply border-border;
+    }
+    td {
+      @apply text-muted-foreground;
+    }
+    hr {
+      @apply border-border;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.container {
+  @apply px-4;
 }

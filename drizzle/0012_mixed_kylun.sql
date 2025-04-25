@@ -1,0 +1,1 @@
+ALTER TABLE "chat_title_submission" ADD COLUMN "scale" integer DEFAULT 80;

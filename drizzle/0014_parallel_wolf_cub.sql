@@ -1,0 +1,1 @@
+ALTER TABLE "killfeed_submission" DROP COLUMN "margin_x";
