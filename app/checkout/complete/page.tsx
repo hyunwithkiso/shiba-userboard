@@ -10,14 +10,16 @@ import { eq } from "drizzle-orm";
 export default async function CheckoutCompletePage({
   searchParams,
 }: {
-  searchParams: { "txn-id"?: string; transaction_id?: string };
+  searchParams: Promise<{ "txn-id"?: string; transaction_id?: string }>;
 }) {
   // 서버에서 사용자 정보 및 basketIdent 가져오기
+
+  const { "txn-id": txn_id, transaction_id } = await searchParams;
   const session = await auth();
   const userId = session?.user?.id;
 
   // "txn-id" 또는 "transaction_id" 파라미터를 모두 확인
-  const txnId = searchParams["txn-id"] || searchParams.transaction_id;
+  const txnId = txn_id || transaction_id;
 
   console.log("Transaction ID:", txnId);
 
