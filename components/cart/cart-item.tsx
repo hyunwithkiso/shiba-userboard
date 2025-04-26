@@ -143,9 +143,9 @@ export function CartItem({ item }: CartItemProps) {
           <div className="flex-grow">
             <h3 className="font-semibold">{item.name}</h3>
             <p className="text-sm text-muted-foreground">
-              {new Intl.NumberFormat("ko-KR", {
+              {new Intl.NumberFormat("en-US", {
                 style: "currency",
-                currency: item.currency || "KRW",
+                currency: item.currency || "USD",
               }).format(item.in_basket.price)}{" "}
               / 개
             </p>
@@ -200,9 +200,9 @@ export function CartItem({ item }: CartItemProps) {
         <div className="w-full sm:w-auto text-right font-medium pt-2 sm:pt-0 border-t sm:border-none mt-2 sm:mt-0 sm:ml-4">
           {" "}
           {/* 오른쪽 정렬 및 간격 조정 */}
-          {new Intl.NumberFormat("ko-KR", {
+          {new Intl.NumberFormat("en-US", {
             style: "currency",
-            currency: item.currency || "KRW",
+            currency: item.currency || "USD",
           }).format(item.in_basket.price * item.in_basket.quantity)}
         </div>
       </div>

@@ -247,6 +247,7 @@ export async function createBasket(
  * @param basketIdent 장바구니 식별자
  * @returns 장바구니 상세 정보
  */
+
 export async function getBasket(
   basketIdent: string
 ): Promise<TebexBasket | null> {
@@ -439,4 +440,22 @@ export async function fetchTebexCheckoutApi<T>(
     console.error(`Error calling Tebex Checkout API (${url}):`, error);
     throw error;
   }
+}
+
+export async function getCheckoutBasket(
+  basketIdent: string
+): Promise<TebexBasket> {
+  const result = await fetch(
+    `https://checkout.tebex.io/api/baskets/${basketIdent}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Basic ${Buffer.from(
+          `${process.env.TEBEX_PUBLIC_TOKEN}:${process.env.TEBEX_PRIVATE_KEY}`
+        ).toString("base64")}`,
+      },
+    }
+  );
+  return result.json();
 }

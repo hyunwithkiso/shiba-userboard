@@ -25,10 +25,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
     <Link
       href={productUrl}
       aria-label={`${name} 상세 보기`}
-      className="block group"
+      className="block group h-full"
     >
       <Card
-        className="flex flex-col h-full overflow-hidden rounded-lg border shadow-sm transition-shadow group-hover:shadow-md bg-card py-0"
+        className="flex flex-col h-full overflow-hidden rounded-lg border shadow-sm transition-shadow group-hover:shadow-md bg-card"
         aria-labelledby={`product-title-${id}`}
       >
         <CardHeader className="p-0 relative">
@@ -52,12 +52,12 @@ const ProductCard = ({ product }: ProductCardProps) => {
             )}
           </AspectRatio>
         </CardHeader>
-        <CardContent className="flex flex-1 flex-col justify-between p-4">
+        <CardContent className="flex flex-1 flex-col justify-between p-3">
           <div>
             {/* 상품명 */}
             <CardTitle
               id={`product-title-${id}`}
-              className="mb-1 text-base font-medium leading-tight group-hover:underline"
+              className="mb-1 text-base font-medium leading-tight line-clamp-2 group-hover:underline"
             >
               {name}
             </CardTitle>

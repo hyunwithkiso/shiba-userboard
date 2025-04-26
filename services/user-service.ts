@@ -41,8 +41,8 @@ export async function ensureUserBasket(userId: string): Promise<{
     // lib/tebex.ts 의 createBasket 함수 사용
     const basketResponse = await createBasket(
       process.env.NEXT_PUBLIC_APP_URL ||
-        "http://localhost:3000/payment/success",
-      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000/payment/cancel"
+        "http://localhost:3000/checkout/success",
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000/checkout/cancel"
     );
 
     if (!basketResponse || !basketResponse.ident) {

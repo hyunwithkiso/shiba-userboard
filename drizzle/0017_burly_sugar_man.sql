@@ -1,0 +1,1 @@
+ALTER TABLE "purchases" RENAME COLUMN "tebex_package_id" TO "tebex_transaction_id";

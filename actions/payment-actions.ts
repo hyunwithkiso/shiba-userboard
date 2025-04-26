@@ -56,12 +56,60 @@ export async function resetUserBasketAction(): Promise<{
 }
 
 /**
+ * 특정 basketIdent의 장바구니 정보를 가져옵니다.
+ * @param basketIdent Tebex Basket Identifier
+ * @returns {Promise<{success: boolean, data?: any, error?: string}>} 성공 여부, 장바구니 데이터, 에러 메시지
+ */
+export async function getBasketAction(basketIdent: string): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> {
+  try {
+    if (!basketIdent) {
+      return { success: false, error: "유효하지 않은 장바구니 ID입니다." };
+    }
+
+    console.log(`[Action:getBasket] Fetching basket info for: ${basketIdent}`);
+
+    // 라이브러리에서 getTebexBasket 함수 가져오기
+    const { getBasket } = await import("@/lib/tebex");
+
+    // 장바구니 정보 가져오기
+    const basket = await getBasket(basketIdent);
+
+    if (!basket) {
+      return { success: false, error: "장바구니 정보를 찾을 수 없습니다." };
+    }
+
+    console.log(
+      `[Action:getBasket] Successfully retrieved basket: ${basketIdent}`
+    );
+    return { success: true, data: basket };
+  } catch (error) {
+    console.error(
+      `[Action:getBasket] Error fetching basket ${basketIdent}:`,
+      error
+    );
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "장바구니 정보를 가져오는데 실패했습니다.",
+    };
+  }
+}
+
+/**
  * Tebex Checkout API를 통해 확인된 basketIdent를 사용하여 Purchase 레코드를 생성합니다.
  * @param basketIdent Tebex Basket Identifier
+ * @param transactionId 결제 트랜잭션 ID (선택적)
  * @returns 생성 결과 (성공 시 purchase 객체, 실패 시 에러 객체)
  */
 export async function createPurchaseFromCheckout(
-  basketIdent: string
+  basketIdent: string,
+  transactionId?: string
 ): Promise<{ success: boolean; purchase?: any; error?: string }> {
   try {
     const session = await auth();
@@ -70,14 +118,17 @@ export async function createPurchaseFromCheckout(
     }
 
     console.log(
-      `[Server Action] Attempting to create purchase for basket: ${basketIdent}, user: ${session.user.id}`
+      `[Server Action] Attempting to create purchase for basket: ${basketIdent}, user: ${
+        session.user.id
+      }, transactionId: ${transactionId || "N/A"}`
     );
 
     // basketService.createPurchase를 직접 호출하도록 수정 (basketService 임포트 필요 시 추가)
     const { basketService } = await import("@/services/basket-service"); // 동적 임포트 또는 상단 임포트
     const purchase = await basketService.createPurchase(
       session.user.id,
-      basketIdent
+      basketIdent,
+      transactionId
     );
 
     console.log(

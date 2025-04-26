@@ -34,6 +34,8 @@ export async function addCartItemAction(
     console.log(
       `[Action:addCartItem] Calling basketService.addPackageToBasket for user ${userId}, package ${packageId}`
     );
+    console.log("hello world!");
+
     // BasketService의 addPackageToBasket 호출 (내부적으로 ident 확인/생성 및 API 호출)
     await basketService.addPackageToBasket(packageId, quantity);
 

@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/schema";
+import { db, users } from "@/lib/schema";
 import { killfeedSubmission, chatTitleSubmission } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -64,12 +64,14 @@ export async function POST(req: Request) {
         .select()
         .from(killfeedSubmission)
         .where(eq(killfeedSubmission.id, imageId))
+        .leftJoin(users, eq(killfeedSubmission.userId, users.id))
         .limit(1);
     } else if (type === "chat") {
       existingImage = await db
         .select()
         .from(chatTitleSubmission)
         .where(eq(chatTitleSubmission.id, imageId))
+        .leftJoin(users, eq(chatTitleSubmission.userId, users.id))
         .limit(1);
     } else {
       return NextResponse.json(
@@ -133,6 +135,15 @@ export async function POST(req: Request) {
     // 승인된 경우에만 MySQL DB에 저장
     if (status === "approved") {
       try {
+        // 제출자 userId 확인 (존재하지 않으면 null 처리)
+        const submitterId = image.users.userId || null;
+
+        if (!submitterId) {
+          console.warn(
+            `이미지 ${imageId}에 사용자 ID가 없습니다. 기본값을 사용합니다.`
+          );
+        }
+
         // 파일명 추출
         const fileName = image.filePath.split("/").pop() || "image.webp";
         let uploadedFileName = fileName;
@@ -203,7 +214,7 @@ export async function POST(req: Request) {
         `;
 
         const values = [
-          1, // 임시로 1로 고정 (추후 사용자 ID로 변경 필요)
+          submitterId || 1, // 제출자 ID 사용, 없으면 1로 대체
           code,
           image.name + "님의 " + (type === "killfeed" ? "킬피드" : "채팅 칭호"),
           type === "killfeed" ? "killfeed" : "chattitle",
@@ -213,7 +224,10 @@ export async function POST(req: Request) {
 
         await mysql.execute(query, values);
 
-        console.log("게임 DB에 이미지 정보가 저장되었습니다:", code);
+        console.log("게임 DB에 이미지 정보가 저장되었습니다:", {
+          code,
+          userId: submitterId || 1,
+        });
       } catch (error) {
         console.error("이미지 처리 중 오류:", error);
         // 이미지 처리 실패해도 승인 상태는 유지

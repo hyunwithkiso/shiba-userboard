@@ -160,6 +160,7 @@ export const purchases = pgTable("purchases", {
   basketIdent: text("basket_ident").notNull(),
   items: json("items").default([]).notNull(),
   packageId: integer("package_id"),
+  tebexTransactionId: integer("tebex_transaction_id"),
   packageName: text("package_name"),
   quantity: integer("quantity").default(1),
   basePrice: integer("base_price"),

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-// import { useToast } from "@/components/ui/use-toast"; // 나중에 피드백 추가 시 사용
-// import { addProductToCartAction } from '@/actions/cart-actions'; // 서버 액션 임포트 (추후)
+import { useToast } from "@/components/ui/use-toast";
+import { addPackageToBasketAction } from "@/actions/basket-action";
 
 interface AddToCartFormProps {
   packageId: number;
@@ -13,7 +13,7 @@ interface AddToCartFormProps {
 const AddToCartForm = ({ packageId }: AddToCartFormProps) => {
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  // const { toast } = useToast(); // 토스트 훅
+  const { toast } = useToast();
 
   const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(event.target.value, 10);
@@ -32,20 +32,28 @@ const AddToCartForm = ({ packageId }: AddToCartFormProps) => {
     );
 
     try {
-      // TODO: 실제 장바구니 추가 로직 구현 (예: 서버 액션 호출)
-      // const result = await addProductToCartAction(packageId, quantity);
-      // if (result.success) {
-      //   toast({ title: "성공", description: "장바구니에 상품을 추가했습니다." });
-      // } else {
-      //   toast({ variant: "destructive", title: "오류", description: result.error || "상품 추가 중 오류 발생" });
-      // }
-      // 임시 성공 토스트 (테스트용)
-      // toast({ title: "알림", description: `상품 ID ${packageId} (${quantity}개) 장바구니 추가 시도` });
-      alert(`상품 ID ${packageId} (${quantity}개) 장바구니 추가 시도 (임시)`); // 임시 alert
+      const result = await addPackageToBasketAction(packageId, quantity);
+      console.log(result);
+
+      if (result.success) {
+        toast({
+          title: "성공",
+          description: "장바구니에 상품을 추가했습니다.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "오류",
+          description: result.error || "상품 추가 중 오류가 발생했습니다.",
+        });
+      }
     } catch (error) {
       console.error("Failed to add item to cart:", error);
-      // toast({ variant: "destructive", title: "오류", description: "상품을 추가하는 중 예기치 않은 오류가 발생했습니다." });
-      alert("상품 추가 중 오류 발생 (임시)"); // 임시 alert
+      toast({
+        variant: "destructive",
+        title: "오류",
+        description: "상품을 추가하는 중 예기치 않은 오류가 발생했습니다.",
+      });
     } finally {
       setIsLoading(false);
     }

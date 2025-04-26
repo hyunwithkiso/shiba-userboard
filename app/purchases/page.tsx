@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { db, purchases, users } from "@/lib/schema"; // 스키마 경로 확인
+import { db, purchases } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
-// import { createClient } from '@/utils/supabase/server'; // Supabase 대신 NextAuth 사용
-import { auth } from "@/lib/auth"; // NextAuth auth 함수 임포트
-import { formatPrice } from "@/lib/utils";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { PurchaseHistoryList } from "@/components/purchases/purchase-history-list";
 import {
   Card,
   CardContent,
@@ -12,17 +12,8 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { redirect } from "next/navigation";
+import { ShoppingBag } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "구매 내역 | SHIBA 상점",
@@ -30,19 +21,17 @@ export const metadata: Metadata = {
 };
 
 // 구매 내역 데이터 타입 (스키마 기반 확장)
-type PurchaseHistoryItem = typeof purchases.$inferSelect & {
+export type PurchaseHistoryItem = typeof purchases.$inferSelect & {
   // 필요시 사용자 정보 등 join된 데이터 추가
 };
 
 // 구매 내역 페이지 컴포넌트
 export default async function PurchasesPage() {
-  // const supabase = createClient(); // 제거
   const session = await auth(); // NextAuth 사용
 
-  // if (!user) { // session.user 확인
   if (!session?.user?.id) {
     // 로그인하지 않은 사용자는 홈페이지로 리디렉션
-    redirect("/"); // 리디렉션 경로 변경
+    redirect("/");
   }
 
   const userId = session.user.id; // 사용자 ID 가져오기
@@ -72,97 +61,31 @@ export default async function PurchasesPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8 md:py-12">
-      <h1 className="text-3xl font-bold tracking-tight mb-6">구매 내역</h1>
+    <div className="container mx-auto max-w-5xl px-4 py-8 md:py-12">
+      <div className="flex items-center gap-3 mb-6">
+        <ShoppingBag className="h-8 w-8 text-primary" />
+        <h1 className="text-3xl font-bold tracking-tight">구매 내역</h1>
+      </div>
 
       {userPurchases.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>구매 기록 없음</CardTitle>
-            <CardDescription>아직 구매한 상품이 없습니다.</CardDescription>
+        <Card className="border-dashed">
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">구매 기록 없음</CardTitle>
+            <CardDescription className="text-base">
+              아직 구매한 상품이 없습니다.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <Link href="/shop">상점으로 가기</Link>
+          <CardContent className="flex justify-center pb-6">
+            <Button asChild className="px-8">
+              <Link href="/shop">
+                <ShoppingBag className="mr-2 h-4 w-4" />
+                상점으로 가기
+              </Link>
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            {" "}
-            {/* 테이블 패딩 제거 */}
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>주문일</TableHead>
-                  <TableHead>상품 정보</TableHead>
-                  <TableHead className="text-right">결제 금액</TableHead>
-                  <TableHead className="text-center">상태</TableHead>
-                  {/* <TableHead className="text-right">주문 ID</TableHead> */}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {userPurchases.map((purchase) => {
-                  // items가 배열인지 확인하고, 아니면 빈 배열로 처리
-                  const itemsArray = Array.isArray(purchase.items)
-                    ? purchase.items
-                    : [];
-                  return (
-                    <TableRow key={purchase.id}>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {purchase.purchasedAt
-                          ? new Date(purchase.purchasedAt).toLocaleDateString(
-                              "ko-KR"
-                            )
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col space-y-1">
-                          {itemsArray.length > 0 ? (
-                            itemsArray.map((item: any, index: number) => (
-                              <div key={index} className="text-sm">
-                                <span className="font-medium">
-                                  {item.name || "알 수 없는 상품"}
-                                </span>
-                                {item.quantity > 1 && ` x ${item.quantity}`}
-                              </div>
-                            ))
-                          ) : (
-                            <span className="text-muted-foreground">
-                              상품 정보 없음
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {/* totalAmount는 cents 단위라고 가정 */}
-                        {formatPrice(
-                          purchase.totalAmount ? purchase.totalAmount / 100 : 0,
-                          purchase.currency
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge
-                          variant={
-                            purchase.status === "completed"
-                              ? "default"
-                              : purchase.status === "pending"
-                              ? "secondary"
-                              : "destructive"
-                          }
-                        >
-                          {purchase.status}
-                        </Badge>
-                      </TableCell>
-                      {/* <TableCell className="text-right text-xs text-muted-foreground">{purchase.id}</TableCell> */}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <PurchaseHistoryList purchaseHistory={userPurchases} />
       )}
     </div>
   );

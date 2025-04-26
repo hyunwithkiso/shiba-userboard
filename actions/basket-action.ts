@@ -84,8 +84,10 @@ export async function addPackageToBasketAction(
   try {
     const result = await basketService.addToCart(packageId, quantity);
 
+    console.log(result);
+
     if (result.success) {
-      revalidatePath("/store/cart"); // 장바구니 페이지 캐시 무효화
+      revalidatePath("/cart"); // 장바구니 페이지 캐시 무효화
       revalidatePath("/basket"); // 다른 장바구니 관련 컴포넌트 캐시 무효화 (필요시)
       return { success: true, data: result.data };
     } else {

@@ -30,6 +30,7 @@ import {
   ImageIcon,
 } from "lucide-react";
 import { ThemeToggle } from "../ui/theme-toggle";
+import { MiniCart } from "../cart/mini-cart";
 
 const navLinks = [
   { href: "/notices", label: "공지사항" },
@@ -60,6 +61,7 @@ function SignOutButton() {
 export const Header = () => {
   const { data: session, status } = useSession();
   const isAdmin = session?.user?.isAdmin ?? false;
+  const isAuthenticated = status === "authenticated";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

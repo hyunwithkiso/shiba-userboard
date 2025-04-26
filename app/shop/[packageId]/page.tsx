@@ -7,6 +7,8 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge"; // 카테고리 표시용
 import AddToCartForm from "@/components/add-to-cart-form"; // 새로 만든 컴포넌트 임포트
 import { auth } from "@/lib/auth"; // auth 임포트
+import { getUserBasketAction } from "@/actions/basket-action"; // 장바구니 정보 가져오기
+import { CartSummary } from "@/components/cart/cart-summary"; // 장바구니 요약 컴포넌트 추가
 
 type Props = {
   params: Promise<{ packageId: string }>;
@@ -54,6 +56,10 @@ export default async function PackageDetailPage({ params }: Props) {
     notFound();
   }
 
+  // 장바구니 정보 가져오기
+  const basketResult = await getUserBasketAction();
+  const basket = basketResult.success ? basketResult.data : null;
+
   const {
     id,
     name,
@@ -71,61 +77,76 @@ export default async function PackageDetailPage({ params }: Props) {
 
   return (
     // 가운데 정렬 및 최대 너비 설정
-    <div className="container mx-auto max-w-3xl px-4 py-10 md:py-16">
-      <div className="flex flex-col space-y-8">
+    <div className="container mx-auto max-w-6xl px-4 py-10 md:py-16">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* 상품 이미지 */}
-        <div className="aspect-video md:aspect-square relative overflow-hidden rounded-lg border bg-card shadow-sm">
-          {image ? (
-            <Image
-              src={image}
-              alt={`${name} 상품 이미지`}
-              fill
-              className="object-contain p-4" // contain 및 padding 추가
-              sizes="(max-width: 768px) 90vw, 45vw"
-              priority
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground rounded-lg">
-              <span>이미지 없음</span>
+        <div className="lg:col-span-2">
+          <div className="aspect-video md:aspect-square relative overflow-hidden rounded-lg border bg-card shadow-sm">
+            {image ? (
+              <Image
+                src={image}
+                alt={`${name} 상품 이미지`}
+                fill
+                className="object-contain p-4" // contain 및 padding 추가
+                sizes="(max-width: 768px) 90vw, 45vw"
+                priority
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground rounded-lg">
+                <span>이미지 없음</span>
+              </div>
+            )}
+          </div>
+
+          {/* 상품 정보 (이미지 아래 배치) */}
+          <div className="flex flex-col space-y-4 mt-6">
+            <div className="space-y-2">
+              {/* 카테고리 (Badge 사용) */}
+              {category?.name && (
+                <Badge variant="outline">{category.name}</Badge>
+              )}
+              {/* 상품명 */}
+              <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
+                {name}
+              </h1>
+            </div>
+
+            {/* 가격 */}
+            <span className="text-4xl font-bold text-primary">
+              {formatPrice(displayPrice, displayCurrency)}
+            </span>
+          </div>
+
+          <Separator className="my-6" />
+
+          {/* 상품 설명 */}
+          {description && (
+            <div className="space-y-3">
+              <h2 className="text-xl font-semibold text-foreground">
+                상품 설명
+              </h2>
+              {/* prose-sm으로 가독성 확보, HTML 렌더링 */}
+              <div
+                className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground text-sm"
+                dangerouslySetInnerHTML={{ __html: description }}
+              />
             </div>
           )}
         </div>
 
-        {/* 상품 정보 (이미지 아래 배치) */}
-        <div className="flex flex-col space-y-4">
-          <div className="space-y-2">
-            {/* 카테고리 (Badge 사용) */}
-            {category?.name && <Badge variant="outline">{category.name}</Badge>}
-            {/* 상품명 */}
-            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
-              {name}
-            </h1>
+        {/* 오른쪽 사이드바 */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* 수량 선택 및 장바구니 추가 (클라이언트 컴포넌트 사용) */}
+          <div className="bg-card border rounded-lg p-6 shadow-sm">
+            <h2 className="text-xl font-semibold mb-4">상품 구매</h2>
+            <AddToCartForm packageId={id} />
           </div>
 
-          {/* 가격 */}
-          <span className="text-4xl font-bold text-primary">
-            {formatPrice(displayPrice, displayCurrency)}
-          </span>
+          {/* 장바구니 요약 정보 표시 */}
+          {basket && basket.packages && basket.packages.length > 0 && (
+            <CartSummary basket={basket} className="shadow-sm" />
+          )}
         </div>
-
-        <Separator />
-
-        {/* 수량 선택 및 장바구니 추가 (클라이언트 컴포넌트 사용) */}
-        <AddToCartForm packageId={id} />
-
-        <Separator />
-
-        {/* 상품 설명 */}
-        {description && (
-          <div className="space-y-3">
-            <h2 className="text-xl font-semibold text-foreground">상품 설명</h2>
-            {/* prose-sm으로 가독성 확보, HTML 렌더링 */}
-            <div
-              className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground text-sm"
-              dangerouslySetInnerHTML={{ __html: description }}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

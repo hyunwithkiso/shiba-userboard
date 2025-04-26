@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, ShoppingCart, Home } from "lucide-react";
 import { Metadata } from "next";
 import { Skeleton } from "@/components/ui/skeleton";
+import { db, users } from "@/lib/schema";
 
 export const metadata: Metadata = {
   title: "결제 취소",
@@ -23,7 +24,9 @@ function ResetButtonFallback() {
   return <Skeleton className="h-10 w-full max-w-xs" />;
 }
 
-export default function PaymentCancelPage() {
+export default async function PaymentCancelPage() {
+  const result = await db.update(users).set({ basketIdent: null }).execute();
+
   return (
     <div className="container mx-auto flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] text-center px-4 py-10">
       <Card className="w-full max-w-md shadow-lg">

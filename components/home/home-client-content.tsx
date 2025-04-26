@@ -16,7 +16,12 @@ import {
   Info,
   CalendarDays,
   Search,
+  Clock,
+  PinIcon,
+  Bell,
 } from "lucide-react";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
 
 // --- Helper Function for Avatar Background ---
 const colors = [
@@ -39,21 +44,37 @@ interface Player {
   name: string; // 플레이어 이름
 }
 
+interface Notice {
+  id: string;
+  title: string;
+  createdAt: Date;
+  isPinned: boolean;
+}
+
+interface Event {
+  id: string;
+  title: string;
+  thumbnailImage: string | null;
+  startDate: Date;
+  endDate: Date;
+  isPinned: boolean;
+}
+
 interface HomeClientContentProps {
   playerNum: number;
   players: Player[]; // 이미 user_id 기준으로 정렬된 플레이어 배열
+  notices: Notice[];
+  events: Event[];
 }
 
 // --- Client Component for Home Page Content ---
 export const HomeClientContent = ({
   playerNum,
   players,
+  notices,
+  events,
 }: HomeClientContentProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-
-  // 공지사항 및 이벤트 데이터 (임시 - 실제로는 DB 등에서 가져오거나 props로 받아야 함)
-  const noticesData: { id: number; title: string }[] = [];
-  const eventsData: { id: number; title: string }[] = [];
 
   // 검색어에 따라 플레이어 필터링
   const filteredPlayers = players.filter(
@@ -65,6 +86,23 @@ export const HomeClientContent = ({
   // 검색어 입력 핸들러
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
+  };
+
+  // 날짜 포맷팅 함수
+  const formatEventDate = (date: Date) => {
+    return format(new Date(date), "MM월 dd일", { locale: ko });
+  };
+
+  // 진행 중/예정/종료 상태 확인
+  const getEventStatus = (startDate: Date, endDate: Date) => {
+    const now = new Date();
+    if (now < new Date(startDate)) {
+      return "upcoming";
+    } else if (now > new Date(endDate)) {
+      return "ended";
+    } else {
+      return "ongoing";
+    }
   };
 
   return (
@@ -239,8 +277,8 @@ export const HomeClientContent = ({
             </Link>
           </div>
           <Card className="border-blue-500/20 shadow-lg h-[280px] overflow-hidden">
-            <CardContent className="pt-6 h-full flex flex-col justify-center">
-              {noticesData.length === 0 ? (
+            <CardContent className="pt-6 h-full flex flex-col">
+              {notices.length === 0 ? (
                 <div className="flex flex-col items-center justify-center space-y-4 text-center text-muted-foreground h-full">
                   <div className="p-4 rounded-full bg-blue-500/5 border border-blue-500/10">
                     <Info className="h-8 w-8 text-blue-500/70" />
@@ -248,9 +286,34 @@ export const HomeClientContent = ({
                   <span>등록된 공지사항이 없습니다</span>
                 </div>
               ) : (
-                <ul>
-                  {noticesData.map((notice) => (
-                    <li key={notice.id}>{notice.title}</li>
+                <ul className="space-y-3">
+                  {notices.map((notice) => (
+                    <li key={notice.id}>
+                      <Link
+                        href={`/notices/${notice.id}`}
+                        className="block p-3 rounded-lg border border-blue-500/10 hover:bg-blue-500/5 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          {notice.isPinned && (
+                            <Badge variant="destructive" className="text-xs">
+                              <PinIcon className="h-3 w-3 mr-1" />
+                              중요
+                            </Badge>
+                          )}
+                          <h3 className="font-medium text-primary line-clamp-1">
+                            {notice.title}
+                          </h3>
+                        </div>
+                        <div className="flex items-center text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {format(
+                            new Date(notice.createdAt),
+                            "yyyy년 MM월 dd일",
+                            { locale: ko }
+                          )}
+                        </div>
+                      </Link>
+                    </li>
                   ))}
                 </ul>
               )}
@@ -277,8 +340,8 @@ export const HomeClientContent = ({
             </Link>
           </div>
           <Card className="border-blue-500/20 shadow-lg h-[280px] overflow-hidden">
-            <CardContent className="pt-6 h-full flex flex-col justify-center">
-              {eventsData.length === 0 ? (
+            <CardContent className="pt-6 h-full flex flex-col">
+              {events.length === 0 ? (
                 <div className="flex flex-col items-center justify-center space-y-4 text-center text-muted-foreground h-full">
                   <div className="p-4 rounded-full bg-blue-500/5 border border-blue-500/10">
                     <CalendarDays className="h-8 w-8 text-blue-500/70" />
@@ -286,10 +349,76 @@ export const HomeClientContent = ({
                   <span>진행 중인 이벤트가 없습니다</span>
                 </div>
               ) : (
-                <ul>
-                  {eventsData.map((event) => (
-                    <li key={event.id}>{event.title}</li>
-                  ))}
+                <ul className="space-y-3">
+                  {events.map((event) => {
+                    const status = getEventStatus(
+                      event.startDate,
+                      event.endDate
+                    );
+
+                    return (
+                      <li key={event.id}>
+                        <Link
+                          href={`/events/${event.id}`}
+                          className="flex items-start gap-3 p-3 rounded-lg border border-blue-500/10 hover:bg-blue-500/5 transition-colors"
+                        >
+                          <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-blue-500/10 flex items-center justify-center">
+                            {event.thumbnailImage ? (
+                              <Image
+                                src={event.thumbnailImage}
+                                alt={event.title}
+                                width={64}
+                                height={64}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <CalendarDays className="h-8 w-8 text-blue-500/70" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              {event.isPinned && (
+                                <Badge
+                                  variant="default"
+                                  className="bg-primary/80 text-xs"
+                                >
+                                  <PinIcon className="h-3 w-3 mr-1" />
+                                  중요
+                                </Badge>
+                              )}
+                              {status === "ongoing" ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-green-500/80 text-white text-xs"
+                                >
+                                  진행중
+                                </Badge>
+                              ) : status === "upcoming" ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-blue-500/80 text-white text-xs"
+                                >
+                                  예정
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs">
+                                  종료
+                                </Badge>
+                              )}
+                            </div>
+                            <h3 className="font-medium text-primary line-clamp-1">
+                              {event.title}
+                            </h3>
+                            <div className="flex items-center text-xs text-muted-foreground mt-1">
+                              <CalendarDays className="h-3 w-3 mr-1" />
+                              {formatEventDate(event.startDate)} ~{" "}
+                              {formatEventDate(event.endDate)}
+                            </div>
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </CardContent>

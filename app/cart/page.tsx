@@ -6,7 +6,7 @@ import { CartItems } from "@/components/cart/cart-items"; // 생성 예정
 import { TebexBasket } from "@/lib/tebex";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, AlertCircle } from "lucide-react";
+import { ShoppingCart, AlertCircle, ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton"; // 로딩 상태용
 
 export const metadata: Metadata = {
@@ -18,7 +18,10 @@ export const metadata: Metadata = {
 function CartLoadingSkeleton() {
   return (
     <div className="space-y-6">
-      <Skeleton className="h-8 w-1/4" /> {/* Title Skeleton */}
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-32" /> {/* Title Skeleton */}
+        <Skeleton className="h-10 w-24" /> {/* Back Button Skeleton */}
+      </div>
       <div className="space-y-4">
         {[1, 2].map((i) => (
           <div
@@ -34,15 +37,14 @@ function CartLoadingSkeleton() {
             </div>
             <div className="flex items-center space-x-2">
               <Skeleton className="h-10 w-16" /> {/* Quantity Input Skeleton */}
-              <Skeleton className="h-10 w-20" /> {/* Update Button Skeleton */}
+              <Skeleton className="h-10 w-10" /> {/* Update Button Skeleton */}
               <Skeleton className="h-10 w-10" /> {/* Remove Button Skeleton */}
             </div>
           </div>
         ))}
       </div>
-      <div className="mt-6 flex justify-end items-center space-x-4 border-t pt-4">
-        <Skeleton className="h-6 w-24" /> {/* Total Text Skeleton */}
-        <Skeleton className="h-10 w-32" /> {/* Checkout Button Skeleton */}
+      <div className="mt-6 space-y-4">
+        <Skeleton className="h-40 w-full" /> {/* Summary Skeleton */}
       </div>
     </div>
   );
@@ -67,6 +69,8 @@ async function CartPageContent() {
     // 현재 구현에서는 로그인된 사용자만 가정합니다.
   }
 
+  console.log(basket);
+
   // 오류 발생 시
   if (error) {
     return (
@@ -86,7 +90,7 @@ async function CartPageContent() {
   // 장바구니가 비어있거나 없는 경우
   if (!basket || !basket.packages || basket.packages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center text-center text-muted-foreground gap-4 border rounded-lg p-8">
+      <div className="flex flex-col items-center justify-center text-center text-muted-foreground gap-4 border rounded-lg p-8 my-8">
         <ShoppingCart className="h-12 w-12" />
         <h2 className="text-xl font-semibold">장바구니가 비어 있습니다</h2>
         <p>상점에서 상품을 추가해보세요.</p>
@@ -104,7 +108,16 @@ async function CartPageContent() {
 export default function CartPage() {
   return (
     <div className="container mx-auto px-4 py-8 md:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold mb-6">장바구니</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">장바구니</h1>
+        <Button asChild variant="ghost" size="sm" className="gap-1">
+          <Link href="/shop">
+            <ArrowLeft className="h-4 w-4" />
+            <span>계속 쇼핑하기</span>
+          </Link>
+        </Button>
+      </div>
+
       <Suspense fallback={<CartLoadingSkeleton />}>
         <CartPageContent />
       </Suspense>

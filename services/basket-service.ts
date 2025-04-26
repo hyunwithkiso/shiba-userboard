@@ -295,6 +295,8 @@ export class BasketService {
       packageId,
       quantity
     );
+    console.log(updatedBasket);
+
     console.log(
       "[BasketService] Package added, updated basket:",
       updatedBasket
@@ -529,14 +531,14 @@ export class BasketService {
       const packagePrice = packageInfoResult.data.total_price ?? 0; // Use total_price
 
       // 최소 결제 금액 체크 ($0.77)
-      if (packagePrice * quantity < 0.77) {
-        return {
-          success: false,
-          message: `최소 결제 금액은 $0.77입니다. (현재 상품 총액: $${(
-            packagePrice * quantity
-          ).toFixed(2)})`,
-        };
-      }
+      // if (packagePrice * quantity < 0.77) {
+      //   return {
+      //     success: false,
+      //     message: `최소 결제 금액은 $0.77입니다. (현재 상품 총액: $${(
+      //       packagePrice * quantity
+      //     ).toFixed(2)})`,
+      //   };
+      // }
 
       // 사용자의 현재 장바구니 가져오기 (없으면 생성됨)
       const currentBasket = await this.getUserBasket();
@@ -682,6 +684,10 @@ export class BasketService {
           purchasedAt: new Date(),
           createdAt: new Date(),
           updatedAt: new Date(),
+          // Tebex 트랜잭션 ID 저장 (있는 경우)
+          tebexTransactionId: transactionId
+            ? parseInt(transactionId, 10) || null
+            : null,
           // 호환성 필드는 제거하거나 필요시 첫 아이템 기준으로 유지
           packageId: itemsArray[0]?.id || 0,
           packageName: itemsArray[0]?.name || "Unknown",
@@ -756,11 +762,11 @@ export class BasketService {
 
     // TODO: 실제 리디렉션 URL로 변경 필요
     const completeUrl = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/payment/success`
-      : "/payment/success";
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success`
+      : "/checkout/success";
     const cancelUrl = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/cart`
-      : "/cart";
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/checkout/cancel`
+      : "/checkout/cancel";
 
     try {
       // 1. DB에서 사용자의 basketIdent 확인
