@@ -79,13 +79,10 @@ export default function ChatTitleDialog({
   }, [initialMetadata, initialAdminNotes]);
 
   // 현재 에디터 상태로 metadata 객체 생성
-  const getCurrentMetadata = (): Metadata => ({
+  const getCurrentMetadata = () => ({
     width: width,
     scale: scale / 100, // 0-100% -> 0-1
-    marginTop: marginTop,
-    marginRight: marginRight,
-    marginBottom: marginBottom,
-    marginLeft: marginLeft,
+    margin: `${marginTop}px ${marginRight}px ${marginBottom}px ${marginLeft}px`,
   });
 
   const handleApprove = async () => {
