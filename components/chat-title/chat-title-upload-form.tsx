@@ -136,7 +136,14 @@ export default function ChatTitleUploadForm() {
             <CardContent className="pt-6">
               <h3 className="text-sm font-medium mb-3">채팅창 미리보기</h3>
               <div className="border rounded-lg p-4 bg-background">
-                <ChatTitleExample imageSrc={imagePreview} scale={scale} />
+                <ChatTitleExample
+                  imageSrc={imagePreview}
+                  metadata={{
+                    width: "100px",
+                    scale: scale,
+                    margin: "-3px -12px 0",
+                  }}
+                />
               </div>
 
               <div className="mt-4 space-y-2">

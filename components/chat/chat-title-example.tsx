@@ -6,10 +6,7 @@ import Image from "next/image";
 interface Metadata {
   width?: string;
   scale?: number;
-  marginTop?: number;
-  marginRight?: number;
-  marginBottom?: number;
-  marginLeft?: number;
+  margin?: string;
 }
 
 interface ChatTitleExampleProps {
@@ -35,16 +32,7 @@ const ChatTitleExample = ({
 
   const customWidth = metadata?.width || "100px";
   const customScale = metadata?.scale !== undefined ? metadata.scale : 0.7;
-  const customMarginTop =
-    metadata?.marginTop !== undefined ? `${metadata.marginTop}px` : "-3px";
-  const customMarginRight =
-    metadata?.marginRight !== undefined ? `${metadata.marginRight}px` : "-10px";
-  const customMarginBottom =
-    metadata?.marginBottom !== undefined ? `${metadata.marginBottom}px` : "0px";
-  const customMarginLeft =
-    metadata?.marginLeft !== undefined ? `${metadata.marginLeft}px` : "0px";
-
-  const customMargin = `${customMarginTop} ${customMarginRight} ${customMarginBottom} ${customMarginLeft}`;
+  const customMargin = metadata?.margin || "0px 0px 0px 0px";
 
   return (
     <div className="chat_default">

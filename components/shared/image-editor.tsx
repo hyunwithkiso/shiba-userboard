@@ -50,7 +50,14 @@ export default function ImageEditor({
                   채팅 칭호 미리보기
                 </Label>
                 <div className="w-full overflow-x-auto py-2">
-                  <ChatTitleExample imageSrc={imageSrc} scale={scale} />
+                  <ChatTitleExample
+                    imageSrc={imageSrc}
+                    metadata={{
+                      width: "100px",
+                      scale: scale,
+                      margin: "-3px -12px 0",
+                    }}
+                  />
                 </div>
               </div>
             </CardContent>
