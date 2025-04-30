@@ -11,14 +11,6 @@
   color: #fff;
 }
 
-body {
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .chat_default {
   display: flex;
   align-items: center;
@@ -37,14 +29,14 @@ body {
   font-size: 14px;
 }
 
-.chat_default .custom {
+/* .chat_default .custom {
   display: inline-block;
   height: 20px;
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
   transform-origin: left center;
-}
+} */
 
 .chat_default .userInfo {
   color: #dcddde;

@@ -65,3 +65,18 @@ export function formatDate(date: string | Date) {
     minute: "2-digit",
   });
 }
+/**
+ * 랜덤한 5글자 소문자 영어 문자열을 생성합니다.
+ * @returns 5글자 소문자 영어 문자열
+ */
+export function generateRandomCode(): string {
+  const characters = "abcdefghijklmnopqrstuvwxyz";
+  let result = "";
+
+  for (let i = 0; i < 5; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    result += characters[randomIndex];
+  }
+
+  return result;
+}

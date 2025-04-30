@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import ChatTitleExample from "@/components/chat/chat-title-example";
 import {
   Table,
   TableBody,
@@ -42,18 +41,22 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { formatDate, formatFileSize } from "@/lib/utils";
-import { Info, Trash2, ExternalLink } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+import { Info, Trash2 } from "lucide-react";
 import { deleteImage } from "@/actions/image-action";
-import { formatDistanceToNow } from "date-fns";
-import { ko } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { ImageApprovalButton } from "@/components/admin/image-approval-button";
 import ChatTitleDialog from "@/components/admin/chat-title-dialog";
+
+interface Metadata {
+  width?: string;
+  scale?: number;
+  marginTop?: number;
+  marginRight?: number;
+  marginBottom?: number;
+  marginLeft?: number;
+}
 
 interface Submission {
   id: string;
@@ -70,9 +73,8 @@ interface Submission {
   reviewerNickname: string | null;
   reviewerUserId: string | null;
   adminNotes: string | null;
-  marginX?: number;
-  scale?: number;
   userGameId: string | null;
+  gameDbMetadata?: Metadata | null;
 }
 
 interface AdminImagesClientProps {
@@ -94,17 +96,16 @@ export default function AdminImagesClient({
   const { toast } = useToast();
   const [selectedSubmission, setSelectedSubmission] =
     useState<Submission | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedScale, setEditedScale] = useState<number>(70);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [editedStatus, setEditedStatus] = useState<string>("pending");
-  const [editedNotes, setEditedNotes] = useState<string>("");
+
   const [type, setType] = useState(currentType);
   const [status, setStatus] = useState(currentStatus);
   const [chatTitleDialogOpen, setChatTitleDialogOpen] = useState(false);
-  const [selectedChatTitle, setSelectedChatTitle] = useState<{
+  const [selectedChatTitleData, setSelectedChatTitleData] = useState<{
     id: string;
     url: string;
+    metadata: Metadata;
+    adminNotes?: string | null;
   } | null>(null);
 
   const handleTypeChange = (value: string) => {
@@ -136,53 +137,6 @@ export default function AdminImagesClient({
     router.push(`/admin/images?${searchParams.toString()}`);
   };
 
-  const handleEdit = async (submission: Submission) => {
-    setSelectedSubmission(submission);
-    setEditedScale(submission.scale ? submission.scale * 100 : 70);
-    setEditedStatus(submission.status);
-    setEditedNotes(submission.adminNotes || "");
-    setIsEditing(true);
-  };
-
-  const handleSave = async () => {
-    if (!selectedSubmission) return;
-
-    try {
-      const response = await fetch(`/api/admin/images/edit`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: selectedSubmission.id,
-          type: selectedSubmission.type,
-          status: editedStatus,
-          adminNotes: editedNotes,
-          scale:
-            selectedSubmission.type === "chat" ? editedScale / 100 : undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save changes");
-      }
-
-      toast({
-        title: "변경사항이 저장되었습니다.",
-        description: "이미지 정보가 성공적으로 업데이트되었습니다.",
-      });
-
-      setIsEditing(false);
-      router.refresh();
-    } catch (error) {
-      toast({
-        title: "오류가 발생했습니다.",
-        description: "변경사항을 저장하는 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleDelete = async () => {
     if (!selectedSubmission) return;
 
@@ -204,7 +158,8 @@ export default function AdminImagesClient({
 
       setIsDeleting(false);
       setSelectedSubmission(null);
-      setIsEditing(false);
+      setChatTitleDialogOpen(false);
+      setSelectedChatTitleData(null);
       router.refresh();
     } catch (error) {
       console.error("Delete error:", error);
@@ -219,9 +174,18 @@ export default function AdminImagesClient({
   };
 
   const handleChatTitleClick = (submission: Submission) => {
-    setSelectedChatTitle({
+    setSelectedChatTitleData({
       id: submission.id,
       url: submission.filePath,
+      metadata: submission.gameDbMetadata || {
+        width: "100px",
+        scale: 0.7,
+        marginTop: -3,
+        marginRight: -10,
+        marginBottom: 0,
+        marginLeft: -10,
+      },
+      adminNotes: submission.adminNotes,
     });
     setChatTitleDialogOpen(true);
   };
@@ -278,8 +242,6 @@ export default function AdminImagesClient({
                 <TableHead>이미지</TableHead>
                 <TableHead>타입</TableHead>
                 <TableHead>유저 정보</TableHead>
-                <TableHead>파일명</TableHead>
-                <TableHead>크기</TableHead>
                 <TableHead>상태</TableHead>
                 <TableHead>업로드 일시</TableHead>
                 <TableHead>검토자</TableHead>
@@ -298,6 +260,7 @@ export default function AdminImagesClient({
                         alt={submission.fileName}
                         fill
                         className="object-contain"
+                        unoptimized
                       />
                     </div>
                   </TableCell>
@@ -323,16 +286,14 @@ export default function AdminImagesClient({
                               {submission.userNickname || "알 수 없음"}
                             </p>
                             <p>
-                              <span className="font-medium">고유번호:</span>{" "}
-                              {submission.userGameId}
+                              <span className="font-medium">게임 ID:</span>{" "}
+                              {submission.userGameId || "-"}
                             </p>
                           </div>
                         </div>
                       </HoverCardContent>
                     </HoverCard>
                   </TableCell>
-                  <TableCell>{submission.fileName}</TableCell>
-                  <TableCell>{formatFileSize(submission.fileSize)}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
@@ -371,8 +332,8 @@ export default function AdminImagesClient({
                                 {submission.reviewerNickname || "알 수 없음"}
                               </p>
                               <p>
-                                <span className="font-medium">고유번호:</span>{" "}
-                                {submission.reviewerUserId}
+                                <span className="font-medium">게임 ID:</span>{" "}
+                                {submission.reviewerUserId || "-"}
                               </p>
                             </div>
                           </div>
@@ -404,8 +365,10 @@ export default function AdminImagesClient({
                           <DialogHeader>
                             <DialogTitle>관리자 메모</DialogTitle>
                             <DialogDescription>
-                              {formatDate(submission.reviewedAt!)}에 작성된
-                              메모입니다.
+                              {submission.reviewedAt
+                                ? formatDate(submission.reviewedAt)
+                                : ""}
+                              에 작성된 메모입니다.
                             </DialogDescription>
                           </DialogHeader>
                           <ScrollArea className="h-[200px] w-full rounded-md border p-4">
@@ -430,7 +393,7 @@ export default function AdminImagesClient({
                               onClick={() => handleChatTitleClick(submission)}
                               className="w-full"
                             >
-                              이미지 조절 및 승인
+                              조정 및 승인/거절
                             </Button>
                           ) : (
                             <ImageApprovalButton
@@ -442,17 +405,59 @@ export default function AdminImagesClient({
                         </>
                       )}
                       {submission.status !== "pending" && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedSubmission(submission);
-                            setIsDeleting(true);
+                        <Dialog
+                          open={
+                            selectedSubmission?.id === submission.id &&
+                            isDeleting
+                          }
+                          onOpenChange={(open) => {
+                            if (!open) {
+                              setSelectedSubmission(null);
+                              setIsDeleting(false);
+                            }
                           }}
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          삭제
-                        </Button>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedSubmission(submission);
+                                setIsDeleting(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              삭제
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>이미지 삭제</DialogTitle>
+                              <DialogDescription>
+                                정말로 이 이미지를 삭제하시겠습니까? 이 작업은
+                                되돌릴 수 없습니다.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedSubmission(null);
+                                  setIsDeleting(false);
+                                }}
+                              >
+                                {" "}
+                                취소{" "}
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                onClick={handleDelete}
+                              >
+                                삭제
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       )}
                     </div>
                   </TableCell>
@@ -462,7 +467,7 @@ export default function AdminImagesClient({
           </Table>
 
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-2 pt-4">
               <Button
                 variant="outline"
                 onClick={() => handlePageChange(currentPage - 1)}
@@ -475,6 +480,7 @@ export default function AdminImagesClient({
                   <Button
                     key={page}
                     variant={currentPage === page ? "default" : "outline"}
+                    size="icon"
                     onClick={() => handlePageChange(page)}
                   >
                     {page}
@@ -493,131 +499,18 @@ export default function AdminImagesClient({
         </CardContent>
       </Card>
 
-      <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>이미지 수정</DialogTitle>
-            <DialogDescription>
-              이미지 정보를 수정하고 상태를 변경할 수 있습니다.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-6">
-            {selectedSubmission?.type === "chat" ? (
-              <div className="space-y-4">
-                <div className="border rounded-lg p-4 bg-muted/50">
-                  <ChatTitleExample
-                    imageSrc={selectedSubmission?.filePath}
-                    scale={editedScale / 100}
-                    marginX={0}
-                    marginY={-3}
-                  />
-                </div>
-                {selectedSubmission.status === "pending" && (
-                  <div className="space-y-2">
-                    <Label>크기 조절 (70% ~ 100%)</Label>
-                    <Slider
-                      value={[editedScale]}
-                      onValueChange={(value) => setEditedScale(value[0])}
-                      min={70}
-                      max={100}
-                      step={1}
-                    />
-                    <p className="text-sm text-muted-foreground text-right">
-                      {editedScale}%
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-                <Image
-                  src={selectedSubmission?.filePath || ""}
-                  alt={selectedSubmission?.fileName || ""}
-                  fill
-                  className="object-contain"
-                />
-              </div>
-            )}
-
-            <div className="space-y-4">
-              {selectedSubmission?.status === "pending" && (
-                <div className="space-y-2">
-                  <Label>상태</Label>
-                  <Select value={editedStatus} onValueChange={setEditedStatus}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">대기중</SelectItem>
-                      <SelectItem value="approved">승인</SelectItem>
-                      <SelectItem value="rejected">거절</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label>관리자 메모</Label>
-                <Textarea
-                  value={editedNotes}
-                  onChange={(e) => setEditedNotes(e.target.value)}
-                  placeholder="관리자 메모를 입력하세요."
-                  className="h-32"
-                  readOnly={selectedSubmission?.status !== "pending"}
-                />
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="flex items-center justify-between">
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setIsDeleting(true)}
-            >
-              <Trash2 className="h-4 w-4 mr-1" />
-              삭제
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
-                취소
-              </Button>
-              {selectedSubmission?.status === "pending" && (
-                <Button onClick={handleSave}>저장</Button>
-              )}
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isDeleting} onOpenChange={setIsDeleting}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>이미지 삭제</DialogTitle>
-            <DialogDescription>
-              정말로 이 이미지를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleting(false)}>
-              취소
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              삭제
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* 채팅 칭호 이미지 조절 대화상자 */}
-      {selectedChatTitle && (
+      {selectedChatTitleData && (
         <ChatTitleDialog
           open={chatTitleDialogOpen}
           onOpenChange={setChatTitleDialogOpen}
-          imageUrl={selectedChatTitle.url}
-          imageId={selectedChatTitle.id}
-          onSuccess={refreshData}
+          imageUrl={selectedChatTitleData.url}
+          imageId={selectedChatTitleData.id}
+          initialMetadata={selectedChatTitleData.metadata}
+          initialAdminNotes={selectedChatTitleData.adminNotes}
+          onSuccess={() => {
+            refreshData();
+            setSelectedChatTitleData(null);
+          }}
         />
       )}
     </div>

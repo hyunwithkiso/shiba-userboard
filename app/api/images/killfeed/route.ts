@@ -4,7 +4,7 @@ import { killfeedSubmission } from "@/lib/schema";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
-
+import { generateRandomCode } from "@/lib/utils";
 export async function POST(request: NextRequest) {
   try {
     // 인증 확인
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     externalFormData.append("folder", "killfeed");
 
     // 외부 API로 이미지 업로드
-    const uploadUrl = "https://screenshot.dokku.co.kr/files";
+    const uploadUrl = "https://screenshot.dokku.co.kr/files?type=killfeed";
     let response;
     try {
       response = await fetch(uploadUrl, {
@@ -155,12 +155,15 @@ export async function POST(request: NextRequest) {
       .insert(killfeedSubmission)
       .values({
         userId: user.id,
+        code: generateRandomCode(),
         name: name.trim(),
         filePath: uploadedUrl,
-        fileName: file.name,
+        fileName: responseData.fileName,
         fileType: file.type,
         fileSize: file.size,
         status: "pending",
+        gameDbName: name.trim(),
+        gameDbFileName: responseData.fileName,
       })
       .returning();
 

@@ -127,6 +127,20 @@
       "when": 1745650389158,
       "tag": "0017_burly_sugar_man",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1746015348557,
+      "tag": "0018_perpetual_red_ghost",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1746017686745,
+      "tag": "0019_wild_union_jack",
+      "breakpoints": true
     }
   ]
 }

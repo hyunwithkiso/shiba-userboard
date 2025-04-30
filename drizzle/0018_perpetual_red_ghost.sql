@@ -1,0 +1,1 @@
+ALTER TABLE "chat_title_submission" ADD COLUMN "meta_data" jsonb DEFAULT '{"width":"100px","scale":0.7,"margin":"-3px -10px 0"}'::jsonb;

@@ -211,11 +211,15 @@ export const killfeedSubmission = pgTable(
       onDelete: "set null",
     }),
     adminNotes: text("admin_notes"),
-    // marginX: integer("margin_x").default(0),
+    code: text("code").notNull().unique(),
+    gameDbName: text("game_db_name").notNull(),
+    gameDbFileName: text("game_db_file_name").notNull(),
+    gameDbMetadata: jsonb("game_db_metadata").default({}).notNull(),
   },
   (table) => ({
     userIdx: index("killfeed_user_idx").on(table.userId),
     statusIdx: index("killfeed_status_idx").on(table.status),
+    codeIdx: index("killfeed_code_idx").on(table.code),
   })
 );
 
@@ -243,10 +247,32 @@ export const chatTitleSubmission = pgTable(
     adminNotes: text("admin_notes"),
     marginX: integer("margin_x").default(0),
     scale: integer("scale").default(70),
+    code: text("code").notNull().unique(),
+    gameDbName: text("game_db_name").notNull(),
+    gameDbFileName: text("game_db_file_name").notNull(),
+    gameDbMetadata: jsonb("game_db_metadata")
+      .$type<{
+        width?: string;
+        scale?: number;
+        marginTop?: number;
+        marginRight?: number;
+        marginBottom?: number;
+        marginLeft?: number;
+      }>()
+      .default({
+        width: "100px",
+        scale: 0.7,
+        marginTop: -3,
+        marginRight: -10,
+        marginBottom: 0,
+        marginLeft: -10,
+      })
+      .notNull(),
   },
   (table) => ({
     userIdx: index("chat_title_user_idx").on(table.userId),
     statusIdx: index("chat_title_status_idx").on(table.status),
+    codeIdx: index("chat_title_code_idx").on(table.code),
   })
 );
 

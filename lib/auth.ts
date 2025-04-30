@@ -85,13 +85,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token.isAdmin !== undefined && session.user) {
         session.user.isAdmin = token.isAdmin;
       }
+
+      if (token.userId && session.user) {
+        session.user.userId = token.userId;
+      }
       return session;
     },
     async jwt({ token, user, account, profile }) {
       if (user?.id) {
         token.sub = user.id;
         token.discordId = (user as any).discordId || token.discordId;
-
+        token.userId = (user as any).userId || token.userId;
         try {
           console.log(
             `[JWT Callback] Fetching DB user info for id: ${user.id}`
@@ -99,7 +103,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const dbUser = await db
             .select({
               nickname: users.nickname,
-              gameId: users.userId,
+              userId: users.userId,
               isAdmin: users.isAdmin,
             })
             .from(users)
@@ -108,10 +112,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           if (dbUser.length > 0) {
             token.nickname = dbUser[0].nickname;
-            token.gameId = dbUser[0].gameId;
+            token.userId = dbUser[0].userId;
             token.isAdmin = dbUser[0].isAdmin ?? false;
             console.log(
-              `[JWT Callback] User info fetched: nickname=${token.nickname}, gameId=${token.gameId}, isAdmin=${token.isAdmin}`
+              `[JWT Callback] User info fetched: nickname=${token.nickname}, userId=${token.userId}, isAdmin=${token.isAdmin}`
             );
           } else {
             console.warn(
@@ -129,6 +133,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!token.discordId && (profile as any)?.id) {
           token.discordId = String((profile as any).id);
+        }
+
+        if (!token.userId && (profile as any)?.id) {
+          token.userId = String((profile as any).id);
         }
       }
       if (account?.provider === "discord" && account.providerAccountId) {

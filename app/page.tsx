@@ -7,7 +7,7 @@ import { desc, eq, and, gte, lte } from "drizzle-orm";
 
 // 메타데이터 정의
 export const metadata: Metadata = {
-  title: "SHIBA | 온라인 게임 커뮤니티",
+  title: "SHIBA | 유저보드",
   description:
     "현실적인 경제 시스템, 창의적인 컨텐츠, 그리고 커뮤니티 중심의 가상 세계를 경험하세요.",
 };

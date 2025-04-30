@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db, chatTitleSubmission } from "@/lib/schema";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
+import { generateRandomCode } from "@/lib/utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     let response;
     try {
-      response = await fetch("https://screenshot.dokku.co.kr/files", {
+      response = await fetch("https://screenshot.dokku.co.kr/files?type=chat", {
         method: "POST",
         body: externalFormData,
       });
@@ -153,11 +154,14 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
         name: name.trim(),
         filePath: uploadedUrl,
-        fileName: file.name,
+        fileName: responseData.fileName,
         fileType: file.type,
         fileSize: file.size,
         status: "pending",
         scale: scale,
+        code: generateRandomCode(),
+        gameDbName: name.trim(),
+        gameDbFileName: responseData.fileName,
       })
       .returning();
 

@@ -62,6 +62,15 @@ export const Header = () => {
   const { data: session, status } = useSession();
   const isAdmin = session?.user?.isAdmin ?? false;
   const isAuthenticated = status === "authenticated";
+  const hasUserId = !!session?.user?.userId;
+
+  const filteredNavLinks = navLinks.filter((link) => {
+    const protectedRoutes = ["/killfeed", "/chat-title", "/shop"];
+    if (protectedRoutes.includes(link.href)) {
+      return isAuthenticated && (isAdmin || hasUserId);
+    }
+    return true;
+  });
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -78,7 +87,7 @@ export const Header = () => {
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm">
-          {navLinks.map((link) => (
+          {filteredNavLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -188,7 +197,7 @@ export const Header = () => {
                     <Logo />
                     <span>SHIBA 유저보드</span>
                   </Link>
-                  {navLinks.map((link) => (
+                  {filteredNavLinks.map((link) => (
                     <SheetClose asChild key={link.href}>
                       <Link
                         href={link.href}
