@@ -217,16 +217,56 @@ export function PurchaseHistoryList({
             </CardContent>
 
             <CardFooter className="py-2 text-xs text-muted-foreground flex justify-between">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>주문 ID: {purchase.id.slice(0, 8)}...</span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{purchase.id}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 cursor-pointer text-xs text-muted-foreground hover:text-primary transition-colors px-1 py-0.5 rounded border border-transparent hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    aria-label="주문 ID 복사"
+                    tabIndex={0}
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(purchase.id);
+                    }}
+                    onKeyDown={async (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        await navigator.clipboard.writeText(purchase.id);
+                      }
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-3 w-3 mr-1"
+                      fill="none"
+                      viewBox="0 0 16 16"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <rect
+                        x="4"
+                        y="4"
+                        width="8"
+                        height="8"
+                        rx="1"
+                        stroke="currentColor"
+                        strokeWidth="1.2"
+                      />
+                      <rect
+                        x="2.5"
+                        y="2.5"
+                        width="8"
+                        height="8"
+                        rx="1"
+                        stroke="currentColor"
+                        strokeWidth="1.2"
+                        opacity="0.4"
+                      />
+                    </svg>
+                    주문 ID: {purchase.id}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>클릭 시 복사</TooltipContent>
+              </Tooltip>
 
               {purchase.paymentMethod && (
                 <span>결제 방법: {purchase.paymentMethod}</span>

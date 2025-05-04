@@ -761,12 +761,8 @@ export class BasketService {
     }
 
     // TODO: 실제 리디렉션 URL로 변경 필요
-    const completeUrl = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success`
-      : "/checkout/success";
-    const cancelUrl = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/checkout/cancel`
-      : "/checkout/cancel";
+    const completeUrl = "https://shiba.dokku.co.kr/checkout/success";
+    const cancelUrl = "https://shiba.dokku.co.kr/checkout/cancel";
 
     try {
       // 1. DB에서 사용자의 basketIdent 확인
