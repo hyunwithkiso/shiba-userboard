@@ -3,6 +3,7 @@ import { Sword } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { UploadForm } from "@/components/shared/upload-form";
+import { checkUserInitialization } from "@/lib/auth-utils";
 
 export const metadata: Metadata = {
   title: "킬피드 이미지 업로드",
@@ -10,15 +11,16 @@ export const metadata: Metadata = {
 };
 
 export default async function KillfeedPage() {
+  await checkUserInitialization();
   const session = await auth();
-
-  if (!session?.user) {
+  if (!session) {
+    redirect("/login");
+  }
+  const userId = session.user?.id;
+  if (!userId) {
     redirect("/");
   }
-
-  const isAdmin = session.user.isAdmin ?? false;
-
-  if (!isAdmin && !session.user.gameId) {
+  if (!(session.user && (session.user as any).isInit)) {
     redirect("/init");
   }
 

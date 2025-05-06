@@ -3,6 +3,7 @@ import { MessageSquare } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import ChatTitleUploadForm from "@/components/chat-title/chat-title-upload-form";
+import { checkUserInitialization } from "@/lib/auth-utils";
 
 export const metadata: Metadata = {
   title: "채팅 칭호 업로드",
@@ -10,15 +11,17 @@ export const metadata: Metadata = {
 };
 
 export default async function ChatTitlePage() {
+  await checkUserInitialization();
   const session = await auth();
-
-  if (!session?.user) {
-    redirect("/");
+  if (!session) {
+    redirect("/login");
   }
+  const userId = session.user?.id;
 
-  const isAdmin = session.user.isAdmin ?? false;
-
-  if (!isAdmin && !session.user.gameId) {
+  if (!userId) {
+    redirect("/login");
+  }
+  if (!(session.user && (session.user as any).isInit)) {
     redirect("/init");
   }
 

@@ -71,13 +71,16 @@ async function ProductList() {
 
 // 상점 페이지 메인 컴포넌트
 export default async function ShopPage() {
-  await checkUserInitialization();
-
   const session = await auth();
-  const userId = session?.user?.id;
-
+  if (!session) {
+    redirect("/login");
+  }
+  const userId = session.user?.id;
   if (!userId) {
     redirect("/login");
+  }
+  if (!(session.user && (session.user as any).isInit)) {
+    redirect("/init");
   }
 
   // --- 장바구니 생성 보장 ---

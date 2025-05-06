@@ -105,11 +105,11 @@ function NoticeBanner({ isAdmin }: { isAdmin: boolean }) {
       <div className="absolute inset-0 bg-[url('/images/pattern-grid.svg')] opacity-10 z-10" />
 
       {/* 장식적 요소들 */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full filter blur-3xl z-0"></div>
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full filter blur-3xl z-0"></div>
+      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full filter blur-3xl z-0 hidden md:block"></div>
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full filter blur-3xl z-0 hidden md:block"></div>
 
       {/* 동적 움직임 요소 */}
-      <div className="absolute right-6 top-6 opacity-50 animate-pulse z-10">
+      <div className="absolute right-6 top-6 opacity-50 animate-pulse z-10 hidden md:block">
         <Sparkles className="w-20 h-20 text-yellow-300/80" />
       </div>
 

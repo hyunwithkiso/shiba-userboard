@@ -81,9 +81,7 @@ export const Header = () => {
           aria-label="SHIBA 유저보드 홈"
         >
           <Logo />
-          <span className="font-bold hidden sm:inline-block">
-            SHIBA 유저보드
-          </span>
+          <span className="font-bold">SHIBA 유저보드</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm">
