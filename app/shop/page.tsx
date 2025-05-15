@@ -72,6 +72,8 @@ async function ProductList() {
 // 상점 페이지 메인 컴포넌트
 export default async function ShopPage() {
   const session = await auth();
+  console.log(session, "session");
+
   if (!session) {
     redirect("/login");
   }
@@ -79,7 +81,7 @@ export default async function ShopPage() {
   if (!userId) {
     redirect("/login");
   }
-  if (!(session.user && (session.user as any).isInit)) {
+  if (session.user && session.user?.nickname === null) {
     redirect("/init");
   }
 
