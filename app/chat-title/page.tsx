@@ -21,7 +21,7 @@ export default async function ChatTitlePage() {
   if (!userId) {
     redirect("/login");
   }
-  if (!(session.user && (session.user as any).isInit)) {
+  if (session.user && session.user?.nickname === null) {
     redirect("/init");
   }
 

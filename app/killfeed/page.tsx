@@ -20,7 +20,7 @@ export default async function KillfeedPage() {
   if (!userId) {
     redirect("/");
   }
-  if (!(session.user && (session.user as any).isInit)) {
+  if (session.user && session.user?.nickname === null) {
     redirect("/init");
   }
 
