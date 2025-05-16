@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db, events, users } from "@/lib/schema"; // users 테이블 import 추가
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { checkAdmin } from "@/lib/auth-utils";
 import { auth } from "@/lib/auth";
 
@@ -250,3 +250,16 @@ export async function updateEventAction(eventId: string, formData: FormData) {
 }
 
 // TODO: 이벤트 삭제 액션 (필요시 추가)
+
+export async function incrementEventViewCount(id: string) {
+  try {
+    await db
+      .update(events)
+      .set({ viewCount: sql`${events.viewCount} + 1` })
+      .where(eq(events.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("Error incrementing event view count:", error);
+    return { success: false, error: "Failed to increment view count" };
+  }
+}

@@ -10,6 +10,7 @@ import { ArrowLeft, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { checkAdmin } from "@/lib/auth-utils";
+import { ViewCounter } from "@/components/view-counter";
 
 // TODO: 실제 사용자 인증 및 권한 확인 로직 추가 -> checkAdmin으로 일부 대체
 
@@ -26,16 +27,16 @@ interface NoticeDetail {
 
 // 데이터 로딩 함수
 async function getNoticeDetail(id: string): Promise<NoticeDetail | null> {
-  // 조회수 증가 로직 추가 (선택적이지만 일반적)
-  try {
-    await db
-      .update(notices)
-      .set({ viewCount: sql`${notices.viewCount} + 1` }) // SQL 함수 사용으로 수정
-      .where(eq(notices.id, id));
-  } catch (error) {
-    console.error("Error incrementing view count:", error);
-    // 조회수 증가 실패가 페이지 로딩을 막아서는 안 됨
-  }
+  // 조회수 증가 로직 제거
+  // try {
+  //   await db
+  //     .update(notices)
+  //     .set({ viewCount: sql`${notices.viewCount} + 1` }) // SQL 함수 사용으로 수정
+  //     .where(eq(notices.id, id));
+  // } catch (error) {
+  //   console.error("Error incrementing view count:", error);
+  //   // 조회수 증가 실패가 페이지 로딩을 막아서는 안 됨
+  // }
 
   const result = await db
     .select({
@@ -82,6 +83,7 @@ export default async function NoticeDetailPage({
 
   return (
     <main className="flex-1 py-8 md:py-12">
+      <ViewCounter type="notice" itemId={id} />
       <div className="container mx-auto max-w-4xl px-4">
         {/* 상단 네비게이션 */}
         <div className="flex justify-between items-center mb-6">

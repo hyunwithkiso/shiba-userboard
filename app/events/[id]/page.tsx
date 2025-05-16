@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { checkAdmin } from "@/lib/auth-utils";
 import { cn } from "@/lib/utils";
+import { ViewCounter } from "@/components/view-counter";
 
 interface EventDetail {
   id: string;
@@ -27,15 +28,6 @@ interface EventDetail {
 }
 
 async function getEventDetail(id: string): Promise<EventDetail | null> {
-  try {
-    await db
-      .update(events)
-      .set({ viewCount: sql`${events.viewCount} + 1` })
-      .where(eq(events.id, id));
-  } catch (error) {
-    console.error("Error incrementing event view count:", error);
-  }
-
   const result = await db
     .select({
       id: events.id,
@@ -76,6 +68,7 @@ export default async function EventDetailPage({
 
   return (
     <main className="flex-1 py-8 md:py-12">
+      <ViewCounter type="event" itemId={id} />
       <div className="container mx-auto max-w-4xl px-4">
         <div className="flex justify-between items-center mb-6">
           <Link

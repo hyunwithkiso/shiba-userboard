@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 // import { redirect } from "next/navigation"; // redirect는 현재 사용되지 않으므로 주석 처리 또는 제거
 import { db, notices, users } from "@/lib/schema"; // users는 직접 사용되지 않으므로 제거 가능
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { checkAdmin } from "@/lib/auth-utils";
 import { auth } from "@/lib/auth";
 // import { SerializedEditorState } from "lexical"; // Editor state type 제거
@@ -216,3 +216,16 @@ export async function updateNoticeAction(noticeId: string, formData: FormData) {
 //     return { success: false, error: "공지사항 삭제 중 오류가 발생했습니다." };
 //   }
 // }
+
+export async function incrementNoticeViewCount(id: string) {
+  try {
+    await db
+      .update(notices)
+      .set({ viewCount: sql`${notices.viewCount} + 1` })
+      .where(eq(notices.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("Error incrementing notice view count:", error);
+    return { success: false, error: "Failed to increment view count" };
+  }
+}
