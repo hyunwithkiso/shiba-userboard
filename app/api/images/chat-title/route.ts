@@ -4,6 +4,7 @@ import { db, chatTitleSubmission } from "@/lib/schema";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { generateRandomCode } from "@/lib/utils";
+import { realtimeService } from "@/services/realtime-service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +13,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "인증되지 않은 사용자입니다." },
         { status: 401 }
+      );
+    }
+
+    // 티켓 차감 먼저 시도
+    const updateResult = await realtimeService.updateChatTitleAmount(
+      session.user.id
+    );
+    if (!updateResult.success) {
+      return NextResponse.json(
+        {
+          error:
+            "채팅 칭호 티켓이 부족하거나 차감에 실패했습니다. 티켓을 확인해 주세요.",
+        },
+        { status: 400 }
       );
     }
 

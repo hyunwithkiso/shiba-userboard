@@ -71,6 +71,92 @@ export class RealtimeService {
       return [];
     }
   }
-}
 
+  //       "KillFeedTicket"
+  // "ChatTitleTicket"
+
+  async getCheckAvailableKillFeed(userId: number) {
+    try {
+      const user = await fetch(`${process.env.SHIBA_API_URL}/getPlayerData`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          key: process.env.SHIBA_API_KEY || "",
+        },
+        body: JSON.stringify({ user_id: userId }),
+      });
+      const userData = await user.json();
+      const ticket = userData?.inventory?.KillFeedTicket;
+      if (!ticket) {
+        return { amount: 0, name: "킬피드 이용권", notFound: true };
+      }
+      return ticket;
+    } catch (e) {
+      return { amount: 0, name: "킬피드 이용권", notFound: true, error: e };
+    }
+  }
+
+  async getCheckAvailableChatTitle(userId: number) {
+    try {
+      const user = await fetch(`${process.env.SHIBA_API_URL}/getPlayerData`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          key: process.env.SHIBA_API_KEY || "",
+        },
+        body: JSON.stringify({ user_id: userId }),
+      });
+      const userData = await user.json();
+      const ticket = userData?.inventory?.ChatTitleTicket;
+      if (!ticket) {
+        return { amount: 0, name: "채팅 칭호 이용권", notFound: true };
+      }
+      return ticket;
+    } catch (e) {
+      return { amount: 0, name: "채팅 칭호 이용권", notFound: true, error: e };
+    }
+  }
+
+  async updateKillFeedAmount(user_id: string) {
+    const response = await fetch(
+      `${process.env.SHIBA_API_URL}/updatePlayerItem`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          key: process.env.SHIBA_API_KEY || "",
+        },
+        body: JSON.stringify({
+          user_id: user_id,
+          itemcode: "KillFeedTicket",
+          amount: 1,
+          type: "remove",
+        }),
+      }
+    );
+
+    return response.json();
+  }
+
+  async updateChatTitleAmount(user_id: string) {
+    const response = await fetch(
+      `${process.env.SHIBA_API_URL}/updatePlayerItem`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          key: process.env.SHIBA_API_KEY || "",
+        },
+        body: JSON.stringify({
+          user_id: user_id,
+          itemcode: "ChatTitleTicket",
+          amount: 1,
+          type: "remove",
+        }),
+      }
+    );
+
+    return response.json();
+  }
+}
 export const realtimeService = new RealtimeService();

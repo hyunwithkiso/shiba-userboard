@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { UploadForm } from "@/components/shared/upload-form";
 import { checkUserInitialization } from "@/lib/auth-utils";
+import { realtimeService } from "@/services/realtime-service";
 
 export const metadata: Metadata = {
   title: "킬피드 이미지 업로드",
@@ -20,9 +21,15 @@ export default async function KillfeedPage() {
   if (!userId) {
     redirect("/");
   }
-  if (session.user && session.user?.nickname === null) {
+  if (session.user && session.user?.nickname === null && session.user.userId) {
     redirect("/init");
   }
+
+  const ticketInfo = await realtimeService.getCheckAvailableKillFeed(
+    Number(userId)
+  );
+  const hasTicket = ticketInfo.amount > 0;
+  console.log(ticketInfo);
 
   return (
     <main className="container max-w-5xl py-6 space-y-8 mx-auto">
@@ -44,6 +51,16 @@ export default async function KillfeedPage() {
       <div className="grid gap-6">
         <div className="rounded-lg border bg-card p-6">
           <h2 className="text-lg font-semibold mb-4">이미지 업로드</h2>
+          {hasTicket ? (
+            <div className="mb-2 text-sm text-muted-foreground">
+              보유 티켓: <span className="font-bold">{ticketInfo.amount}</span>
+              장
+            </div>
+          ) : (
+            <div className="mb-2 text-destructive font-semibold">
+              킬피드 이용권이 부족합니다. 상점에서 구매 후 이용해 주세요.
+            </div>
+          )}
           <UploadForm
             endpoint="/api/images/killfeed"
             previewWidth={580}

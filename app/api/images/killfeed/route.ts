@@ -5,6 +5,8 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { generateRandomCode } from "@/lib/utils";
+import { realtimeService } from "@/services/realtime-service";
+
 export async function POST(request: NextRequest) {
   try {
     // 인증 확인
@@ -89,6 +91,18 @@ export async function POST(request: NextRequest) {
     if (!validTypes.includes(file.type)) {
       return NextResponse.json(
         { error: "지원되는 파일 형식은 PNG, WebP, GIF입니다." },
+        { status: 400 }
+      );
+    }
+
+    // 티켓 차감 먼저 시도
+    const updateResult = await realtimeService.updateKillFeedAmount(user.id);
+    if (!updateResult.success) {
+      return NextResponse.json(
+        {
+          error:
+            "킬피드 티켓이 부족하거나 차감에 실패했습니다. 티켓을 확인해 주세요.",
+        },
         { status: 400 }
       );
     }

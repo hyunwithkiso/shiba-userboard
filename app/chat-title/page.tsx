@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import ChatTitleUploadForm from "@/components/chat-title/chat-title-upload-form";
 import { checkUserInitialization } from "@/lib/auth-utils";
+import { realtimeService } from "@/services/realtime-service";
 
 export const metadata: Metadata = {
   title: "채팅 칭호 업로드",
@@ -25,6 +26,12 @@ export default async function ChatTitlePage() {
     redirect("/init");
   }
 
+  const ticketInfo = await realtimeService.getCheckAvailableChatTitle(
+    Number(userId)
+  );
+  const hasTicket = ticketInfo.amount > 0;
+  console.log(ticketInfo);
+
   return (
     <main className="container max-w-5xl py-6 space-y-8 mx-auto">
       <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 p-8">
@@ -45,6 +52,16 @@ export default async function ChatTitlePage() {
       <div className="grid gap-6">
         <div className="rounded-lg border bg-card p-6">
           <h2 className="text-lg font-semibold mb-4">이미지 업로드</h2>
+          {hasTicket ? (
+            <div className="mb-2 text-sm text-muted-foreground">
+              보유 티켓: <span className="font-bold">{ticketInfo.amount}</span>
+              장
+            </div>
+          ) : (
+            <div className="mb-2 text-destructive font-semibold">
+              채팅 칭호 이용권이 부족합니다. 상점에서 구매 후 이용해 주세요.
+            </div>
+          )}
           <ChatTitleUploadForm />
         </div>
 
