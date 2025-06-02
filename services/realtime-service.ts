@@ -17,6 +17,7 @@ export class RealtimeService {
             key: process.env.SHIBA_API_KEY || "",
           },
           // 빌드 시 타임아웃 방지
+
           cache: "no-store",
         }
       );

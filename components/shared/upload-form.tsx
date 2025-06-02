@@ -4,10 +4,10 @@ import { ImageUpload } from "@/components/shared/image-upload";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface UploadFormProps {
   endpoint: string;
@@ -31,7 +31,6 @@ export function UploadForm({
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imageName, setImageName] = useState("");
-  const { toast } = useToast();
   const router = useRouter();
 
   const handleFileSelect = (file: File) => {
@@ -47,11 +46,7 @@ export function UploadForm({
   const handleUpload = async () => {
     if (!selectedFile) return;
     if (!imageName.trim()) {
-      toast({
-        variant: "destructive",
-        title: "이름 필요",
-        description: "이미지 이름을 입력해주세요.",
-      });
+      toast.error("이미지 이름을 입력해주세요.");
       return;
     }
 
@@ -72,10 +67,7 @@ export function UploadForm({
         throw new Error(data.error || "업로드에 실패했습니다.");
       }
 
-      toast({
-        title: "업로드 성공",
-        description: "이미지가 성공적으로 업로드되었습니다.",
-      });
+      toast.success("이미지가 성공적으로 업로드되었습니다.");
 
       // 잠시 후 홈으로 리다이렉트
       setTimeout(() => {
@@ -84,14 +76,11 @@ export function UploadForm({
       }, 1500);
     } catch (error) {
       console.error("Upload error:", error);
-      toast({
-        variant: "destructive",
-        title: "업로드 실패",
-        description:
-          error instanceof Error
-            ? error.message
-            : "업로드 중 오류가 발생했습니다.",
-      });
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "업로드 중 오류가 발생했습니다."
+      );
     } finally {
       setIsUploading(false);
       setSelectedFile(null);

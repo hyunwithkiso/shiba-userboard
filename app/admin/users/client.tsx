@@ -16,7 +16,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, ShieldAlert, Trash2, ArrowUpDown } from "lucide-react";
+import { Shield, ShieldAlert, Trash2, ArrowUpDown, Edit } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +29,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -36,9 +45,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { updateUserIdAction } from "@/actions/user-action";
 
 interface AdminUsersPageProps {
   userList: Array<{
@@ -54,13 +65,17 @@ interface AdminUsersPageProps {
 }
 
 export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
-  const { toast } = useToast();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("");
   const [sort, setSort] = useState("userId");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
+  
+  // 고유번호 변경용 상태
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [newUserId, setNewUserId] = useState("");
+  const [isUserIdDialogOpen, setIsUserIdDialogOpen] = useState(false);
 
   // 필터링된 유저 목록
   const filteredUsers = userList.filter((user) => {
@@ -99,6 +114,40 @@ export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
     setSearch(value);
   };
 
+  // 고유번호 변경 다이얼로그 열기
+  const openUserIdDialog = (user: { id: string; userId: string | null; nickname: string | null; name: string | null }) => {
+    setEditingUserId(user.id);
+    setNewUserId(user.userId || "");
+    setIsUserIdDialogOpen(true);
+  };
+
+  // 고유번호 변경 처리
+  const handleUpdateUserId = async () => {
+    if (!editingUserId || !newUserId.trim()) {
+      toast.error("고유번호를 입력해주세요.");
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const result = await updateUserIdAction(editingUserId, newUserId.trim());
+
+      if (result.success) {
+        toast.success("고유번호가 성공적으로 변경되었습니다.");
+        setIsUserIdDialogOpen(false);
+        setEditingUserId(null);
+        setNewUserId("");
+        router.refresh();
+      } else {
+        toast.error(result.error || "고유번호 변경에 실패했습니다.");
+      }
+    } catch (error) {
+      toast.error("고유번호 변경 중 오류가 발생했습니다.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleMakeAdmin = async (userId: string, userName: string) => {
     try {
       setIsProcessing(true);
@@ -114,20 +163,12 @@ export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
         throw new Error("어드민 권한 부여에 실패했습니다.");
       }
 
-      toast({
-        title: "어드민 권한 부여 완료",
-        description: `${userName}님에게 어드민 권한이 부여되었습니다.`,
-      });
+      toast.success(`${userName}님에게 어드민 권한이 부여되었습니다.`);
       router.refresh();
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "오류 발생",
-        description:
-          error instanceof Error
-            ? error.message
-            : "알 수 없는 오류가 발생했습니다.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -148,20 +189,12 @@ export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
         throw new Error("유저 삭제에 실패했습니다.");
       }
 
-      toast({
-        title: "유저 삭제 완료",
-        description: `${userName}님의 계정이 삭제되었습니다.`,
-      });
+      toast.success(`${userName}님의 계정이 삭제되었습니다.`);
       router.refresh();
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "오류 발생",
-        description:
-          error instanceof Error
-            ? error.message
-            : "알 수 없는 오류가 발생했습니다.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -254,7 +287,21 @@ export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
               {sortedUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>{user.discordId || "-"}</TableCell>
-                  <TableCell>{user.userId || "-"}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span>{user.userId || "-"}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        title="고유번호 편집"
+                        onClick={() => openUserIdDialog(user)}
+                        disabled={isProcessing}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </TableCell>
                   <TableCell>{user.nickname || user.name || "-"}</TableCell>
                   <TableCell>{user.email || "-"}</TableCell>
                   <TableCell className="text-center">
@@ -354,6 +401,43 @@ export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
           </Table>
         </CardContent>
       </Card>
+
+      {/* 고유번호 변경 다이얼로그 */}
+      <Dialog open={isUserIdDialogOpen} onOpenChange={setIsUserIdDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>고유번호 변경</DialogTitle>
+            <DialogDescription>
+              사용자의 고유번호를 변경합니다. 숫자만 입력 가능합니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-userid">새로운 고유번호</Label>
+              <Input
+                id="new-userid"
+                value={newUserId}
+                onChange={(e) => setNewUserId(e.target.value)}
+                placeholder="고유번호 입력 (숫자만)"
+                pattern="[0-9]*"
+                disabled={isProcessing}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsUserIdDialogOpen(false)}
+              disabled={isProcessing}
+            >
+              취소
+            </Button>
+            <Button onClick={handleUpdateUserId} disabled={isProcessing}>
+              {isProcessing ? "변경 중..." : "변경"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

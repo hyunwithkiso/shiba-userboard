@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-// import { useToast } from '@/components/ui/use-toast'; // Toast 사용 (경로 오류로 임시 주석 처리)
+import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
 import type { TebexBasket, BasketPackageDetail } from "@/lib/tebex";
 // import { updateCartItemQuantity, removeCartItem } from '@/actions/cart-actions'; // 추후 구현할 서버 액션
@@ -27,7 +27,6 @@ interface CartDisplayProps {
 const CartDisplay = ({ initialBasket, basketIdent }: CartDisplayProps) => {
   const [basket, setBasket] = useState<TebexBasket>(initialBasket);
   const [isPending, startTransition] = useTransition(); // 서버 액션 로딩 상태
-  // const { toast } = useToast(); // 임시 주석 처리
 
   // 수량 변경 핸들러
   const handleQuantityChange = (
@@ -42,8 +41,7 @@ const CartDisplay = ({ initialBasket, basketIdent }: CartDisplayProps) => {
       );
       try {
         // TODO: 실제 서버 액션 호출
-        // toast({ title: "알림", description: `(임시) 상품 수량 변경 시도: ${newQuantity}개` }); // 임시 주석 처리
-        alert(`(임시) 상품 수량 변경 시도: ${newQuantity}개`); // alert으로 대체
+        toast.success(`상품 수량이 ${newQuantity}개로 변경되었습니다.`);
         // 임시로 클라이언트 상태 업데이트 (실제로는 액션 결과 반영)
         setBasket((prev) => ({
           ...prev,
@@ -56,8 +54,7 @@ const CartDisplay = ({ initialBasket, basketIdent }: CartDisplayProps) => {
         }));
       } catch (error) {
         console.error("Error updating quantity:", error);
-        // toast({ variant: "destructive", title: "오류", description: "수량 변경 중 오류 발생" }); // 임시 주석 처리
-        alert("수량 변경 중 오류 발생 (임시)"); // alert으로 대체
+        toast.error("수량 변경 중 오류가 발생했습니다.");
       }
     });
   };
@@ -70,8 +67,7 @@ const CartDisplay = ({ initialBasket, basketIdent }: CartDisplayProps) => {
       );
       try {
         // TODO: 실제 서버 액션 호출
-        // toast({ title: "알림", description: `(임시) 상품 제거 시도: ${item.name}` }); // 임시 주석 처리
-        alert(`(임시) 상품 제거 시도: ${item.name}`); // alert으로 대체
+        toast.success(`${item.name}이(가) 장바구니에서 제거되었습니다.`);
         // 임시로 클라이언트 상태 업데이트
         setBasket((prev) => ({
           ...prev,
@@ -82,8 +78,7 @@ const CartDisplay = ({ initialBasket, basketIdent }: CartDisplayProps) => {
         }));
       } catch (error) {
         console.error("Error removing item:", error);
-        // toast({ variant: "destructive", title: "오류", description: "상품 제거 중 오류 발생" }); // 임시 주석 처리
-        alert("상품 제거 중 오류 발생 (임시)"); // alert으로 대체
+        toast.error("상품 제거 중 오류가 발생했습니다.");
       }
     });
   };
@@ -94,8 +89,7 @@ const CartDisplay = ({ initialBasket, basketIdent }: CartDisplayProps) => {
       window.location.href = basket.links.checkout;
     } else {
       console.error("Checkout link not available");
-      // toast({ variant: "destructive", title: "오류", description: "결제를 진행할 수 없습니다." }); // 임시 주석 처리
-      alert("결제를 진행할 수 없습니다. (임시)"); // alert으로 대체
+      toast.error("결제를 진행할 수 없습니다.");
     }
   };
 

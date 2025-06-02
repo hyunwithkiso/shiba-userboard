@@ -45,6 +45,11 @@ export default function HeaderAvatar() {
             <p className="text-xs leading-none text-muted-foreground">
               {session.user.email}
             </p>
+            {session.user.userId && (
+              <p className="text-xs leading-none text-muted-foreground">
+                고유번호: {session.user.userId}
+              </p>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

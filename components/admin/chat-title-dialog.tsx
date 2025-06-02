@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +18,7 @@ import ChatTitleExample from "@/components/chat/chat-title-example";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "../ui/scroll-area";
+import { toast } from "sonner";
 
 // gameDbMetadata 타입 (schema.ts와 일치)
 interface Metadata {
@@ -49,7 +49,6 @@ export default function ChatTitleDialog({
   initialAdminNotes,
   onSuccess,
 }: ChatTitleDialogProps) {
-  const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Editor State
@@ -107,19 +106,12 @@ export default function ChatTitleDialog({
         throw new Error(result.error || "승인 처리 중 오류 발생");
       }
 
-      toast({
-        title: "성공",
-        description: "채팅 칭호가 승인되었습니다.",
-      });
+      toast.success("채팅 칭호가 승인되었습니다.");
       onSuccess(); // 부모 컴포넌트에 성공 알림 (데이터 새로고침 등)
       onOpenChange(false); // 다이얼로그 닫기
     } catch (error) {
       console.error("Approval error:", error);
-      toast({
-        variant: "destructive",
-        title: "오류",
-        description: error instanceof Error ? error.message : "알 수 없는 오류",
-      });
+      toast.error(error instanceof Error ? error.message : "알 수 없는 오류");
     } finally {
       setIsProcessing(false);
     }
@@ -147,19 +139,12 @@ export default function ChatTitleDialog({
         throw new Error(result.error || "거절 처리 중 오류 발생");
       }
 
-      toast({
-        title: "성공",
-        description: "채팅 칭호가 거절되었습니다.",
-      });
+      toast.success("채팅 칭호가 거절되었습니다.");
       onSuccess();
       onOpenChange(false);
     } catch (error) {
       console.error("Rejection error:", error);
-      toast({
-        variant: "destructive",
-        title: "오류",
-        description: error instanceof Error ? error.message : "알 수 없는 오류",
-      });
+      toast.error(error instanceof Error ? error.message : "알 수 없는 오류");
     } finally {
       setIsProcessing(false);
     }

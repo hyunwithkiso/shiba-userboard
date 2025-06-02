@@ -4,21 +4,31 @@ import { ImageUpload } from "@/components/shared/image-upload";
 import { Button } from "@/components/ui/button";
 import { Upload, ArrowDown } from "lucide-react";
 import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ChatTitleExample from "@/components/chat/chat-title-example";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
+import { toast } from "sonner";
 
-export default function ChatTitleUploadForm() {
+interface ChatTitleUploadFormProps {
+  onSuccess?: () => void;
+}
+
+export default function ChatTitleUploadForm({
+  onSuccess,
+}: ChatTitleUploadFormProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imageName, setImageName] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [scale, setScale] = useState(0.7);
-  const { toast } = useToast();
+  const [width, setWidth] = useState("100px");
+  const [marginTop, setMarginTop] = useState("-3px");
+  const [marginRight, setMarginRight] = useState("-12px");
+  const [marginBottom, setMarginBottom] = useState("0");
+  const [marginLeft, setMarginLeft] = useState("0");
   const router = useRouter();
 
   const handleFileSelect = (file: File) => {
@@ -42,14 +52,20 @@ export default function ChatTitleUploadForm() {
     setScale(value[0] / 100);
   };
 
+  const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setWidth(e.target.value);
+  };
+
+  const handleMarginChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setter(e.target.value);
+  };
+
+  const getMarginString = () => `${marginTop} ${marginRight} ${marginBottom} ${marginLeft}`;
+
   const handleUpload = async () => {
     if (!selectedFile) return;
     if (!imageName.trim()) {
-      toast({
-        variant: "destructive",
-        title: "이름 필요",
-        description: "이미지 이름을 입력해주세요.",
-      });
+      toast.error("이름을 입력해주세요.");
       return;
     }
 
@@ -58,7 +74,15 @@ export default function ChatTitleUploadForm() {
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("name", imageName.trim());
-      formData.append("scale", scale.toString());
+      // metadata를 JSON string으로 추가
+      formData.append(
+        "metadata",
+        JSON.stringify({
+          width,
+          scale,
+          margin: getMarginString(),
+        })
+      );
 
       const response = await fetch("/api/images/chat-title", {
         method: "POST",
@@ -71,26 +95,15 @@ export default function ChatTitleUploadForm() {
         throw new Error(data.error || "업로드에 실패했습니다.");
       }
 
-      toast({
-        title: "업로드 성공",
-        description: "이미지가 성공적으로 업로드되었습니다.",
-      });
+      toast.success("이미지가 성공적으로 업로드되었습니다.");
 
-      // 잠시 후 홈으로 리다이렉트
       setTimeout(() => {
         router.push("/");
         router.refresh();
       }, 1500);
     } catch (error) {
       console.error("Upload error:", error);
-      toast({
-        variant: "destructive",
-        title: "업로드 실패",
-        description:
-          error instanceof Error
-            ? error.message
-            : "업로드 중 오류가 발생했습니다.",
-      });
+      toast.error("업로드 중 오류가 발생했습니다.");
     } finally {
       setIsUploading(false);
     }
@@ -126,6 +139,56 @@ export default function ChatTitleUploadForm() {
         />
       </div>
 
+      {/* width, scale, margin 입력 UI */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="width">width (ex: 100px)</Label>
+          <Input
+            id="width"
+            value={width}
+            onChange={handleWidthChange}
+            placeholder="100px"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>크기 조절 (scale)</Label>
+          <Slider
+            value={[scale * 100]}
+            onValueChange={handleScaleChange}
+            min={10}
+            max={100}
+            step={1}
+          />
+          <span className="text-xs text-muted-foreground">{Math.round(scale * 100)}%</span>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>margin (상 우 하 좌, px 단위)</Label>
+        <div className="grid grid-cols-4 gap-2">
+          <Input
+            value={marginTop}
+            onChange={handleMarginChange(setMarginTop)}
+            placeholder="상"
+          />
+          <Input
+            value={marginRight}
+            onChange={handleMarginChange(setMarginRight)}
+            placeholder="우"
+          />
+          <Input
+            value={marginBottom}
+            onChange={handleMarginChange(setMarginBottom)}
+            placeholder="하"
+          />
+          <Input
+            value={marginLeft}
+            onChange={handleMarginChange(setMarginLeft)}
+            placeholder="좌"
+          />
+        </div>
+        <span className="text-xs text-muted-foreground">예시: -3px -12px 0 0</span>
+      </div>
+
       {imagePreview && (
         <div className="pt-4">
           <div className="flex items-center justify-center mb-2">
@@ -139,30 +202,16 @@ export default function ChatTitleUploadForm() {
                 <ChatTitleExample
                   imageSrc={imagePreview}
                   metadata={{
-                    width: "100px",
-                    scale: scale,
-                    margin: "-3px -12px 0",
+                    width,
+                    scale,
+                    margin: getMarginString(),
                   }}
                 />
               </div>
 
               <div className="mt-4 space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label>크기 조절</Label>
-                  <span className="text-sm text-muted-foreground">
-                    {Math.round(scale * 100)}%
-                  </span>
-                </div>
-                <Slider
-                  value={[scale * 100]}
-                  onValueChange={handleScaleChange}
-                  min={50}
-                  max={90}
-                  step={1}
-                />
                 <p className="text-xs text-muted-foreground">
-                  * 이미지 크기를 조절해 채팅창에서의 모습을 확인해보세요. 최종
-                  승인 시 관리자가 조정할 수 있습니다.
+                  * width, scale, margin을 조절해 채팅창에서의 모습을 확인해보세요. 최종 승인 시 관리자가 조정할 수 있습니다.
                 </p>
               </div>
             </CardContent>

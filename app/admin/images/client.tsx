@@ -41,9 +41,9 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
-import { Info, Trash2 } from "lucide-react";
+import { Info, Trash2, ZoomIn } from "lucide-react";
 import { deleteImage } from "@/actions/image-action";
 import { Badge } from "@/components/ui/badge";
 import { ImageApprovalButton } from "@/components/admin/image-approval-button";
@@ -93,7 +93,6 @@ export default function AdminImagesClient({
   currentStatus,
 }: AdminImagesClientProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const [selectedSubmission, setSelectedSubmission] =
     useState<Submission | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -107,6 +106,10 @@ export default function AdminImagesClient({
     metadata: Metadata;
     adminNotes?: string | null;
   } | null>(null);
+
+  // 이미지 확대 다이얼로그
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [zoomImage, setZoomImage] = useState<Submission | null>(null);
 
   const handleTypeChange = (value: string) => {
     setType(value);
@@ -151,10 +154,7 @@ export default function AdminImagesClient({
         throw new Error("이미지 삭제 실패");
       }
 
-      toast({
-        title: "이미지 삭제 완료",
-        description: "이미지가 완전히 삭제되었습니다.",
-      });
+      toast.success("이미지가 완전히 삭제되었습니다.");
 
       setIsDeleting(false);
       setSelectedSubmission(null);
@@ -163,12 +163,9 @@ export default function AdminImagesClient({
       router.refresh();
     } catch (error) {
       console.error("Delete error:", error);
-      toast({
-        variant: "destructive",
-        title: "삭제 실패",
-        description:
-          error instanceof Error ? error.message : "오류가 발생했습니다.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "오류가 발생했습니다."
+      );
       setIsDeleting(false);
     }
   };
@@ -246,7 +243,6 @@ export default function AdminImagesClient({
                 <TableHead>업로드 일시</TableHead>
                 <TableHead>검토자</TableHead>
                 <TableHead>검토 일시</TableHead>
-                <TableHead>관리자 메모</TableHead>
                 <TableHead className="text-center">관리</TableHead>
               </TableRow>
             </TableHeader>
@@ -254,14 +250,17 @@ export default function AdminImagesClient({
               {submissions.map((submission) => (
                 <TableRow key={submission.id}>
                   <TableCell>
-                    <div className="relative w-20 h-20">
+                    <div className="relative w-20 h-20 cursor-pointer group" onClick={() => { setZoomImage(submission); setImageDialogOpen(true); }}>
                       <Image
                         src={submission.filePath}
                         alt={submission.fileName}
                         fill
-                        className="object-contain"
+                        className="object-contain group-hover:scale-105 transition-transform duration-200"
                         unoptimized
                       />
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/30 transition-opacity rounded">
+                        <ZoomIn className="w-8 h-8 text-white" />
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -347,40 +346,6 @@ export default function AdminImagesClient({
                     {submission.reviewedAt
                       ? formatDate(submission.reviewedAt)
                       : "-"}
-                  </TableCell>
-                  <TableCell>
-                    {submission.adminNotes ? (
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 text-muted-foreground hover:text-foreground"
-                          >
-                            <Info className="h-4 w-4 mr-1" />
-                            메모 보기
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>관리자 메모</DialogTitle>
-                            <DialogDescription>
-                              {submission.reviewedAt
-                                ? formatDate(submission.reviewedAt)
-                                : ""}
-                              에 작성된 메모입니다.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                            <p className="text-sm whitespace-pre-wrap">
-                              {submission.adminNotes}
-                            </p>
-                          </ScrollArea>
-                        </DialogContent>
-                      </Dialog>
-                    ) : (
-                      "-"
-                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-center gap-2">
@@ -498,6 +463,61 @@ export default function AdminImagesClient({
           )}
         </CardContent>
       </Card>
+
+      {/* 이미지 확대 다이얼로그 */}
+      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>이미지 상세 보기</DialogTitle>
+          </DialogHeader>
+          {zoomImage && (
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative w-[320px] h-[120px] border rounded-lg overflow-hidden bg-background">
+                <Image
+                  src={zoomImage.filePath}
+                  alt={zoomImage.fileName}
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
+              <div className="w-full space-y-2">
+                <div className="font-semibold text-lg">{zoomImage.fileName}</div>
+                <div className="text-sm text-muted-foreground">ID: {zoomImage.id}</div>
+                <div className="text-sm mt-2">
+                  <span className="font-medium">메타데이터</span>
+                  <ul className="list-disc list-inside text-xs mt-1">
+                    {zoomImage.gameDbMetadata ? (
+                      <>
+                        {zoomImage.gameDbMetadata.width && (
+                          <li>width: {zoomImage.gameDbMetadata.width}</li>
+                        )}
+                        {zoomImage.gameDbMetadata.scale !== undefined && (
+                          <li>scale: {zoomImage.gameDbMetadata.scale}</li>
+                        )}
+                        {zoomImage.gameDbMetadata.marginTop !== undefined && (
+                          <li>marginTop: {zoomImage.gameDbMetadata.marginTop}</li>
+                        )}
+                        {zoomImage.gameDbMetadata.marginRight !== undefined && (
+                          <li>marginRight: {zoomImage.gameDbMetadata.marginRight}</li>
+                        )}
+                        {zoomImage.gameDbMetadata.marginBottom !== undefined && (
+                          <li>marginBottom: {zoomImage.gameDbMetadata.marginBottom}</li>
+                        )}
+                        {zoomImage.gameDbMetadata.marginLeft !== undefined && (
+                          <li>marginLeft: {zoomImage.gameDbMetadata.marginLeft}</li>
+                        )}
+                      </>
+                    ) : (
+                      <li>메타데이터 없음</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {selectedChatTitleData && (
         <ChatTitleDialog

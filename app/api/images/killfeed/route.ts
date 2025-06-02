@@ -18,6 +18,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 관리자 여부 확인
+    const isAdmin = !!session.user.isAdmin;
+
     // 사용자 확인
     const user = session.user;
 
@@ -96,15 +99,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 티켓 차감 먼저 시도
-    const updateResult = await realtimeService.updateKillFeedAmount(user.id);
-    if (!updateResult.success) {
-      return NextResponse.json(
-        {
-          error:
-            "킬피드 티켓이 부족하거나 차감에 실패했습니다. 티켓을 확인해 주세요.",
-        },
-        { status: 400 }
-      );
+    if (!isAdmin) {
+      const updateResult = await realtimeService.updateKillFeedAmount(user.id);
+      if (!updateResult.success) {
+        return NextResponse.json(
+          {
+            error:
+              "킬피드 티켓이 부족하거나 차감에 실패했습니다. 티켓을 확인해 주세요.",
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // 외부 API로 업로드할 FormData 생성

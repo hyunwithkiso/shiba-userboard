@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { addPackageToBasketAction } from "@/actions/basket-action";
 
 interface AddToCartFormProps {
@@ -13,7 +13,6 @@ interface AddToCartFormProps {
 const AddToCartForm = ({ packageId }: AddToCartFormProps) => {
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(event.target.value, 10);
@@ -36,24 +35,13 @@ const AddToCartForm = ({ packageId }: AddToCartFormProps) => {
       console.log(result);
 
       if (result.success) {
-        toast({
-          title: "성공",
-          description: "장바구니에 상품을 추가했습니다.",
-        });
+        toast.success("장바구니에 상품을 추가했습니다.");
       } else {
-        toast({
-          variant: "destructive",
-          title: "오류",
-          description: result.error || "상품 추가 중 오류가 발생했습니다.",
-        });
+        toast.error(result.error || "상품 추가 중 오류가 발생했습니다.");
       }
     } catch (error) {
       console.error("Failed to add item to cart:", error);
-      toast({
-        variant: "destructive",
-        title: "오류",
-        description: "상품을 추가하는 중 예기치 않은 오류가 발생했습니다.",
-      });
+      toast.error("상품을 추가하는 중 예기치 않은 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }

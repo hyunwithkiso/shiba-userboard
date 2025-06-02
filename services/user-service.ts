@@ -103,6 +103,49 @@ class UserService {
       .where(eq(users.id, userId));
     return user;
   }
+
+  /**
+   * 사용자의 userId(고유번호)를 변경합니다.
+   * @param id 사용자의 ID (NextAuth ID)
+   * @param newUserId 새로운 userId
+   * @returns 성공 여부
+   */
+  async updateUserId(id: string, newUserId: string): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    if (!id || !newUserId) {
+      return { success: false, error: "ID와 새로운 고유번호가 필요합니다." };
+    }
+
+    try {
+      // 새로운 userId가 이미 사용 중인지 확인
+      const existingUser = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.userId, newUserId))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        return { success: false, error: "이미 사용 중인 고유번호입니다." };
+      }
+
+      // userId 업데이트
+      await db
+        .update(users)
+        .set({ userId: newUserId, updatedAt: new Date() })
+        .where(eq(users.id, id));
+
+      console.log(`[UserService] Successfully updated userId for ${id} to ${newUserId}`);
+      return { success: true };
+    } catch (error) {
+      console.error(`[UserService] Error updating userId for ${id}:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "고유번호 변경 중 오류가 발생했습니다.",
+      };
+    }
+  }
 }
 
 export const userService = new UserService();

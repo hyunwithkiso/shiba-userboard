@@ -72,16 +72,27 @@ export function EventForm({ mode, eventId, initialData }: EventFormProps) {
     initialData?.thumbnailImage || null
   );
 
+  // 기본 날짜 설정 (현재 시간 + 1시간)
+  const getDefaultStartDate = () => {
+    const now = new Date();
+    now.setHours(now.getHours() + 1, 0, 0, 0); // 1시간 후, 분/초는 0으로
+    return now;
+  };
+
+  const getDefaultEndDate = () => {
+    const now = new Date();
+    now.setHours(now.getHours() + 2, 0, 0, 0); // 2시간 후, 분/초는 0으로
+    return now;
+  };
+
   const form = useForm<EventFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: initialData?.title || "",
       content: initialData?.content || "",
       thumbnailImage: initialData?.thumbnailImage || "",
-      startDate: initialData?.startDate
-        ? new Date(initialData.startDate)
-        : undefined,
-      endDate: initialData?.endDate ? new Date(initialData.endDate) : undefined,
+      startDate: initialData?.startDate || getDefaultStartDate(),
+      endDate: initialData?.endDate || getDefaultEndDate(),
       isPinned: initialData?.isPinned || false,
     },
   });

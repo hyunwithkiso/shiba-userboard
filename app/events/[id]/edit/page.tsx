@@ -63,12 +63,18 @@ export default async function EditEventPage({
   // let initialContent: SerializedEditorState | undefined;
   // if (initialDbData.content && typeof initialDbData.content === "object") { ... }
 
-  // Ensure dates are Date objects or undefined
+  // Ensure dates are Date objects or undefined (with validation)
   const startDate = initialDbData.startDate
-    ? new Date(initialDbData.startDate)
+    ? (() => {
+        const date = new Date(initialDbData.startDate);
+        return isNaN(date.getTime()) ? undefined : date;
+      })()
     : undefined;
   const endDate = initialDbData.endDate
-    ? new Date(initialDbData.endDate)
+    ? (() => {
+        const date = new Date(initialDbData.endDate);
+        return isNaN(date.getTime()) ? undefined : date;
+      })()
     : undefined;
 
   // Assemble the final initialData prop

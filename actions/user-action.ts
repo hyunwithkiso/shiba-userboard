@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { userService } from "@/services/user-service";
 
 // init-form 에서 전달받는 Discord 역할 객체 타입
 type DiscordRole = {
@@ -70,6 +71,65 @@ export async function updateUserMetadataAction(
   } catch (error) {
     console.error(
       `[Action:updateUserMetadata] 사용자 ${userId}의 닉네임 및 역할 업데이트 실패`,
+      error
+    );
+    return { success: false, error: "서버 오류가 발생했습니다." };
+  }
+}
+
+/**
+ * 관리자가 사용자의 고유번호(userId)를 변경합니다.
+ * @param targetUserId 변경할 사용자의 ID (NextAuth ID)
+ * @param newUserId 새로운 고유번호
+ * @returns 성공 또는 실패를 나타내는 객체
+ */
+export async function updateUserIdAction(
+  targetUserId: string,
+  newUserId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await auth();
+
+    // 관리자 권한 확인
+    if (!session?.user?.isAdmin) {
+      return { success: false, error: "관리자 권한이 필요합니다." };
+    }
+
+    // 입력값 유효성 검사
+    if (!targetUserId || !newUserId) {
+      return {
+        success: false,
+        error: "사용자 ID와 새로운 고유번호가 필요합니다.",
+      };
+    }
+
+    // 고유번호 형식 검사 (숫자만 허용)
+    if (!/^\d+$/.test(newUserId)) {
+      return {
+        success: false,
+        error: "고유번호는 숫자만 입력 가능합니다.",
+      };
+    }
+
+    console.log(
+      `[Action:updateUserId] 관리자 ${session.user.id}가 사용자 ${targetUserId}의 고유번호를 ${newUserId}로 변경 시도`
+    );
+
+    // 서비스 호출
+    const result = await userService.updateUserId(targetUserId, newUserId);
+
+    if (result.success) {
+      // 페이지 새로고침
+      revalidatePath("/admin/users");
+      console.log(
+        `[Action:updateUserId] 사용자 ${targetUserId}의 고유번호 변경 성공`
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error(
+      `[Action:updateUserId] 고유번호 변경 실패`,
       error
     );
     return { success: false, error: "서버 오류가 발생했습니다." };

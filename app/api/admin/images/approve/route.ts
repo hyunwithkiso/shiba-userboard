@@ -164,9 +164,8 @@ export async function POST(req: Request) {
           type === "killfeed"
             ? "killfeed_" + submissionData.code
             : "chattitle_" + submissionData.code,
-          submissionData.gameDbName +
-            (type === "killfeed" ? "님의 킬피드" : "님의 채팅칭호"),
-          type === "killfeed" ? "killfeed" : "chattitle",
+          submissionData.gameDbName,
+           type === "killfeed" ? "killfeed" : "chattitle",
           submissionData.gameDbFileName,
           metadataString,
         ];

@@ -175,12 +175,37 @@ export async function updateEventAction(eventId: string, formData: FormData) {
   // 2. 입력 데이터 유효성 검사
   const content = formData.get("content") as string;
 
+  // startDate, endDate를 Date 객체로 파싱 (createEventAction과 동일)
+  const startDateString = formData.get("startDate") as string | null;
+  const endDateString = formData.get("endDate") as string | null;
+  let startDate, endDate;
+  try {
+    if (!startDateString || !endDateString) {
+      throw new Error("Start date or end date is missing.");
+    }
+    startDate = new Date(startDateString);
+    endDate = new Date(endDateString);
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new Error("Invalid date format provided.");
+    }
+  } catch (dateError: any) {
+    console.error("[Action:updateEvent] Invalid date format:", dateError);
+    return {
+      success: false,
+      error: "날짜 형식이 잘못되었습니다.",
+      errors: {
+        startDate: ["유효한 시작일을 입력해주세요."],
+        endDate: ["유효한 종료일을 입력해주세요."],
+      },
+    };
+  }
+
   const validatedFields = eventSchema.safeParse({
     title: formData.get("title"),
     content: content,
     thumbnailImage: formData.get("thumbnailImage") || undefined,
-    startDate: formData.get("startDate"),
-    endDate: formData.get("endDate"),
+    startDate: startDate, // 파싱된 Date 객체 사용
+    endDate: endDate, // 파싱된 Date 객체 사용
     isPinned: formData.get("isPinned") === "true",
   });
 
@@ -200,8 +225,8 @@ export async function updateEventAction(eventId: string, formData: FormData) {
     title: validatedTitle,
     content: validatedContent,
     thumbnailImage,
-    startDate,
-    endDate,
+    startDate: validatedStartDate, // 변수명 구분
+    endDate: validatedEndDate, // 변수명 구분
     isPinned,
   } = validatedFields.data;
 
@@ -223,8 +248,8 @@ export async function updateEventAction(eventId: string, formData: FormData) {
         title: validatedTitle,
         content: validatedContent,
         thumbnailImage: thumbnailImage || null,
-        startDate: startDate,
-        endDate: endDate,
+        startDate: validatedStartDate, // 파싱된 Date 객체 사용
+        endDate: validatedEndDate, // 파싱된 Date 객체 사용
         isPinned: isPinned ?? false,
         updatedAt: new Date(),
       })

@@ -16,18 +16,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 관리자 여부 확인
+    const isAdmin = !!session.user.isAdmin;
+
     // 티켓 차감 먼저 시도
-    const updateResult = await realtimeService.updateChatTitleAmount(
-      session.user.id
-    );
-    if (!updateResult.success) {
-      return NextResponse.json(
-        {
-          error:
-            "채팅 칭호 티켓이 부족하거나 차감에 실패했습니다. 티켓을 확인해 주세요.",
-        },
-        { status: 400 }
+    if (!isAdmin) {
+      const updateResult = await realtimeService.updateChatTitleAmount(
+        session.user.id
       );
+      if (!updateResult.success) {
+        return NextResponse.json(
+          {
+            error:
+              "채팅 칭호 티켓이 부족하거나 차감에 실패했습니다. 티켓을 확인해 주세요.",
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Content-Type 확인
@@ -53,8 +58,18 @@ export async function POST(request: NextRequest) {
 
     const file = formData.get("file") as File;
     const name = formData.get("name") as string | null;
-    const scaleStr = formData.get("scale") as string | null;
-    const scale = scaleStr ? Math.round(parseFloat(scaleStr) * 100) : 70;
+    const metadataStr = formData.get("metadata") as string | null;
+    let metadata: { width?: string; scale?: number; margin?: string } = {};
+    if (metadataStr) {
+      try {
+        metadata = JSON.parse(metadataStr);
+      } catch (e) {
+        return NextResponse.json(
+          { error: "메타데이터 파싱 오류" },
+          { status: 400 }
+        );
+      }
+    }
 
     if (!file) {
       return NextResponse.json(
@@ -173,10 +188,10 @@ export async function POST(request: NextRequest) {
         fileType: file.type,
         fileSize: file.size,
         status: "pending",
-        scale: scale,
         code: generateRandomCode(),
         gameDbName: name.trim(),
         gameDbFileName: responseData.fileName,
+        gameDbMetadata: metadata,
       })
       .returning();
 

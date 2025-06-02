@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Check, X, MoreHorizontal } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +35,6 @@ export function ImageApprovalButton({
   const [isRejecting, setIsRejecting] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
-  const { toast } = useToast();
 
   const handleApprove = async () => {
     try {
@@ -58,22 +57,16 @@ export function ImageApprovalButton({
         throw new Error(data.error || "승인 처리 중 오류가 발생했습니다.");
       }
 
-      toast({
-        title: "승인 완료",
-        description: "이미지가 성공적으로 승인되었습니다.",
-      });
+      toast.success("이미지가 성공적으로 승인되었습니다.");
 
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
       console.error("Approval error:", error);
-      toast({
-        variant: "destructive",
-        title: "승인 실패",
-        description:
-          error instanceof Error ? error.message : "오류가 발생했습니다.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "오류가 발생했습니다."
+      );
     } finally {
       setIsApproving(false);
     }
@@ -101,10 +94,7 @@ export function ImageApprovalButton({
         throw new Error(data.error || "거부 처리 중 오류가 발생했습니다.");
       }
 
-      toast({
-        title: "거부 완료",
-        description: "이미지가 성공적으로 거부되었습니다.",
-      });
+      toast.success("이미지가 성공적으로 거부되었습니다.");
 
       setShowRejectDialog(false);
       setRejectReason("");
@@ -114,12 +104,9 @@ export function ImageApprovalButton({
       }
     } catch (error) {
       console.error("Rejection error:", error);
-      toast({
-        variant: "destructive",
-        title: "거부 실패",
-        description:
-          error instanceof Error ? error.message : "오류가 발생했습니다.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "오류가 발생했습니다."
+      );
     } finally {
       setIsRejecting(false);
     }

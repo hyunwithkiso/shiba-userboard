@@ -28,7 +28,8 @@ export default async function KillfeedPage() {
   const ticketInfo = await realtimeService.getCheckAvailableKillFeed(
     Number(userId)
   );
-  const hasTicket = ticketInfo.amount > 0;
+  const isAdmin = !!session.user?.isAdmin;
+  const hasTicket = ticketInfo.amount > 0 || isAdmin;
   console.log(ticketInfo);
 
   return (
