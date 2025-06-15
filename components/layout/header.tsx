@@ -127,6 +127,9 @@ export const Header = () => {
                       </p>
                     </div>
                   </DropdownMenuLabel>
+                  <div className="text-xs text-muted-foreground ml-1">
+                    고유번호 : {session.user?.userId}
+                  </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/my-uploads">
