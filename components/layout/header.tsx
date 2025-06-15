@@ -72,6 +72,8 @@ export const Header = () => {
     return true;
   });
 
+  console.log(session?.user);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-between mx-auto">
@@ -128,7 +130,7 @@ export const Header = () => {
                     </div>
                   </DropdownMenuLabel>
                   <div className="text-xs text-muted-foreground ml-1">
-                    고유번호 : {session.user?.userId}
+                    {session.user?.userId && `고유번호 : ${session.user.userId}`}
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
