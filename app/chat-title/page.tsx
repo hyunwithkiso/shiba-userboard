@@ -17,7 +17,7 @@ export default async function ChatTitlePage() {
   if (!session) {
     redirect("/login");
   }
-  const userId = session.user?.id;
+  const userId = session.user?.userId;
 
   if (!userId) {
     redirect("/login");
