@@ -1,137 +1,95 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db, chatTitleSubmission } from "@/lib/schema";
-import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
-import { generateRandomCode } from "@/lib/utils";
 import { realtimeService } from "@/services/realtime-service";
+import { imageService } from "@/services/image-service";
 
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: "인증되지 않은 사용자입니다." },
-        { status: 401 }
-      );
+    if (!session?.user?.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 관리자 여부 확인
-    const isAdmin = !!session.user.isAdmin;
-
-    // 티켓 차감 먼저 시도
-    if (!isAdmin) {
-      const updateResult = await realtimeService.updateChatTitleAmount(
-        session.user.id
-      );
-      if (!updateResult.success) {
-        return NextResponse.json(
-          {
-            error:
-              "채팅 칭호 티켓이 부족하거나 차감에 실패했습니다. 티켓을 확인해 주세요.",
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Content-Type 확인
-    const contentType = request.headers.get("content-type") || "";
-    if (!contentType.includes("multipart/form-data")) {
-      return NextResponse.json(
-        { error: "Content-Type must be multipart/form-data" },
-        { status: 400 }
-      );
-    }
-
-    // formData 처리
-    let formData;
-    try {
-      formData = await request.formData();
-    } catch (error) {
-      console.error("FormData 파싱 오류:", error);
-      return NextResponse.json(
-        { error: "FormData 처리 중 오류가 발생했습니다." },
-        { status: 400 }
-      );
-    }
-
-    const file = formData.get("file") as File;
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
     const name = formData.get("name") as string | null;
     const metadataStr = formData.get("metadata") as string | null;
-    let metadata: { width?: string; scale?: number; margin?: string } = {};
-    if (metadataStr) {
-      try {
-        metadata = JSON.parse(metadataStr);
-      } catch (e) {
-        return NextResponse.json(
-          { error: "메타데이터 파싱 오류" },
-          { status: 400 }
-        );
-      }
-    }
 
     if (!file) {
       return NextResponse.json(
-        { error: "파일이 제공되지 않았습니다." },
+        { error: "파일이 선택되지 않았습니다." },
         { status: 400 }
       );
     }
 
-    if (!name || name.trim() === "") {
+    if (!name?.trim()) {
       return NextResponse.json(
-        { error: "이미지 이름이 필요합니다." },
+        { error: "이미지 이름을 입력해주세요." },
         { status: 400 }
       );
     }
 
-    if (name.length > 10) {
-      return NextResponse.json(
-        { error: "이미지 이름은 최대 10자까지 가능합니다." },
-        { status: 400 }
-      );
+    // 메타데이터 파싱
+    let metadata = {
+      width: "100px",
+      scale: 0.7,
+      marginTop: -5,
+      marginRight: -10,
+      marginBottom: 0,
+      marginLeft: -10,
+    };
+
+    if (metadataStr) {
+      try {
+        const parsedMetadata = JSON.parse(metadataStr);
+        metadata = { ...metadata, ...parsedMetadata };
+      } catch (error) {
+        console.error("메타데이터 파싱 오류:", error);
+      }
     }
 
-    // 이름 중복 검사
-    const existingImage = await db
-      .select({ id: chatTitleSubmission.id })
-      .from(chatTitleSubmission)
-      .where(eq(chatTitleSubmission.name, name.trim()))
-      .limit(1);
-
-    if (existingImage.length > 0) {
-      return NextResponse.json(
-        { error: "이미 존재하는 이미지 이름입니다. 다른 이름을 사용해주세요." },
-        { status: 400 }
-      );
-    }
-
-    // 파일 크기 검증 (500KB)
-    if (file.size > 500 * 1024) {
-      return NextResponse.json(
-        { error: "파일 크기는 500KB를 초과할 수 없습니다." },
-        { status: 400 }
-      );
-    }
-
-    // 파일 형식 검증
+    // 파일 타입 검증
     const allowedTypes = ["image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: "지원하지 않는 파일 형식입니다." },
+        { error: "PNG, WebP, GIF 파일만 업로드 가능합니다." },
         { status: 400 }
       );
     }
 
-    // 파일을 외부 API로 업로드
+    // 파일 크기 검증 (200KB)
+    if (file.size > 200 * 1024) {
+      return NextResponse.json(
+        { error: "파일 크기는 200KB 이하여야 합니다." },
+        { status: 400 }
+      );
+    }
+
+    const gameUserId = Number(session.user.userId); // 게임 유저 ID
+    const isAdmin = !!session.user.isAdmin;
+
+    // 티켓 확인 (관리자는 제외)
+    if (!isAdmin) {
+      const ticketInfo = await realtimeService.getCheckAvailableChatTitle(gameUserId);
+      if (ticketInfo.amount <= 0) {
+        return NextResponse.json(
+          { error: "채팅 칭호 이용권이 부족합니다." },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 외부 API로 업로드할 FormData 생성
     const externalFormData = new FormData();
     externalFormData.append("files", file);
     externalFormData.append("bucket", "game");
-    externalFormData.append("folder", "chat-title");
+    externalFormData.append("folder", "chatTitle");
 
+    // 외부 API로 이미지 업로드
+    const uploadUrl = "https://screenshot.dokku.co.kr/files?type=chatTitle";
     let response;
     try {
-      response = await fetch("https://screenshot.dokku.co.kr/files?type=chat", {
+      response = await fetch(uploadUrl, {
         method: "POST",
         body: externalFormData,
       });
@@ -157,6 +115,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 응답에서 URL 추출
     let responseData;
     try {
       responseData = await response.json();
@@ -169,45 +128,52 @@ export async function POST(request: NextRequest) {
     }
 
     const uploadedUrl = responseData.url;
+    const fileName = responseData.fileName;
 
-    if (!uploadedUrl) {
+    if (!uploadedUrl || !fileName) {
       return NextResponse.json(
-        { error: "업로드 응답에서 이미지 URL을 찾을 수 없습니다." },
+        { error: "업로드 응답에서 필요한 정보를 찾을 수 없습니다." },
         { status: 500 }
       );
     }
 
-    // DB에 제출 정보 저장
-    const submission = await db
-      .insert(chatTitleSubmission)
-      .values({
-        userId: session.user.id,
+    // MySQL의 dokku_userboard 테이블에 직접 저장
+    try {
+      const result = await imageService.createImageSubmission({
+        userId: gameUserId, // 게임 유저 ID 사용
         name: name.trim(),
-        filePath: uploadedUrl,
-        fileName: responseData.fileName,
-        fileType: file.type,
-        fileSize: file.size,
-        status: "pending",
-        code: generateRandomCode(),
-        gameDbName: name.trim(),
-        gameDbFileName: responseData.fileName,
-        gameDbMetadata: metadata,
-      })
-      .returning();
+        type: "chattitle",
+        fileName: fileName,
+        metadata: metadata // 채팅칭호 메타데이터 포함
+      });
 
-    revalidatePath("/dashboard");
-
-    return NextResponse.json({
-      url: uploadedUrl,
-      submission: submission[0],
-    });
+      // 응답 반환
+      return NextResponse.json({
+        message: "채팅 칭호가 성공적으로 업로드되었습니다. 관리자 검토 후 게임에 적용됩니다.",
+        url: uploadedUrl,
+        submission: {
+          id: result.id,
+          code: result.code,
+          name: name.trim(),
+          fileName: fileName,
+          filePath: uploadedUrl,
+          status: "pending", // 프론트엔드 호환성을 위해
+          scale: Math.round(metadata.scale * 100), // 프론트엔드 호환성
+          marginX: metadata.marginRight, // 프론트엔드 호환성
+          gameDbMetadata: metadata
+        }
+      });
+    } catch (error: any) {
+      console.error("DB 저장 오류:", error);
+      return NextResponse.json(
+        { error: error.message || "데이터베이스 저장 중 오류가 발생했습니다." },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error("[Chat Title Upload Error]:", error);
+    console.error("Chat title upload error:", error);
     return NextResponse.json(
-      {
-        error: "이미지 업로드 중 오류가 발생했습니다.",
-        details: error instanceof Error ? error.message : undefined,
-      },
+      { error: "서버 오류가 발생했습니다." },
       { status: 500 }
     );
   }

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import ChatTitleUploadForm from "@/components/chat-title/chat-title-upload-form";
 import { checkUserInitialization } from "@/lib/auth-utils";
 import { realtimeService } from "@/services/realtime-service";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "채팅 칭호 업로드",
@@ -50,16 +52,23 @@ export default async function ChatTitlePage() {
         </div>
       </div>
 
+      {/* 아이템 생성 안내 문구 */}
+      <Alert className="bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800">
+        <Info className="h-4 w-4 stroke-emerald-600 dark:stroke-emerald-400" />
+        <AlertDescription className="text-emerald-800 dark:text-emerald-200">
+          <strong>중요:</strong> 이미지 이름은 아이템 이름으로 사용되며, '이미지이름'의 채팅 칭호 아이템으로 생성됩니다.
+        </AlertDescription>
+      </Alert>
+
       <div className="grid gap-6">
         <div className="rounded-lg border bg-card p-6">
           <h2 className="text-lg font-semibold mb-4">이미지 업로드</h2>
           {hasTicket ? (
-            <div className="mb-2 text-sm text-muted-foreground">
-              보유 티켓: <span className="font-bold">{ticketInfo.amount}</span>
-              장
+            <div className="mb-4 text-sm text-muted-foreground">
+              보유 티켓: <span className="font-bold text-primary">{ticketInfo.amount}</span>장
             </div>
           ) : (
-            <div className="mb-2 text-destructive font-semibold">
+            <div className="mb-4 text-destructive font-semibold">
               채팅 칭호 이용권이 부족합니다. 상점에서 구매 후 이용해 주세요.
             </div>
           )}
@@ -70,12 +79,15 @@ export default async function ChatTitlePage() {
           <h2 className="text-lg font-semibold mb-4">업로드 가이드라인</h2>
           <ul className="list-disc list-inside space-y-2 text-muted-foreground">
             <li>이미지는 PNG, WebP, GIF 형식만 허용됩니다.</li>
-            <li>파일 크기는 500KB 이하여야 합니다.</li>
-            <li>
-              이미지 크기는 180px ~ 220px (가로) x 40px ~ 50px (세로)여야
-              합니다.
+            <li className="font-medium text-orange-600 dark:text-orange-400">
+              파일 크기는 200KB 이하여야 합니다.
             </li>
-            <li>최종 승인 시 크기 및 영역은 변경될 수 있습니다.</li>
+            <li className="font-medium text-primary">
+              이미지 크기는 정확히 200px x 50px 이어야 합니다.
+            </li>
+            <li>이미지 이름은 최대 10자까지 입력 가능합니다.</li>
+            <li>채팅창에서의 width는 100px로 고정됩니다.</li>
+            <li>업로드된 이미지는 관리자 검토 후 게임에 적용됩니다.</li>
           </ul>
         </div>
       </div>

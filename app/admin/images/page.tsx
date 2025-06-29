@@ -1,10 +1,7 @@
 import { auth } from "@/lib/auth";
-import { chatTitleSubmission, db } from "@/lib/schema";
-import { killfeedSubmission } from "@/lib/schema";
-import { users } from "@/lib/schema";
-import { sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import AdminImagesClient from "./client";
+import { imageService } from "@/services/image-service";
 
 // 페이지네이션 상수
 const ITEMS_PER_PAGE = 20;
@@ -12,7 +9,12 @@ const ITEMS_PER_PAGE = 20;
 export default async function AdminImagesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; status?: string; page?: string }>;
+  searchParams: Promise<{ 
+    type?: string; 
+    status?: string; 
+    page?: string;
+    name?: string;
+  }>;
 }) {
   const session = await auth();
   if (!session?.user?.isAdmin) {
@@ -26,113 +28,81 @@ export default async function AdminImagesPage({
   const currentPage = Number(params.page) || 1;
   const currentType = params.type || "all";
   const currentStatus = params.status || "all";
+  const searchName = params.name || "";
 
-  // 조건문 (raw SQL)
-  const typeCondition =
-    currentType === "all"
-      ? sql`1=1`
-      : currentType === "killfeed"
-      ? sql`type = 'killfeed'`
-      : sql`type = 'chat'`;
+  // 필터 설정
+  const filters: any = {
+    limit: ITEMS_PER_PAGE,
+    offset: (currentPage - 1) * ITEMS_PER_PAGE,
+  };
 
-  const statusCondition =
-    currentStatus === "all" ? sql`1=1` : sql`status = ${currentStatus}`;
+  if (currentType !== "all") {
+    filters.type = currentType as "killfeed" | "chattitle";
+  }
 
-  const killfeedJoinQuery = sql`
-    SELECT 
-      k.id,
-      k.user_id as "userId",
-      k.file_path as "filePath",
-      k.file_name as "fileName",
-      k.file_type as "fileType",
-      k.file_size as "fileSize",
-      k.status,
-      k.uploaded_at as "uploadedAt",
-      k.reviewed_at as "reviewedAt",
-      k.reviewer_id as "reviewerId",
-      k.admin_notes as "adminNotes",
-      NULL as "scale",
-      'killfeed' as type,
-      u.nickname as "userNickname",
-      u.user_id as "userGameId",
-      r.nickname as "reviewerNickname",
-      r.user_id as "reviewerUserId"
-    FROM ${killfeedSubmission} k
-    LEFT JOIN ${users} u ON k.user_id = u.id
-    LEFT JOIN ${users} r ON k.reviewer_id = r.id
-  `;
+  if (currentStatus !== "all") {
+    filters.approved = currentStatus as "pending" | "approved" | "rejected";
+  }
 
-  // chatTitle + users left join
-  const chatTitleJoinQuery = sql`
-    SELECT 
-      c.id,
-      c.user_id as "userId",
-      c.file_path as "filePath",
-      c.file_name as "fileName",
-      c.file_type as "fileType",
-      c.file_size as "fileSize",
-      c.status,
-      c.uploaded_at as "uploadedAt",
-      c.reviewed_at as "reviewedAt",
-      c.reviewer_id as "reviewerId",
-      c.admin_notes as "adminNotes",
-      c.scale,
-      'chat' as type,
-      u.nickname as "userNickname",
-      u.user_id as "userGameId",
-      r.nickname as "reviewerNickname",
-      r.user_id as "reviewerUserId"
-    FROM ${chatTitleSubmission} c
-    LEFT JOIN ${users} u ON c.user_id = u.id
-    LEFT JOIN ${users} r ON c.reviewer_id = r.id
-  `;
+  if (searchName) {
+    filters.name = searchName;
+  }
 
-  // 전체 쿼리 (UNION ALL + 정렬 + 페이징)
-  const query = sql`
-    WITH combined_submissions AS (
-      ${killfeedJoinQuery}
-      UNION ALL
-      ${chatTitleJoinQuery}
-    )
-    SELECT *
-    FROM combined_submissions
-    WHERE ${typeCondition} AND ${statusCondition}
-    ORDER BY "uploadedAt" DESC
-    LIMIT ${ITEMS_PER_PAGE}
-    OFFSET ${(currentPage - 1) * ITEMS_PER_PAGE}
-  `;
+  try {
+    // MySQL에서 데이터 조회
+    const submissions = await imageService.getAllImages(filters);
+    
+    // 전체 개수 조회 (페이지네이션용)
+    const countFilters = { ...filters };
+    delete countFilters.limit;
+    delete countFilters.offset;
+    const allSubmissions = await imageService.getAllImages(countFilters);
+    const totalItems = allSubmissions.length;
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
-  // 전체 아이템 수 쿼리
-  const countQuery = sql`
-    WITH combined_submissions AS (
-      ${killfeedJoinQuery}
-      UNION ALL
-      ${chatTitleJoinQuery}
-    )
-    SELECT COUNT(*) as count
-    FROM combined_submissions
-    WHERE ${typeCondition} AND ${statusCondition}
-  `;
+    // 데이터 형식 변환 (기존 client 컴포넌트와 호환)
+    const formattedSubmissions = submissions.map((sub: any) => ({
+      id: sub.id.toString(),
+      userId: sub.user_id.toString(),
+      userNickname: sub.user_nickname || "Unknown",
+      type: (sub.type === "killfeed" ? "killfeed" : "chat") as "killfeed" | "chat",
+      filePath: `https://screenshot.dokku.co.kr/images/game/${sub.type === "killfeed" ? "killfeed" : "chatTitle"}/${sub.image}`,
+      fileName: sub.image,
+      fileSize: 0, // MySQL에 파일 크기 정보 없음
+      uploadedAt: sub.created_at || new Date().toISOString(),
+      status: sub.status, // 이미 문자열로 변환됨 (pending/approved/rejected)
+      reviewedAt: sub.approved_at || null,
+      reviewerId: null,
+      reviewerNickname: null,
+      reviewerUserId: null,
+      adminNotes: null,
+      userGameId: sub.user_id.toString(),
+      gameDbMetadata: sub.metadata,
+      name: sub.name,
+      code: sub.code,
+    }));
 
-  const [submissions, countResult] = await Promise.all([
-    db.execute(query),
-    db.execute(countQuery),
-  ]);
-
-  const totalItems = Number(countResult[0]?.count || 0);
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-
-  console.log(submissions);
-
-  return (
-    <div className="container max-w-6xl py-6 space-y-8 mx-auto">
-      <AdminImagesClient
-        submissions={submissions as any}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        currentType={currentType}
-        currentStatus={currentStatus}
-      />
-    </div>
-  );
+    return (
+      <div className="container max-w-6xl py-6 space-y-8 mx-auto">
+        <AdminImagesClient
+          submissions={formattedSubmissions}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          currentType={currentType}
+          currentStatus={currentStatus}
+          currentName={searchName}
+        />
+      </div>
+    );
+  } catch (error) {
+    console.error("Error loading admin images:", error);
+    // 에러 발생 시 빈 데이터로 표시
+    return (
+      <div className="container max-w-6xl py-6 space-y-8 mx-auto">
+        <div className="text-center py-8">
+          <p className="text-destructive">이미지 목록을 불러오는 중 오류가 발생했습니다.</p>
+        </div>
+      </div>
+    );
+  }
 }

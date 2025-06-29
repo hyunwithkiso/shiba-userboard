@@ -51,38 +51,31 @@ export default function ChatTitleDialog({
 }: ChatTitleDialogProps) {
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Editor State
-  const [width, setWidth] = useState(initialMetadata?.width || "100px");
+  // Editor State - 개선된 기본값들
+  const width = "100px"; // 고정값
   const [scale, setScale] = useState((initialMetadata?.scale || 0.7) * 100); // 0-1 -> 0-100%
-  const [marginTop, setMarginTop] = useState(initialMetadata?.marginTop || -3);
-  const [marginRight, setMarginRight] = useState(
-    initialMetadata?.marginRight || -10
-  );
-  const [marginBottom, setMarginBottom] = useState(
-    initialMetadata?.marginBottom || 0
-  );
-  const [marginLeft, setMarginLeft] = useState(
-    initialMetadata?.marginLeft || -10
-  );
+  const [marginTop, setMarginTop] = useState(initialMetadata?.marginTop || -5);
+  const [marginSide, setMarginSide] = useState(initialMetadata?.marginRight || -10); // 좌우 공통
+  const marginBottom = 0; // 고정값
   const [adminNotes, setAdminNotes] = useState(initialAdminNotes || "");
 
   // Reset state when initialMetadata changes (e.g., opening dialog for different image)
   useEffect(() => {
-    setWidth(initialMetadata?.width || "100px");
     setScale((initialMetadata?.scale || 0.7) * 100);
-    setMarginTop(initialMetadata?.marginTop || -3);
-    setMarginRight(initialMetadata?.marginRight || -10);
-    setMarginBottom(initialMetadata?.marginBottom || 0);
-    setMarginLeft(initialMetadata?.marginLeft || -10);
+    setMarginTop(initialMetadata?.marginTop || -5);
+    setMarginSide(initialMetadata?.marginRight || -10);
     setAdminNotes(initialAdminNotes || "");
   }, [initialMetadata, initialAdminNotes]);
 
-  // 현재 에디터 상태로 metadata 객체 생성
+  // 현재 에디터 상태로 metadata 객체 생성 (개선된 형식)
   const getCurrentMetadata = () => ({
-    width: width,
+    width,
     scale: scale / 100, // 0-100% -> 0-1
-    margin: `${marginTop}px ${marginRight}px ${marginBottom}px ${marginLeft}px`,
+    margin: `${marginTop}px ${marginSide}px ${marginBottom}px`,
   });
+
+  // 마진 문자열 생성 (표시용)
+  const getMarginString = () => `${marginTop}px ${marginSide}px ${marginBottom}px`;
 
   const handleApprove = async () => {
     setIsProcessing(true);
@@ -95,8 +88,15 @@ export default function ChatTitleDialog({
           type: "chat", // 타입 명시
           status: "approved",
           adminNotes: adminNotes,
-          // scale 대신 metadata 객체 전달
-          metadata: getCurrentMetadata(),
+          // 개선된 메타데이터 형식
+          metadata: {
+            width,
+            scale: scale / 100,
+            marginTop,
+            marginRight: marginSide,
+            marginBottom,
+            marginLeft: marginSide,
+          },
         }),
       });
 
@@ -128,8 +128,8 @@ export default function ChatTitleDialog({
           type: "chat",
           status: "rejected",
           adminNotes: adminNotes,
-          // 거절 시에는 metadata를 보낼 필요 없음 (API에서 무시해야 함)
-          margin: `${marginTop}px ${marginRight}px ${marginBottom}px ${marginLeft}px`,
+          // 거절 시에도 현재 설정 전달 (필요시)
+          margin: getMarginString(),
         }),
       });
 
@@ -164,8 +164,8 @@ export default function ChatTitleDialog({
         <div className="grid gap-6 mt-4">
           {/* Preview Area */}
           <div className="space-y-4">
-            <Label>미리보기</Label>
-            <div className="border rounded-lg p-4 bg-muted/50 min-h-[80px] flex items-center justify-center">
+            <Label>채팅창 미리보기</Label>
+            <div className="border rounded-lg p-4 bg-background min-h-[80px] flex items-center justify-center">
               <ChatTitleExample
                 imageSrc={imageUrl}
                 metadata={getCurrentMetadata()}
@@ -175,30 +175,14 @@ export default function ChatTitleDialog({
 
           {/* Editor Area */}
           <ScrollArea className="h-[400px] pr-4">
-            {" "}
-            {/* 스크롤 추가 */}
-            <div className="space-y-4">
-              {/* Width */}
-              <div className="space-y-2">
-                <Label htmlFor="width">너비 (Width)</Label>
-                <Input
-                  id="width"
-                  value={width}
-                  onChange={(e) => setWidth(e.target.value)}
-                  placeholder="예: 100px, 80%"
-                />
-                <p className="text-xs text-muted-foreground">
-                  CSS 너비 값을 입력하세요 (예: 100px).
-                </p>
-              </div>
+            <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+              <h3 className="text-sm font-medium">스타일 조정</h3>
 
               {/* Scale */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="scale">크기 (Scale)</Label>
-                  <span className="text-sm text-muted-foreground">
-                    {scale.toFixed(0)}%
-                  </span>
+                  <span className="text-sm text-muted-foreground">{Math.round(scale)}%</span>
                 </div>
                 <Slider
                   id="scale"
@@ -206,69 +190,53 @@ export default function ChatTitleDialog({
                   onValueChange={(value) => setScale(value[0])}
                   min={50} // 최소 50%
                   max={150} // 최대 150%
-                  step={1}
+                  step={5}
                 />
+                <p className="text-xs text-muted-foreground">
+                  채팅창에서의 크기를 조정합니다 (50% ~ 150%)
+                </p>
               </div>
 
-              {/* Margins */}
-              <div className="space-y-2">
-                <Label>여백 (Margin - px 단위)</Label>
+              {/* Margins - 개선된 형식 */}
+              <div className="space-y-3">
+                <Label>여백 조정 (px)</Label>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label htmlFor="marginTop" className="text-xs">
-                      상 (Top)
-                    </Label>
+                    <Label htmlFor="marginTop" className="text-xs">상단 여백</Label>
                     <Input
                       id="marginTop"
                       type="number"
                       value={marginTop}
-                      onChange={(e) =>
-                        setMarginTop(parseInt(e.target.value) || 0)
-                      }
+                      onChange={(e) => setMarginTop(parseInt(e.target.value) || 0)}
+                      min={-20}
+                      max={10}
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="marginRight" className="text-xs">
-                      우 (Right)
-                    </Label>
+                    <Label htmlFor="marginSide" className="text-xs">좌우 여백</Label>
                     <Input
-                      id="marginRight"
+                      id="marginSide"
                       type="number"
-                      value={marginRight}
-                      onChange={(e) =>
-                        setMarginRight(parseInt(e.target.value) || 0)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="marginBottom" className="text-xs">
-                      하 (Bottom)
-                    </Label>
-                    <Input
-                      id="marginBottom"
-                      type="number"
-                      value={marginBottom}
-                      onChange={(e) =>
-                        setMarginBottom(parseInt(e.target.value) || 0)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="marginLeft" className="text-xs">
-                      좌 (Left)
-                    </Label>
-                    <Input
-                      id="marginLeft"
-                      type="number"
-                      value={marginLeft}
-                      onChange={(e) =>
-                        setMarginLeft(parseInt(e.target.value) || 0)
-                      }
+                      value={marginSide}
+                      onChange={(e) => setMarginSide(parseInt(e.target.value) || 0)}
+                      min={-20}
+                      max={10}
                     />
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  채팅 메시지 기준 상대적 여백.
+                  마진 형식: <code className="bg-muted px-1 rounded">{getMarginString()}</code> (하단은 0으로 고정)
+                </p>
+              </div>
+
+              {/* Width - 고정값 표시 */}
+              <div className="space-y-2">
+                <Label>Width (고정값)</Label>
+                <div className="p-2 bg-background border rounded text-sm text-muted-foreground">
+                  100px (조정 불가)
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  채팅창에서의 width는 100px로 고정됩니다.
                 </p>
               </div>
 
@@ -282,6 +250,15 @@ export default function ChatTitleDialog({
                   placeholder="검토 의견이나 참고사항을 입력하세요."
                   className="h-24"
                 />
+              </div>
+              
+              <div className="mt-4 space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  * 스타일을 조정하여 채팅창에서의 모습을 확인해보세요.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  * 승인 시 설정된 값들이 게임에 적용됩니다.
+                </p>
               </div>
             </div>
           </ScrollArea>
@@ -301,10 +278,24 @@ export default function ChatTitleDialog({
               onClick={handleReject}
               disabled={isProcessing}
             >
-              {isProcessing ? "처리중..." : "거절"}
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  처리중...
+                </>
+              ) : (
+                "거절"
+              )}
             </Button>
             <Button onClick={handleApprove} disabled={isProcessing}>
-              {isProcessing ? "처리중..." : "승인 및 저장"}
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  처리중...
+                </>
+              ) : (
+                "승인 및 저장"
+              )}
             </Button>
           </div>
         </DialogFooter>

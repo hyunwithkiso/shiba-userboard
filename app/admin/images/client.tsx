@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
   Table,
@@ -43,11 +43,14 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
-import { Info, Trash2, ZoomIn } from "lucide-react";
+import { Info, Trash2, ZoomIn, Search } from "lucide-react";
 import { deleteImage } from "@/actions/image-action";
 import { Badge } from "@/components/ui/badge";
 import { ImageApprovalButton } from "@/components/admin/image-approval-button";
 import ChatTitleDialog from "@/components/admin/chat-title-dialog";
+import { Input } from "@/components/ui/input";
+import { formatDistanceToNow } from "date-fns";
+import { ko } from "date-fns/locale";
 
 interface Metadata {
   width?: string;
@@ -75,6 +78,8 @@ interface Submission {
   adminNotes: string | null;
   userGameId: string | null;
   gameDbMetadata?: Metadata | null;
+  name?: string;
+  code?: string;
 }
 
 interface AdminImagesClientProps {
@@ -83,6 +88,7 @@ interface AdminImagesClientProps {
   totalPages: number;
   currentType: string;
   currentStatus: string;
+  currentName?: string;
 }
 
 export default function AdminImagesClient({
@@ -91,6 +97,7 @@ export default function AdminImagesClient({
   totalPages,
   currentType,
   currentStatus,
+  currentName = "",
 }: AdminImagesClientProps) {
   const router = useRouter();
   const [selectedSubmission, setSelectedSubmission] =
@@ -99,6 +106,7 @@ export default function AdminImagesClient({
 
   const [type, setType] = useState(currentType);
   const [status, setStatus] = useState(currentStatus);
+  const [nameSearch, setNameSearch] = useState(currentName);
   const [chatTitleDialogOpen, setChatTitleDialogOpen] = useState(false);
   const [selectedChatTitleData, setSelectedChatTitleData] = useState<{
     id: string;
@@ -117,6 +125,7 @@ export default function AdminImagesClient({
       type: value,
       status: status,
       page: "1",
+      ...(nameSearch && { name: nameSearch }),
     });
     router.push(`/admin/images?${searchParams.toString()}`);
   };
@@ -127,6 +136,17 @@ export default function AdminImagesClient({
       type: type,
       status: value,
       page: "1",
+      ...(nameSearch && { name: nameSearch }),
+    });
+    router.push(`/admin/images?${searchParams.toString()}`);
+  };
+
+  const handleNameSearch = () => {
+    const searchParams = new URLSearchParams({
+      type: type,
+      status: status,
+      page: "1",
+      ...(nameSearch && { name: nameSearch }),
     });
     router.push(`/admin/images?${searchParams.toString()}`);
   };
@@ -136,6 +156,7 @@ export default function AdminImagesClient({
       type: type,
       status: status,
       page: String(page),
+      ...(nameSearch && { name: nameSearch }),
     });
     router.push(`/admin/images?${searchParams.toString()}`);
   };
@@ -146,8 +167,7 @@ export default function AdminImagesClient({
     try {
       setIsDeleting(true);
       const response = await deleteImage(
-        selectedSubmission.id,
-        selectedSubmission.type
+        Number(selectedSubmission.id)
       );
 
       if (!response) {
@@ -191,6 +211,45 @@ export default function AdminImagesClient({
     router.refresh();
   };
 
+  // 필터링
+  const filteredData = submissions.filter((item) => {
+    const statusMatch = status === "all" || item.status === status;
+    const nameMatch = !nameSearch || 
+      item.name?.toLowerCase().includes(nameSearch.toLowerCase()) ||
+      item.fileName?.toLowerCase().includes(nameSearch.toLowerCase());
+    
+    return statusMatch && nameMatch;
+  });
+
+  // 승인/거절 핸들러
+  const handleApproval = async (id: string, action: "approved" | "rejected") => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch("/api/admin/images/approve", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          imageId: id,
+          status: action,
+        }),
+      });
+
+      if (response.ok) {
+        toast(action === "approved" ? "승인 완료" : "거절 완료");
+        router.refresh();
+      } else {
+        const error = await response.json();
+        toast(error.error || `${action === "approved" ? "승인" : "거절"} 중 오류가 발생했습니다.`);
+      }
+    } catch (error) {
+      toast(`${action === "approved" ? "승인" : "거절"} 중 오류가 발생했습니다.`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -231,12 +290,34 @@ export default function AdminImagesClient({
                 <SelectItem value="rejected">거절됨</SelectItem>
               </SelectContent>
             </Select>
+
+            <div className="flex-1 flex gap-2">
+              <Input
+                placeholder="아이템 이름으로 검색..."
+                value={nameSearch}
+                onChange={(e) => setNameSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleNameSearch();
+                  }
+                }}
+                className="max-w-xs"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleNameSearch}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>이미지</TableHead>
+                <TableHead>아이템명</TableHead>
                 <TableHead>타입</TableHead>
                 <TableHead>유저 정보</TableHead>
                 <TableHead>상태</TableHead>
@@ -247,7 +328,7 @@ export default function AdminImagesClient({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {submissions.map((submission) => (
+              {filteredData.map((submission) => (
                 <TableRow key={submission.id}>
                   <TableCell>
                     <div className="relative w-20 h-20 cursor-pointer group" onClick={() => { setZoomImage(submission); setImageDialogOpen(true); }}>
@@ -262,6 +343,11 @@ export default function AdminImagesClient({
                         <ZoomIn className="w-8 h-8 text-white" />
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-medium">
+                      {submission.name || "이름 없음"}
+                    </span>
                   </TableCell>
                   <TableCell>
                     <span className="font-medium">
@@ -482,8 +568,9 @@ export default function AdminImagesClient({
                 />
               </div>
               <div className="w-full space-y-2">
-                <div className="font-semibold text-lg">{zoomImage.fileName}</div>
+                <div className="font-semibold text-lg">{zoomImage.name || zoomImage.fileName}</div>
                 <div className="text-sm text-muted-foreground">ID: {zoomImage.id}</div>
+                <div className="text-sm text-muted-foreground">Code: {zoomImage.code || "-"}</div>
                 <div className="text-sm mt-2">
                   <span className="font-medium">메타데이터</span>
                   <ul className="list-disc list-inside text-xs mt-1">
@@ -519,6 +606,7 @@ export default function AdminImagesClient({
         </DialogContent>
       </Dialog>
 
+      {/* 채팅 칭호 다이얼로그 */}
       {selectedChatTitleData && (
         <ChatTitleDialog
           open={chatTitleDialogOpen}
@@ -527,10 +615,7 @@ export default function AdminImagesClient({
           imageId={selectedChatTitleData.id}
           initialMetadata={selectedChatTitleData.metadata}
           initialAdminNotes={selectedChatTitleData.adminNotes}
-          onSuccess={() => {
-            refreshData();
-            setSelectedChatTitleData(null);
-          }}
+          onSuccess={refreshData}
         />
       )}
     </div>

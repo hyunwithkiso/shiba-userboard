@@ -2,8 +2,8 @@
 
 import { ImageUpload } from "@/components/shared/image-upload";
 import { Button } from "@/components/ui/button";
-import { Upload, ArrowDown } from "lucide-react";
-import { useState } from "react";
+import { Upload, ArrowDown, CheckCircle, Loader2, AlertCircle, Check } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,16 +20,64 @@ export default function ChatTitleUploadForm({
   onSuccess,
 }: ChatTitleUploadFormProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imageName, setImageName] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [scale, setScale] = useState(0.7);
-  const [width, setWidth] = useState("100px");
-  const [marginTop, setMarginTop] = useState("-3px");
-  const [marginRight, setMarginRight] = useState("-12px");
-  const [marginBottom, setMarginBottom] = useState("0");
-  const [marginLeft, setMarginLeft] = useState("0");
+  
+  // 중복 검사 상태
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [duplicateCheckMessage, setDuplicateCheckMessage] = useState("");
+  
+  // 고정된 값들
+  const width = "100px"; // 고정값
+  
+  // 마진 값 (상단, 좌우만 조정 가능, 하단은 0 고정)
+  const [marginTop, setMarginTop] = useState(-5);
+  const [marginSide, setMarginSide] = useState(-10);
+  const marginBottom = 0; // 고정값
+  
+  // 스케일 (50% ~ 150%)
+  const [scale, setScale] = useState(70); // 70% 기본값
+  
   const router = useRouter();
+
+  // 중복 검사 함수
+  const checkDuplicate = useCallback(async (name: string) => {
+    if (!name.trim()) {
+      setIsDuplicate(false);
+      setDuplicateCheckMessage("");
+      return;
+    }
+
+    setIsCheckingDuplicate(true);
+    try {
+      const response = await fetch(
+        `/api/check/duplicate?name=${encodeURIComponent(name)}&type=chattitle`
+      );
+      const data = await response.json();
+      
+      setIsDuplicate(data.isDuplicate);
+      setDuplicateCheckMessage(data.message);
+    } catch (error) {
+      console.error("중복 검사 오류:", error);
+      setDuplicateCheckMessage("중복 검사를 수행할 수 없습니다.");
+    } finally {
+      setIsCheckingDuplicate(false);
+    }
+  }, []);
+
+  // 디바운싱된 중복 검사
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (imageName) {
+        checkDuplicate(imageName);
+      }
+    }, 500); // 500ms 디바운스
+
+    return () => clearTimeout(timer);
+  }, [imageName, checkDuplicate]);
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -49,23 +97,21 @@ export default function ChatTitleUploadForm({
   };
 
   const handleScaleChange = (value: number[]) => {
-    setScale(value[0] / 100);
+    setScale(value[0]);
   };
 
-  const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setWidth(e.target.value);
-  };
-
-  const handleMarginChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setter(e.target.value);
-  };
-
-  const getMarginString = () => `${marginTop} ${marginRight} ${marginBottom} ${marginLeft}`;
+  // 고정된 마진 형식: -5px -10px 0
+  const getMarginString = () => `${marginTop}px ${marginSide}px ${marginBottom}px`;
 
   const handleUpload = async () => {
     if (!selectedFile) return;
     if (!imageName.trim()) {
       toast.error("이름을 입력해주세요.");
+      return;
+    }
+    
+    if (isDuplicate) {
+      toast.error("이미 사용 중인 이름입니다.");
       return;
     }
 
@@ -74,13 +120,17 @@ export default function ChatTitleUploadForm({
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("name", imageName.trim());
-      // metadata를 JSON string으로 추가
+      
+      // 메타데이터를 JSON string으로 추가
       formData.append(
         "metadata",
         JSON.stringify({
           width,
-          scale,
-          margin: getMarginString(),
+          scale: scale / 100, // 0-1 범위로 변환
+          marginTop,
+          marginRight: marginSide,
+          marginBottom,
+          marginLeft: marginSide,
         })
       );
 
@@ -95,103 +145,170 @@ export default function ChatTitleUploadForm({
         throw new Error(data.error || "업로드에 실패했습니다.");
       }
 
+      setUploadSuccess(true);
       toast.success("이미지가 성공적으로 업로드되었습니다.");
 
+      // 성공 상태를 3초간 표시 후 리다이렉트
       setTimeout(() => {
         router.push("/");
         router.refresh();
-      }, 1500);
+      }, 3000);
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("업로드 중 오류가 발생했습니다.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "업로드 중 오류가 발생했습니다."
+      );
     } finally {
       setIsUploading(false);
     }
   };
+
+  if (uploadSuccess) {
+    return (
+      <div className="space-y-6 text-center">
+        <div className="flex flex-col items-center gap-4 p-8 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+          <CheckCircle className="w-16 h-16 text-emerald-600 dark:text-emerald-400" />
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-emerald-800 dark:text-emerald-200">
+              업로드 완료!
+            </h3>
+            <p className="text-emerald-700 dark:text-emerald-300">
+              채팅 칭호가 성공적으로 업로드되었습니다.
+            </p>
+            <p className="text-sm text-emerald-600 dark:text-emerald-400">
+              관리자 검토 후 게임에 적용됩니다.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>3초 후 메인 페이지로 이동합니다...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="image-name">이미지 이름 (최대 10자)</Label>
-          <Input
-            id="image-name"
-            value={imageName}
-            onChange={handleNameChange}
-            placeholder="이미지 이름을 입력하세요"
-            maxLength={10}
-          />
-          <p className="text-xs text-muted-foreground">
-            {imageName.length}/10 자
-          </p>
+          <div className="relative">
+            <Input
+              id="image-name"
+              value={imageName}
+              onChange={handleNameChange}
+              placeholder="이미지 이름을 입력하세요"
+              maxLength={10}
+              disabled={isUploading}
+              className={isDuplicate ? "pr-10 border-destructive" : "pr-10"}
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+              {isCheckingDuplicate ? (
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              ) : imageName && !isDuplicate ? (
+                <Check className="w-4 h-4 text-emerald-600" />
+              ) : imageName && isDuplicate ? (
+                <AlertCircle className="w-4 h-4 text-destructive" />
+              ) : null}
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <p className="text-xs text-muted-foreground">
+              {imageName.length}/10 자
+            </p>
+            {duplicateCheckMessage && (
+              <p className={`text-xs ${isDuplicate ? "text-destructive" : "text-emerald-600"}`}>
+                {duplicateCheckMessage}
+              </p>
+            )}
+          </div>
         </div>
 
         <ImageUpload
           onFileSelect={handleFileSelect}
-          maxSize={500 * 1024}
+          maxSize={200 * 1024} // 200KB 제한
           acceptedTypes={["image/png", "image/webp", "image/gif"]}
-          previewWidth={180}
-          previewHeight={40}
-          minWidth={180}
-          maxWidth={220}
-          minHeight={40}
-          maxHeight={50}
+          exactWidth={200}
+          exactHeight={50}
         />
       </div>
 
-      {/* width, scale, margin 입력 UI */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* 스타일 조정 UI */}
+      <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+        <h3 className="text-sm font-medium">스타일 조정</h3>
+        
+        {/* 크기 조절 (Scale) */}
         <div className="space-y-2">
-          <Label htmlFor="width">width (ex: 100px)</Label>
-          <Input
-            id="width"
-            value={width}
-            onChange={handleWidthChange}
-            placeholder="100px"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>크기 조절 (scale)</Label>
+          <div className="flex justify-between items-center">
+            <Label htmlFor="scale">크기 (Scale)</Label>
+            <span className="text-sm text-muted-foreground">{scale}%</span>
+          </div>
           <Slider
-            value={[scale * 100]}
+            id="scale"
+            value={[scale]}
             onValueChange={handleScaleChange}
-            min={10}
-            max={100}
-            step={1}
+            min={50}
+            max={150}
+            step={5}
+            disabled={isUploading}
           />
-          <span className="text-xs text-muted-foreground">{Math.round(scale * 100)}%</span>
+          <p className="text-xs text-muted-foreground">
+            채팅창에서의 크기를 조정합니다 (50% ~ 150%)
+          </p>
         </div>
-      </div>
-      <div className="space-y-2">
-        <Label>margin (상 우 하 좌, px 단위)</Label>
-        <div className="grid grid-cols-4 gap-2">
-          <Input
-            value={marginTop}
-            onChange={handleMarginChange(setMarginTop)}
-            placeholder="상"
-          />
-          <Input
-            value={marginRight}
-            onChange={handleMarginChange(setMarginRight)}
-            placeholder="우"
-          />
-          <Input
-            value={marginBottom}
-            onChange={handleMarginChange(setMarginBottom)}
-            placeholder="하"
-          />
-          <Input
-            value={marginLeft}
-            onChange={handleMarginChange(setMarginLeft)}
-            placeholder="좌"
-          />
+
+        {/* 여백 조정 */}
+        <div className="space-y-3">
+          <Label>여백 조정 (px)</Label>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="marginTop" className="text-xs">상단 여백</Label>
+              <Input
+                id="marginTop"
+                type="number"
+                value={marginTop}
+                onChange={(e) => setMarginTop(parseInt(e.target.value) || 0)}
+                min={-20}
+                max={10}
+                disabled={isUploading}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="marginSide" className="text-xs">좌우 여백</Label>
+              <Input
+                id="marginSide"
+                type="number"
+                value={marginSide}
+                onChange={(e) => setMarginSide(parseInt(e.target.value) || 0)}
+                min={-20}
+                max={10}
+                disabled={isUploading}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            마진 형식: <code className="bg-muted px-1 rounded">{getMarginString()}</code> (하단은 0으로 고정)
+          </p>
         </div>
-        <span className="text-xs text-muted-foreground">예시: -3px -12px 0 0</span>
+
+        {/* Width 고정 안내 */}
+        <div className="space-y-2">
+          <Label>Width (고정값)</Label>
+          <div className="p-2 bg-background border rounded text-sm text-muted-foreground">
+            100px (조정 불가)
+          </div>
+          <p className="text-xs text-muted-foreground">
+            채팅창에서의 width는 100px로 고정됩니다.
+          </p>
+        </div>
       </div>
 
       {imagePreview && (
         <div className="pt-4">
-          <div className="flex items-center justify-center mb-2">
+          <div className="flex items-center justify-center mb-3">
             <ArrowDown className="text-muted-foreground w-5 h-5" />
           </div>
 
@@ -203,7 +320,7 @@ export default function ChatTitleUploadForm({
                   imageSrc={imagePreview}
                   metadata={{
                     width,
-                    scale,
+                    scale: scale / 100,
                     margin: getMarginString(),
                   }}
                 />
@@ -211,7 +328,10 @@ export default function ChatTitleUploadForm({
 
               <div className="mt-4 space-y-2">
                 <p className="text-xs text-muted-foreground">
-                  * width, scale, margin을 조절해 채팅창에서의 모습을 확인해보세요. 최종 승인 시 관리자가 조정할 수 있습니다.
+                  * 스타일을 조정하여 채팅창에서의 모습을 확인해보세요.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  * 최종 승인 시 관리자가 추가 조정할 수 있습니다.
                 </p>
               </div>
             </CardContent>
@@ -222,10 +342,20 @@ export default function ChatTitleUploadForm({
       <div className="flex justify-end">
         <Button
           onClick={handleUpload}
-          disabled={isUploading || !selectedFile || !imageName.trim()}
+          disabled={isUploading || !selectedFile || !imageName.trim() || isDuplicate}
+          className="min-w-32"
         >
-          <Upload className="w-4 h-4 mr-2" />
-          {isUploading ? "업로드 중..." : "업로드"}
+          {isUploading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              업로드 중...
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4 mr-2" />
+              업로드
+            </>
+          )}
         </Button>
       </div>
     </div>
