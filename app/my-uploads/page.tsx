@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { db, killfeedSubmission, chatTitleSubmission } from "@/lib/schema";
-import { eq, desc } from "drizzle-orm";
+import { imageService } from "@/services/image-service";
+import { getGameIdByDiscordId } from "@/services/game-service";
 import {
   Table,
   TableBody,
@@ -27,10 +27,14 @@ export const metadata: Metadata = {
   description: "내가 업로드한 이미지 목록을 확인합니다.",
 };
 
-type BaseSubmission = typeof killfeedSubmission.$inferSelect;
-
-interface SubmissionWithType extends BaseSubmission {
+interface SubmissionItem {
+  id: number;
+  fileName: string;
+  filePath: string;
   type: "killfeed" | "chat-title";
+  fileSize?: number | null;
+  uploadedAt: Date;
+  status: "pending" | "approved" | "rejected" | "processing";
 }
 
 export default async function MyUploadsPage() {
@@ -39,33 +43,46 @@ export default async function MyUploadsPage() {
     redirect("/login");
   }
 
-  const uploaderId = session.user.id;
+  let gameUserId: number | null = session.user.userId
+    ? Number(session.user.userId)
+    : null;
 
-  let submissions: SubmissionWithType[] = [];
+  if (!gameUserId && session.user.discordId) {
+    try {
+      const fetchedId = await getGameIdByDiscordId(session.user.discordId);
+      if (fetchedId !== null) {
+        gameUserId = typeof fetchedId === "string" ? Number(fetchedId) : fetchedId;
+      }
+    } catch (err) {
+      console.error("Failed to fetch game user id by discordId:", err);
+    }
+  }
+
+  if (!gameUserId) {
+    return (
+      <div className="container mx-auto max-w-4xl px-4 py-8 md:py-12 text-center">
+        <p className="text-red-500">게임 계정 연동 정보가 없습니다.</p>
+      </div>
+    );
+  }
+
+  let submissions: SubmissionItem[] = [];
   try {
-    const [killfeedUploads, chatTitleUploads] = await Promise.all([
-      db
-        .select()
-        .from(killfeedSubmission)
-        .where(eq(killfeedSubmission.userId, uploaderId))
-        .orderBy(desc(killfeedSubmission.uploadedAt)),
-      db
-        .select()
-        .from(chatTitleSubmission)
-        .where(eq(chatTitleSubmission.userId, uploaderId))
-        .orderBy(desc(chatTitleSubmission.uploadedAt)),
-    ]);
+    const images = await imageService.getUserImages(gameUserId);
 
-    submissions = [
-      ...killfeedUploads.map((upload) => ({
-        ...upload,
-        type: "killfeed" as const,
-      })),
-      ...chatTitleUploads.map((upload) => ({
-        ...upload,
-        type: "chat-title" as const,
-      })),
-    ].sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
+    submissions = images.map((img: any) => ({
+      id: img.id,
+      fileName: img.image ?? img.fileName ?? img.name,
+      filePath: `https://screenshot.dokku.co.kr/${
+        img.type === "killfeed" ? "killfeed-api" : "chat-api"
+      }/${img.image ?? img.fileName}`,
+      type: img.type === "chattitle" ? "chat-title" : (img.type as "killfeed"),
+      fileSize: img.metadata?.fileSize ?? null,
+      uploadedAt: new Date(img.created_at ?? img.uploadedAt ?? Date.now()),
+      status: img.status as "pending" | "approved" | "rejected" | "processing",
+    }));
+
+    submissions.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
   } catch (error) {
     console.error("Failed to fetch user uploads:", error);
     return (
@@ -78,8 +95,13 @@ export default async function MyUploadsPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8 md:py-12">
-      <h1 className="text-3xl font-bold tracking-tight mb-6">내 업로드 내역</h1>
+    <div className="container mx-auto max-w-6xl px-4 py-8 md:py-12 space-y-8">
+      <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 p-8">
+        <div className="relative">
+          <h1 className="text-3xl font-bold text-white mb-2">내 업로드 내역</h1>
+          <p className="text-white/80">업로드한 킬피드 / 채팅 칭호 이미지를 확인하세요.</p>
+        </div>
+      </div>
 
       {submissions.length === 0 ? (
         <Card>
@@ -94,68 +116,60 @@ export default async function MyUploadsPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]"></TableHead>
-                  <TableHead>파일명</TableHead>
-                  <TableHead className="w-[100px] text-center">유형</TableHead>
-                  <TableHead className="w-[120px] text-right">크기</TableHead>
-                  <TableHead className="w-[150px] text-center">
-                    업로드 날짜
-                  </TableHead>
-                  <TableHead className="w-[100px] text-center">상태</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {submissions.map((file) => (
-                  <TableRow key={file.id}>
-                    <TableCell className="text-center">
-                      <FileIcon className="h-5 w-5 text-muted-foreground mx-auto" />
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {file.fileName}
-                    </TableCell>
-                    <TableCell className="text-center text-sm">
-                      {file.type === "chat-title" ? "채팅 칭호" : "킬피드"}
-                    </TableCell>
-                    <TableCell className="text-right text-sm text-muted-foreground">
-                      {formatFileSize(file.fileSize)}
-                    </TableCell>
-                    <TableCell className="text-center text-sm text-muted-foreground">
-                      {format(new Date(file.uploadedAt), "yyyy-MM-dd HH:mm")}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          file.status === "approved"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                            : file.status === "rejected"
-                            ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                            : file.status === "processing"
-                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                        }`}
-                      >
-                        {file.status === "pending"
-                          ? "대기중"
-                          : file.status === "approved"
-                          ? "승인됨"
-                          : file.status === "rejected"
-                          ? "거절됨"
-                          : file.status === "processing"
-                          ? "처리중"
-                          : file.status}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {submissions.map((file) => (
+            <Card key={file.id} className="overflow-hidden flex flex-col">
+              {/* 이미지 썸네일 */}
+              <div className="relative w-full h-40 bg-muted flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={file.filePath}
+                  alt={file.fileName}
+                  className="object-contain max-h-full max-w-full"
+                />
+              </div>
+              <CardContent className="flex-1 flex flex-col p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium truncate" title={file.fileName}>
+                    {file.fileName}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {file.type === "chat-title" ? "채팅 칭호" : "킬피드"}
+                  </span>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {file.fileSize ? formatFileSize(file.fileSize) : "-"}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {format(new Date(file.uploadedAt), "yyyy-MM-dd HH:mm")}
+                </div>
+                <div>
+                  <span
+                    className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                      file.status === "approved"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : file.status === "rejected"
+                        ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                        : file.status === "processing"
+                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                        : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                    }`}
+                  >
+                    {file.status === "pending"
+                      ? "대기중"
+                      : file.status === "approved"
+                      ? "승인됨"
+                      : file.status === "rejected"
+                      ? "거절됨"
+                      : file.status === "processing"
+                      ? "처리중"
+                      : file.status}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );
