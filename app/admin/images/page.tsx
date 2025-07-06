@@ -66,7 +66,7 @@ export default async function AdminImagesPage({
       userId: sub.user_id.toString(),
       userNickname: sub.user_nickname || "Unknown",
       type: (sub.type === "killfeed" ? "killfeed" : "chat") as "killfeed" | "chat",
-      filePath: `https://screenshot.dokku.co.kr/images/game/${sub.type === "killfeed" ? "killfeed" : "chatTitle"}/${sub.image}`,
+      filePath: `https://screenshot.dokku.co.kr/${sub.type === "killfeed" ? "killfeed-api" : "chat-api"}/${sub.image}`,
       fileName: sub.image,
       fileSize: 0, // MySQL에 파일 크기 정보 없음
       uploadedAt: sub.created_at || new Date().toISOString(),

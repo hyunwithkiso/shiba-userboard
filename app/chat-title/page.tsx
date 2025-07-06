@@ -32,7 +32,7 @@ export default async function ChatTitlePage() {
     Number(userId)
   );
   const isAdmin = !!session.user?.isAdmin;
-  const hasTicket = ticketInfo.amount > 0 || isAdmin;
+  const hasTicket = ticketInfo.amount > 0;
   console.log(ticketInfo);
 
   return (

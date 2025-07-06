@@ -48,15 +48,13 @@ export async function POST(request: NextRequest) {
     const gameUserId = Number(session.user.userId); // 게임 유저 ID
     const isAdmin = !!session.user.isAdmin;
 
-    // 티켓 확인 (관리자는 제외)
-    if (!isAdmin) {
-      const ticketInfo = await realtimeService.getCheckAvailableKillFeed(gameUserId);
-      if (ticketInfo.amount <= 0) {
-        return NextResponse.json(
-          { error: "킬피드 이용권이 부족합니다." },
-          { status: 400 }
-        );
-      }
+    // 티켓 확인 (모든 사용자 대상)
+    const ticketInfo = await realtimeService.getCheckAvailableKillFeed(gameUserId);
+    if (ticketInfo.amount <= 0) {
+      return NextResponse.json(
+        { error: "킬피드 이용권이 부족합니다." },
+        { status: 400 }
+      );
     }
 
     // 외부 API로 업로드할 FormData 생성
@@ -126,6 +124,16 @@ export async function POST(request: NextRequest) {
         fileName: fileName,
         metadata: {} // 킬피드는 추가 메타데이터 없음
       });
+
+      // DB 저장 성공 후 티켓 차감
+      try {
+        await realtimeService.updateKillFeedAmount(String(gameUserId));
+        console.log(`[KillfeedAPI] Ticket deducted for user ${gameUserId}`);
+      } catch (ticketError) {
+        console.error("[KillfeedAPI] Error deducting ticket:", ticketError);
+        // 티켓 차감 실패 시에도 업로드는 성공으로 처리 (이미 DB에 저장됨)
+        // 관리자가 수동으로 처리할 수 있도록 로그만 남김
+      }
 
       // 응답 반환
       return NextResponse.json({

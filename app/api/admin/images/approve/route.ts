@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { imageService } from "@/services/image-service";
+import { realtimeService } from "@/services/realtime-service";
 
 // gameDbMetadata 타입 정의
 interface Metadata {
@@ -103,6 +104,24 @@ export async function POST(req: Request) {
         { error: "승인 상태 업데이트에 실패했습니다." },
         { status: 500 }
       );
+    }
+
+    // 거절된 경우 티켓 롤백 (관리자가 아닌 사용자만)
+    if (status === "rejected" && submission.user_id) {
+      try {
+        // type에 따라 적절한 롤백 함수 호출
+        if (type === "killfeed") {
+          await realtimeService.rollBackKillFeedAmount(String(submission.user_id));
+          console.log(`[AdminApproval] KillFeed ticket rolled back for user ${submission.user_id}`);
+        } else if (type === "chat") {
+          await realtimeService.rollBackChatTitleAmount(String(submission.user_id));
+          console.log(`[AdminApproval] ChatTitle ticket rolled back for user ${submission.user_id}`);
+        }
+      } catch (rollbackError) {
+        console.error("[AdminApproval] Error rolling back ticket:", rollbackError);
+        // 롤백 실패해도 승인/거절 처리는 성공으로 간주
+        // 관리자가 수동으로 처리할 수 있도록 로그만 남김
+      }
     }
 
     // 승인 거부 시 adminNotes를 별도로 처리하려면 추가 로직 필요

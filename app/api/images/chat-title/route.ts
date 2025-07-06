@@ -68,15 +68,13 @@ export async function POST(request: NextRequest) {
     const gameUserId = Number(session.user.userId); // 게임 유저 ID
     const isAdmin = !!session.user.isAdmin;
 
-    // 티켓 확인 (관리자는 제외)
-    if (!isAdmin) {
-      const ticketInfo = await realtimeService.getCheckAvailableChatTitle(gameUserId);
-      if (ticketInfo.amount <= 0) {
-        return NextResponse.json(
-          { error: "채팅 칭호 이용권이 부족합니다." },
-          { status: 400 }
-        );
-      }
+    // 티켓 확인 (모든 사용자 대상)
+    const ticketInfo = await realtimeService.getCheckAvailableChatTitle(gameUserId);
+    if (ticketInfo.amount <= 0) {
+      return NextResponse.json(
+        { error: "채팅 칭호 이용권이 부족합니다." },
+        { status: 400 }
+      );
     }
 
     // 외부 API로 업로드할 FormData 생성
@@ -86,7 +84,7 @@ export async function POST(request: NextRequest) {
     externalFormData.append("folder", "chatTitle");
 
     // 외부 API로 이미지 업로드
-    const uploadUrl = "https://screenshot.dokku.co.kr/files?type=chatTitle";
+    const uploadUrl = "https://screenshot.dokku.co.kr/files?type=chat";
     let response;
     try {
       response = await fetch(uploadUrl, {
@@ -146,6 +144,16 @@ export async function POST(request: NextRequest) {
         fileName: fileName,
         metadata: metadata // 채팅칭호 메타데이터 포함
       });
+
+      // DB 저장 성공 후 티켓 차감
+      try {
+        await realtimeService.updateChatTitleAmount(String(gameUserId));
+        console.log(`[ChatTitleAPI] Ticket deducted for user ${gameUserId}`);
+      } catch (ticketError) {
+        console.error("[ChatTitleAPI] Error deducting ticket:", ticketError);
+        // 티켓 차감 실패 시에도 업로드는 성공으로 처리 (이미 DB에 저장됨)
+        // 관리자가 수동으로 처리할 수 있도록 로그만 남김
+      }
 
       // 응답 반환
       return NextResponse.json({

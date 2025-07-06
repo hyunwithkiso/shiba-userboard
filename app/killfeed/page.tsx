@@ -32,7 +32,7 @@ export default async function KillfeedPage() {
     Number(userId)
   );
   const isAdmin = !!session.user?.isAdmin;
-  const hasTicket = ticketInfo.amount > 0 || isAdmin;
+  const hasTicket = ticketInfo.amount > 0;
 
   return (
     <main className="container max-w-5xl py-6 space-y-8 mx-auto">

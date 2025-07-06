@@ -159,5 +159,47 @@ export class RealtimeService {
 
     return response.json();
   }
+
+  async rollBackKillFeedAmount(user_id: string) {
+    const response = await fetch(
+      `${process.env.SHIBA_API_URL}/updatePlayerItem`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          key: process.env.SHIBA_API_KEY || "",
+        },
+        body: JSON.stringify({
+          user_id: user_id,
+          itemcode: "KillFeedTicket",
+          amount: 1,
+          type: "add",
+        }),
+      }
+    );
+
+    return response.json();
+  }
+
+  async rollBackChatTitleAmount(user_id: string) {
+    const response = await fetch(
+      `${process.env.SHIBA_API_URL}/updatePlayerItem`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          key: process.env.SHIBA_API_KEY || "",
+        },
+        body: JSON.stringify({
+          user_id: user_id,
+          itemcode: "ChatTitleTicket",
+          amount: 1,
+          type: "add",
+        }),
+      }
+    );
+
+    return response.json();
+  }
 }
 export const realtimeService = new RealtimeService();
