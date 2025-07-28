@@ -73,12 +73,22 @@ export async function POST(req: Request) {
     }
 
     // 이미 처리된 이미지인지 확인
+    // - 거절된 이미지는 추가 조작 불가
+    // - 승인된 이미지는 메타데이터 수정을 허용 (status가 approved로 다시 들어올 때)
     if (submission.approved !== 0) {
-      const statusText = submission.approved === 1 ? "승인" : "거절";
-      return NextResponse.json(
-        { error: `이미 ${statusText}된 이미지입니다.` },
-        { status: 400 }
-      );
+      if (submission.approved === 1 && status === "approved" && type === "chat") {
+        // 승인된 채팅 칭호이지만 메타데이터 수정 요청이므로 허용
+        console.log("[AdminApproval] Approved chat-title metadata update", {
+          imageId: numericImageId,
+          metadata,
+        });
+      } else {
+        const statusText = submission.approved === 1 ? "승인" : "거절";
+        return NextResponse.json(
+          { error: `이미 ${statusText}된 이미지입니다.` },
+          { status: 400 }
+        );
+      }
     }
 
     // 승인 상태 업데이트
@@ -132,6 +142,7 @@ export async function POST(req: Request) {
     revalidatePath("/my-uploads");
 
     const statusMessage = status === "approved" ? "승인" : "거부";
+
     return NextResponse.json({
       success: true,
       message: `이미지가 성공적으로 ${statusMessage}되었습니다.`,

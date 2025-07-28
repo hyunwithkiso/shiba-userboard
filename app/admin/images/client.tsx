@@ -43,10 +43,16 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
-import { Info, Trash2, ZoomIn, Search } from "lucide-react";
+import { Info, Trash2, ZoomIn, Search, MoreHorizontal } from "lucide-react";
 import { deleteImage } from "@/actions/image-action";
 import { Badge } from "@/components/ui/badge";
 import { ImageApprovalButton } from "@/components/admin/image-approval-button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import ChatTitleDialog from "@/components/admin/chat-title-dialog";
 import { Input } from "@/components/ui/input";
 import { formatDistanceToNow } from "date-fns";
@@ -434,32 +440,49 @@ export default function AdminImagesClient({
                       : "-"}
                   </TableCell>
                   <TableCell>
-                    <div className="flex justify-center gap-2">
-                      {submission.status === "pending" && (
-                        <>
-                          {submission.type === "chat" ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleChatTitleClick(submission)}
-                              className="w-full"
-                            >
-                              조정 및 승인/거절
+                    {/* Action Dropdown */}
+                      <div className="flex justify-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
                             </Button>
-                          ) : (
-                            <ImageApprovalButton
-                              imageId={submission.id}
-                              type={submission.type}
-                              onSuccess={refreshData}
-                            />
-                          )}
-                        </>
-                      )}
-                      {submission.status !== "pending" && (
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {submission.type === "chat" ? (
+                              <DropdownMenuItem
+                                onClick={() => handleChatTitleClick(submission)}
+                              >
+                                {submission.status === "pending"
+                                  ? "조정 및 승인/거절"
+                                  : "메타데이터 수정"}
+                              </DropdownMenuItem>
+                            ) : (
+                              submission.status === "pending" && (
+                                <DropdownMenuItem asChild>
+                                  <ImageApprovalButton
+                                    imageId={submission.id}
+                                    type={submission.type}
+                                    onSuccess={refreshData}
+                                  />
+                                </DropdownMenuItem>
+                              )
+                            )}
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => {
+                                setSelectedSubmission(submission);
+                                setIsDeleting(true);
+                              }}
+                            >
+                              삭제
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        {/* 삭제 확인 다이얼로그 */}
                         <Dialog
                           open={
-                            selectedSubmission?.id === submission.id &&
-                            isDeleting
+                            selectedSubmission?.id === submission.id && isDeleting
                           }
                           onOpenChange={(open) => {
                             if (!open) {
@@ -468,25 +491,11 @@ export default function AdminImagesClient({
                             }
                           }}
                         >
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedSubmission(submission);
-                                setIsDeleting(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              삭제
-                            </Button>
-                          </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
                               <DialogTitle>이미지 삭제</DialogTitle>
                               <DialogDescription>
-                                정말로 이 이미지를 삭제하시겠습니까? 이 작업은
-                                되돌릴 수 없습니다.
+                                정말로 이 이미지를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
                               </DialogDescription>
                             </DialogHeader>
                             <DialogFooter>
@@ -497,20 +506,15 @@ export default function AdminImagesClient({
                                   setIsDeleting(false);
                                 }}
                               >
-                                {" "}
-                                취소{" "}
+                                취소
                               </Button>
-                              <Button
-                                variant="destructive"
-                                onClick={handleDelete}
-                              >
+                              <Button variant="destructive" onClick={handleDelete}>
                                 삭제
                               </Button>
                             </DialogFooter>
                           </DialogContent>
                         </Dialog>
-                      )}
-                    </div>
+                      </div>
                   </TableCell>
                 </TableRow>
               ))}
