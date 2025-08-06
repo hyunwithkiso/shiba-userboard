@@ -204,24 +204,42 @@ export default function ChatTitleDialog({
                   <div className="space-y-1">
                     <Label htmlFor="marginTop" className="text-xs">상단 여백</Label>
                     <Input
-                      id="marginTop"
-                      type="number"
-                      value={marginTop}
-                      onChange={(e) => setMarginTop(parseInt(e.target.value) || 0)}
-                      min={-20}
-                      max={10}
-                    />
+  id="marginTop"
+  type="text"
+  inputMode="numeric"
+  pattern="-?\\d*"
+  value={marginTop}
+  onChange={e => {
+    let val = e.target.value.replace(/[^-\d]/g, "");
+    let num = parseInt(val, 10);
+    if (isNaN(num)) num = 0;
+    if (num < -10) num = -10;
+    if (num > 10) num = 10;
+    setMarginTop(num);
+  }}
+  maxLength={3}
+/>
+
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="marginSide" className="text-xs">좌우 여백</Label>
                     <Input
-                      id="marginSide"
-                      type="number"
-                      value={marginSide}
-                      onChange={(e) => setMarginSide(parseInt(e.target.value) || 0)}
-                      min={-20}
-                      max={10}
-                    />
+  id="marginSide"
+  type="text"
+  inputMode="numeric"
+  pattern="-?\\d*"
+  value={marginSide}
+  onChange={e => {
+    let val = e.target.value.replace(/[^-\d]/g, "");
+    let num = parseInt(val, 10);
+    if (isNaN(num)) num = 0;
+    if (num < -10) num = -10;
+    if (num > 10) num = 10;
+    setMarginSide(num);
+  }}
+  maxLength={3}
+/>
+
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
