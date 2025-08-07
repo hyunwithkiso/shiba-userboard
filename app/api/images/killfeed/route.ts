@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { realtimeService } from "@/services/realtime-service";
 import { imageService } from "@/services/image-service";
+import { UploadService } from "@/services/upload-service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,25 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 파일 타입 검증
-    const allowedTypes = ["image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: "PNG, WebP, GIF 파일만 업로드 가능합니다." },
-        { status: 400 }
-      );
-    }
-
-    // 파일 크기 검증 (500KB)
-    if (file.size > 500 * 1024) {
-      return NextResponse.json(
-        { error: "파일 크기는 500KB 이하여야 합니다." },
-        { status: 400 }
-      );
-    }
-
     const gameUserId = Number(session.user.userId); // 게임 유저 ID
-    const isAdmin = !!session.user.isAdmin;
 
     // 티켓 확인 (모든 사용자 대상)
     const ticketInfo = await realtimeService.getCheckAvailableKillFeed(gameUserId);
@@ -57,56 +40,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 외부 API로 업로드할 FormData 생성
-    const externalFormData = new FormData();
-    externalFormData.append("files", file);
-    externalFormData.append("bucket", "game");
-    externalFormData.append("folder", "killfeed");
+    // UploadService를 사용한 이미지 업로드
+    const uploadResult = await UploadService.uploadToExternalStorage({
+      file,
+      type: "killfeed"
+    });
 
-    // 외부 API로 이미지 업로드
-    const uploadUrl = "https://screenshot.dokku.co.kr/files?type=killfeed";
-    let response;
-    try {
-      response = await fetch(uploadUrl, {
-        method: "POST",
-        body: externalFormData,
-      });
-    } catch (error) {
-      console.error("외부 API 업로드 오류:", error);
+    if (!uploadResult.success) {
       return NextResponse.json(
-        { error: "이미지 업로드 중 네트워크 오류가 발생했습니다." },
-        { status: 500 }
+        { error: uploadResult.error },
+        { status: 400 }
       );
     }
 
-    if (!response.ok) {
-      let errorData;
-      try {
-        errorData = await response.json();
-      } catch (e) {
-        errorData = { error: "응답을 파싱할 수 없습니다." };
-      }
-
-      return NextResponse.json(
-        { error: errorData.error || "이미지 업로드 실패" },
-        { status: response.status }
-      );
-    }
-
-    // 응답에서 URL 추출
-    let responseData;
-    try {
-      responseData = await response.json();
-    } catch (error) {
-      console.error("응답 파싱 오류:", error);
-      return NextResponse.json(
-        { error: "업로드 응답을 파싱할 수 없습니다." },
-        { status: 500 }
-      );
-    }
-
-    const uploadedUrl = responseData.url;
-    const fileName = responseData.fileName;
+    const { url: uploadedUrl, fileName } = uploadResult;
 
     if (!uploadedUrl || !fileName) {
       return NextResponse.json(

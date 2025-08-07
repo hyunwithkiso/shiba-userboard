@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
     // 이미지 삭제 요청
     const deleteResponse = await fetch(
-      `https://screenshot.dokku.co.kr/delete?type=${type}&path=${image.filePath}`,
+      `https://screenshot.dokku.co.kr/delete?type=${type}&path=${image.image}`,
       {
         method: "DELETE",
       }

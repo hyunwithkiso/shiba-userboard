@@ -303,6 +303,86 @@ class ImageService {
       }
     }
   }
+
+  /**
+   * 이미지 이름(name)만 변경
+   */
+  async updateImageName(id: number, name: string) {
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [result] = await connection.execute(
+        "UPDATE dokku_userboard SET name = ? WHERE id = ?",
+        [name, id]
+      );
+      const affectedRows = (result as any).affectedRows;
+      console.log(`[ImageService] Updated image name for ID ${id}: ${name}`);
+      return affectedRows > 0;
+    } catch (error) {
+      console.error("[ImageService] Error updating image name:", error);
+      throw new Error("이미지 이름 변경 중 오류가 발생했습니다.");
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
+  }
+
+  /**
+   * 이미지 데이터 전체 업데이트 (어드민용)
+   */
+  async updateImageData(id: number, data: {
+    name?: string;
+    image?: string;
+    metadata?: any;
+  }) {
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      
+      const updateFields: string[] = [];
+      const params: any[] = [];
+      
+      if (data.name !== undefined) {
+        updateFields.push("name = ?");
+        params.push(data.name);
+      }
+      
+      if (data.image !== undefined) {
+        updateFields.push("image = ?");
+        params.push(data.image);
+      }
+      
+      // file_path 컬럼이 테이블에 없으므로 제거
+      // 파일 경로는 image 컬럼에 저장됨
+      
+      if (data.metadata !== undefined) {
+        updateFields.push("metadata = ?");
+        params.push(JSON.stringify(data.metadata));
+      }
+      
+      if (updateFields.length === 0) {
+        throw new Error("업데이트할 필드가 없습니다.");
+      }
+      
+      params.push(id);
+      
+      const query = `UPDATE dokku_userboard SET ${updateFields.join(", ")} WHERE id = ?`;
+      const [result] = await connection.execute(query, params);
+      
+      const affectedRows = (result as any).affectedRows;
+      console.log(`[ImageService] Updated image data for ID ${id}:`, data);
+      
+      return affectedRows > 0;
+    } catch (error) {
+      console.error("[ImageService] Error updating image data:", error);
+      throw new Error("이미지 데이터 업데이트 중 오류가 발생했습니다.");
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
+  }
 }
 
 export const imageService = new ImageService();

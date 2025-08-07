@@ -15,18 +15,18 @@ const VALIDATION_OPTIONS = {
   chatTitle: {
     maxSizeKB: 500,
     allowedFormats: ["image/png", "image/webp", "image/gif"] as const,
-    maxWidth: 800,
-    maxHeight: 400,
+    maxWidth: 200, // 정확히 200x50px
+    maxHeight: 50,
     minWidth: 200,
-    minHeight: 100,
+    minHeight: 50,
   },
   killfeed: {
     maxSizeKB: 300,
     allowedFormats: ["image/png", "image/webp", "image/gif"] as const,
-    maxWidth: 400,
-    maxHeight: 200,
-    minWidth: 100,
-    minHeight: 50,
+    maxWidth: 600, // 정확히 600x140px
+    maxHeight: 140,
+    minWidth: 600,
+    minHeight: 140,
   },
 } as const;
 
@@ -242,7 +242,7 @@ export const formatFileSize = (bytes: number, decimals = 1): string => {
 export const validateImageFile = (
   file: File,
   maxSize = 300 * 1024, // 기본 300KB
-  allowedTypes = ["image/jpeg", "image/png", "image/webp"]
+  allowedTypes: readonly string[] = ["image/jpeg", "image/png", "image/webp"]
 ): { valid: boolean; message?: string } => {
   // 파일 크기 검사
   if (file.size > maxSize) {

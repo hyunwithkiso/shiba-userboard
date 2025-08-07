@@ -54,6 +54,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import ChatTitleDialog from "@/components/admin/chat-title-dialog";
+import AdminImageEditDialog from "@/components/admin/AdminImageEditDialog";
 import { Input } from "@/components/ui/input";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -105,6 +106,10 @@ export default function AdminImagesClient({
   currentStatus,
   currentName = "",
 }: AdminImagesClientProps) {
+  // ... 기존 state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<null | { id: string; name: string; type: "killfeed" | "chat" }>(null);
+
   const router = useRouter();
   const [selectedSubmission, setSelectedSubmission] =
     useState<Submission | null>(null);
@@ -449,6 +454,18 @@ export default function AdminImagesClient({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+  <DropdownMenuItem
+    onClick={() => {
+      setEditTarget({
+        id: submission.id,
+        name: submission.name || submission.fileName,
+        type: submission.type,
+      });
+      setEditDialogOpen(true);
+    }}
+  >
+    이미지 수정
+  </DropdownMenuItem>
                             {submission.type === "chat" ? (
                               <DropdownMenuItem
                                 onClick={() => handleChatTitleClick(submission)}
@@ -622,6 +639,20 @@ export default function AdminImagesClient({
           onSuccess={refreshData}
         />
       )}
-    </div>
+    {/* 이미지 수정 다이얼로그 */}
+    {editTarget && (
+      <AdminImageEditDialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) setEditTarget(null);
+        }}
+        imageId={Number(editTarget.id)}
+        initialName={editTarget.name}
+        type={editTarget.type}
+        onSuccess={refreshData}
+      />
+    )}
+  </div>
   );
 }

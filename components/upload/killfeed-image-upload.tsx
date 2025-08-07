@@ -86,7 +86,7 @@ export const KillfeedImageUpload = ({
         <TooltipContent className="max-w-xs">
           <p>
             게임 킬피드 스타일의 이미지를 업로드하세요.
-            <br />• 권장 크기: 400x200px
+            <br />• 정확한 크기: 600x140px
             <br />• 최대 파일 크기: 300KB
             <br />• 지원 형식: PNG, WebP, GIF
           </p>
