@@ -35,6 +35,7 @@ interface SubmissionItem {
   fileSize?: number | null;
   uploadedAt: Date;
   status: "pending" | "approved" | "rejected" | "processing";
+  reason?: string | null;
 }
 
 export default async function MyUploadsPage() {
@@ -72,7 +73,7 @@ export default async function MyUploadsPage() {
 
     submissions = images.map((img: any) => ({
       id: img.id,
-      fileName: img.image ?? img.fileName ?? img.name,
+      fileName: img.name ?? img.fileName ?? img.image,
       filePath: `https://screenshot.dokku.co.kr/${
         img.type === "killfeed" ? "killfeed-api" : "chat-api"
       }/${img.image ?? img.fileName}`,
@@ -80,6 +81,7 @@ export default async function MyUploadsPage() {
       fileSize: img.metadata?.fileSize ?? null,
       uploadedAt: new Date(img.created_at ?? img.uploadedAt ?? Date.now()),
       status: img.status as "pending" | "approved" | "rejected" | "processing",
+      reason: img.reason || null,
     }));
 
     submissions.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
@@ -138,12 +140,9 @@ export default async function MyUploadsPage() {
                   </span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {file.fileSize ? formatFileSize(file.fileSize) : "-"}
+                  {file.fileSize ? formatFileSize(file.fileSize) : ""}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {format(new Date(file.uploadedAt), "yyyy-MM-dd HH:mm")}
-                </div>
-                <div>
+                <div className="space-y-1">
                   <span
                     className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                       file.status === "approved"
@@ -165,6 +164,11 @@ export default async function MyUploadsPage() {
                       ? "처리중"
                       : file.status}
                   </span>
+                  {file.reason && (
+                    <div className="text-xs text-muted-foreground bg-muted p-2 rounded text-wrap break-words">
+                      <strong>메모:</strong> {file.reason}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

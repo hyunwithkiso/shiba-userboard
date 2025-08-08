@@ -107,7 +107,7 @@ class ImageService {
   /**
    * 이미지 승인 상태 업데이트
    */
-  async updateApprovalStatus(id: number, status: "approved" | "rejected", metadata?: any) {
+  async updateApprovalStatus(id: number, status: "approved" | "rejected", metadata?: any, reason?: string) {
     let connection;
     try {
       connection = await pool.getConnection();
@@ -121,6 +121,11 @@ class ImageService {
       if (metadata) {
         query += ", metadata = ?";
         params.push(JSON.stringify(metadata));
+      }
+      
+      if (reason) {
+        query += ", reason = ?";
+        params.push(reason);
       }
       
       query += " WHERE id = ?";

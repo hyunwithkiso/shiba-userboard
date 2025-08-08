@@ -83,6 +83,7 @@ interface Submission {
   reviewerNickname: string | null;
   reviewerUserId: string | null;
   adminNotes: string | null;
+  reason: string | null;
   userGameId: string | null;
   gameDbMetadata?: Metadata | null;
   name?: string;
@@ -332,7 +333,7 @@ export default function AdminImagesClient({
                 <TableHead>타입</TableHead>
                 <TableHead>유저 정보</TableHead>
                 <TableHead>상태</TableHead>
-                <TableHead>업로드 일시</TableHead>
+                <TableHead>메모/사유</TableHead>
                 <TableHead>검토자</TableHead>
                 <TableHead>검토 일시</TableHead>
                 <TableHead className="text-center">관리</TableHead>
@@ -407,7 +408,18 @@ export default function AdminImagesClient({
                         : "대기중"}
                     </Badge>
                   </TableCell>
-                  <TableCell>{formatDate(submission.uploadedAt)}</TableCell>
+                  <TableCell>
+                    {submission.reason ? (
+                      <div className="max-w-[100px] truncate text-sm" title={submission.reason}>
+                        {submission.reason.length > 8 
+                          ? `${submission.reason.substring(0, 8)}...`
+                          : submission.reason
+                        }
+                      </div>
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
                   <TableCell>
                     {submission.reviewerId ? (
                       <HoverCard>

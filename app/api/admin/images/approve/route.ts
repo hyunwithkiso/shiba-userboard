@@ -106,7 +106,8 @@ export async function POST(req: Request) {
     const updateSuccess = await imageService.updateApprovalStatus(
       numericImageId,
       status,
-      finalMetadata
+      finalMetadata,
+      adminNotes
     );
 
     if (!updateSuccess) {
@@ -153,8 +154,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 승인 거부 시 adminNotes를 별도로 처리하려면 추가 로직 필요
-    // 현재 dokku_userboard 테이블에는 adminNotes 필드가 없음
+    // adminNotes는 이제 reason 컬럼에 저장됨
 
     // 캐시 재검증
     revalidatePath("/admin/images");
