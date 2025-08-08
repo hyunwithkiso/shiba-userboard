@@ -229,7 +229,7 @@ export default function ChatTitleUploadForm({
 
         <ImageUpload
           onFileSelect={handleFileSelect}
-          maxSize={500 * 1024} // 500KB 제한 (image-upload-utils와 일치)
+          maxSize={200 * 1024} // 200KB 제한
           acceptedTypes={["image/png", "image/webp", "image/gif"]}
           exactWidth={200}
           exactHeight={50}

@@ -60,9 +60,9 @@ export default function ChatTitleImageUpload({
     if (!file) return;
 
     try {
-      // 파일 크기 검증 (500KB 제한)
-      if (file.size > 500 * 1024) {
-        toast.error("파일 크기는 500KB 이하여야 합니다.");
+      // 파일 크기 검증 (200KB 제한)
+      if (file.size > 200 * 1024) {
+        toast.error("파일 크기는 200KB 이하여야 합니다.");
         return;
       }
 
@@ -114,7 +114,7 @@ export default function ChatTitleImageUpload({
       <div className="mb-2 flex items-center justify-between">
         <p className="text-sm font-medium text-neutral-700">채팅 칭호 이미지</p>
         <p className="text-xs text-neutral-500">
-          권장 사이즈: 600 x 200 (최대 500KB)
+          권장 사이즈: 200 x 50 (최대 200KB)
         </p>
       </div>
 

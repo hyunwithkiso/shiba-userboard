@@ -56,7 +56,7 @@ export default async function ChatTitlePage() {
       <Alert className="bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800">
         <Info className="h-4 w-4 stroke-emerald-600 dark:stroke-emerald-400" />
         <AlertDescription className="text-emerald-800 dark:text-emerald-200">
-          <strong>중요:</strong> 이미지 이름은 아이템 이름으로 사용되며, '이미지이름'의 채팅 칭호 아이템으로 생성됩니다.
+          <strong>중요:</strong> 이미지 이름은 아이템 이름으로 사용되며, '이미지이름' 채팅 칭호로 생성됩니다.
         </AlertDescription>
       </Alert>
 

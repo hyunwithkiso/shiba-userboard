@@ -50,7 +50,7 @@ export default function AdminImageEditDialog({
 
     try {
       // image-upload-utils의 검증 로직 사용
-      const maxSize = type === "killfeed" ? 300 * 1024 : 500 * 1024; // image-upload-utils와 일치
+      const maxSize = type === "killfeed" ? 500 * 1024 : 200 * 1024; // 킬피드: 500KB, 채팅칭호: 200KB
       const allowedTypes = ["image/png", "image/webp", "image/gif"];
       
       const validation = validateImageFile(selectedFile, maxSize, allowedTypes);
@@ -64,9 +64,9 @@ export default function AdminImageEditDialog({
         const img = new window.Image();
         img.onload = () => {
           if (type === "killfeed") {
-            // 킬피드: 정확히 600x140px
-            if (img.width !== 600 || img.height !== 140) {
-              resolve({ valid: false, message: "킬피드 이미지는 정확히 600x140px이어야 합니다." });
+            // 킬피드: 정확히 640x140px
+            if (img.width !== 640 || img.height !== 140) {
+              resolve({ valid: false, message: "킬피드 이미지는 정확히 640x140px이어야 합니다." });
               return;
             }
           } else if (type === "chat") {
@@ -230,7 +230,7 @@ export default function AdminImageEditDialog({
                         이미지 선택
                       </p>
                       <p className="text-xs text-neutral-500">
-                        PNG, WebP, GIF ({type === "killfeed" ? "최대 300KB" : "최대 500KB"})
+                        PNG, WebP, GIF ({type === "killfeed" ? "최대 500KB" : "최대 200KB"})
                       </p>
                     </div>
                   </div>

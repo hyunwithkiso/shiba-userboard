@@ -40,7 +40,7 @@ class ImageService {
         [
           data.userId,
           fullCode,
-          data.name,
+          data.type === "chattitle" ? `${data.name} 채팅 칭호` : `${data.name} 킬피드`,
           data.type,
           data.fileName,
           metadataString,
@@ -381,6 +381,58 @@ class ImageService {
       if (connection) {
         connection.release();
       }
+    }
+  }
+
+  /**
+   * 게임 서버에 유저보드 아이템 갱신 알림
+   */
+  async refreshUserBoardItem(data: {
+    insert_id: number;
+    user_id: number;
+    isNew: boolean;
+  }) {
+    try {
+      if (!process.env.SHIBA_API_URL) {
+        console.warn("[ImageService] SHIBA_API_URL is not defined, skipping refresh");
+        return { success: false, error: "API URL not configured" };
+      }
+
+      const response = await fetch(
+        `${process.env.SHIBA_API_URL}/refreshUserBoardItem`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            key: process.env.SHIBA_API_KEY || "",
+          },
+          body: JSON.stringify({
+            insert_id: data.insert_id,
+            user_id: data.user_id,
+            isNew: data.isNew
+          }),
+          cache: "no-store",
+        }
+      );
+
+      if (!response.ok) {
+        console.warn(`[ImageService] Failed to refresh user board item: ${response.status}`);
+        return { 
+          success: false, 
+          error: `API responded with status ${response.status}` 
+        };
+      }
+
+      const result = await response.json();
+      console.log(`[ImageService] Successfully refreshed user board item for user ${data.user_id}, insert_id: ${data.insert_id}, isNew: ${data.isNew}`);
+      
+      return { success: true, data: result };
+    } catch (error) {
+      console.error("[ImageService] Error refreshing user board item:", error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      };
     }
   }
 }

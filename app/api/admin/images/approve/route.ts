@@ -116,6 +116,25 @@ export async function POST(req: Request) {
       );
     }
 
+    // 승인된 경우 게임 서버에 유저보드 아이템 갱신 알림
+    if (status === "approved" && submission.user_id) {
+      try {
+        // 최초 승인인지 확인 (이전에 승인되지 않았던 경우 isNew = true)
+        const isNew = submission.approved !== 1;
+        
+        await imageService.refreshUserBoardItem({
+          insert_id: numericImageId,
+          user_id: submission.user_id,
+          isNew: isNew
+        });
+        console.log(`[AdminApproval] User board item refreshed for user ${submission.user_id}, isNew: ${isNew}`);
+      } catch (refreshError) {
+        console.error("[AdminApproval] Error refreshing user board item:", refreshError);
+        // 갱신 알림 실패해도 승인 처리는 성공으로 간주
+        // 관리자가 수동으로 처리할 수 있도록 로그만 남김
+      }
+    }
+
     // 거절된 경우 티켓 롤백 (관리자가 아닌 사용자만)
     if (status === "rejected" && submission.user_id) {
       try {

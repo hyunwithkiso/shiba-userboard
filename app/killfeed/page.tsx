@@ -52,7 +52,7 @@ export default async function KillfeedPage() {
       <Alert className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
         <Info className="h-4 w-4 stroke-orange-600 dark:stroke-orange-400" />
         <AlertDescription className="text-orange-800 dark:text-orange-200">
-          <strong>중요:</strong> 이미지 이름은 아이템 이름으로 사용되며, '이미지이름'의 킬피드 아이템으로 생성됩니다.
+          <strong>중요:</strong> 이미지 이름은 아이템 이름으로 사용되며, '이미지이름' 킬피드로 생성됩니다.
         </AlertDescription>
       </Alert>
 

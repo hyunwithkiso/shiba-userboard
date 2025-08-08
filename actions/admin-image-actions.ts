@@ -107,6 +107,21 @@ export async function updateImageAction(options: UpdateImageOptions): Promise<Ac
     const success = await imageService.updateImageData(imageId, updateData);
     
     if (success) {
+      // 이미지가 승인된 상태라면 게임 서버에 갱신 알림
+      if (existingImage.approved === 1) {
+        try {
+          await imageService.refreshUserBoardItem({
+            insert_id: imageId,
+            user_id: existingImage.user_id,
+            isNew: false // 수정이므로 false
+          });
+          console.log(`[AdminImageActions] User board item refreshed for user ${existingImage.user_id} after modification`);
+        } catch (refreshError) {
+          console.error("[AdminImageActions] Error refreshing user board item after modification:", refreshError);
+          // 갱신 알림 실패해도 수정 처리는 성공으로 간주
+        }
+      }
+
       revalidatePath("/admin/images");
       revalidatePath("/my-uploads");
       
@@ -157,6 +172,21 @@ export async function updateChatTitleMetadataAction(
     const success = await imageService.updateMetadata(imageId, metadata);
     
     if (success) {
+      // 이미지가 승인된 상태라면 게임 서버에 갱신 알림
+      if (existingImage.approved === 1) {
+        try {
+          await imageService.refreshUserBoardItem({
+            insert_id: imageId,
+            user_id: existingImage.user_id,
+            isNew: false // 메타데이터 수정이므로 false
+          });
+          console.log(`[AdminImageActions] User board item refreshed for user ${existingImage.user_id} after metadata update`);
+        } catch (refreshError) {
+          console.error("[AdminImageActions] Error refreshing user board item after metadata update:", refreshError);
+          // 갱신 알림 실패해도 수정 처리는 성공으로 간주
+        }
+      }
+
       revalidatePath("/admin/images");
       revalidatePath("/my-uploads");
       return { success: true, message: "채팅 칭호 설정이 수정되었습니다." };

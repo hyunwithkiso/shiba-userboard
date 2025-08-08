@@ -18,15 +18,15 @@ export class UploadService {
   // 정확한 이미지 크기 설정
   private static readonly VALIDATION_OPTIONS: Record<string, ImageValidationOptions> = {
     killfeed: {
-      maxSizeKB: 300,
+      maxSizeKB: 500,
       allowedFormats: ["image/png", "image/webp", "image/gif"],
-      maxWidth: 600, // 600px x 140px
+      maxWidth: 640, // 640px x 140px
       maxHeight: 140,
-      minWidth: 600,
+      minWidth: 640,
       minHeight: 140,
     },
     "chat-title": {
-      maxSizeKB: 500,
+      maxSizeKB: 200,
       allowedFormats: ["image/png", "image/webp", "image/gif"],
       maxWidth: 200, // 200px x 50px
       maxHeight: 50,

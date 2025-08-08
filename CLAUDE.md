@@ -9,6 +9,7 @@ This is a Next.js 15 application called "SHIBA 유저보드" - a Korean gaming c
 ## Key Development Commands
 
 - `npm run dev --turbopack`: Start development server with Turbopack
+- `npm run dev`: Start development server without Turbopack  
 - `npm run build`: Build for production 
 - `npm start`: Start production server
 - `npm run lint`: Run ESLint
@@ -20,7 +21,7 @@ This is a Next.js 15 application called "SHIBA 유저보드" - a Korean gaming c
 - `npx drizzle-kit push`: Push schema changes directly (dev only)
 - `npx drizzle-kit studio`: Launch Drizzle Studio (database GUI)
 
-Database uses PostgreSQL with Drizzle ORM. Schema located in `lib/schema.ts`.
+Database uses PostgreSQL with Drizzle ORM. Schema located in `lib/schema.ts`. Configuration in `drizzle.config.ts` requires `DB_URL` environment variable.
 
 ## Architecture Overview
 
@@ -113,13 +114,19 @@ NextAuth.js v5 with custom Discord provider:
 Always generate migrations with `npx drizzle-kit generate` after schema changes. Both PostgreSQL (Drizzle) and MySQL (legacy) systems need consideration.
 
 **Authentication Context**:
-User sessions include: `id`, `nickname`, `gameId`, `discordId`, `isAdmin`, `userId`. Check admin status for sensitive operations.
+User sessions include: `id`, `nickname`, `gameId`, `discordId`, `isAdmin`, `userId`. Check admin status for sensitive operations. There are duplicate type definitions in `next-auth.d.ts` and `types/next-auth.d.ts` - the root level one should be considered canonical.
 
 **Error Handling**:
 Services use try/catch with detailed logging. UI components handle service errors gracefully with user feedback.
 
-**TypeScript Configuration**:
-Path alias `@/*` maps to project root. Strict mode enabled with some flexibility for legacy integrations.
 
 **Environment Variables**:
-Required: `DATABASE_URL`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `AUTH_SECRET`, `TEBEX_*` variables for payment processing.
+Required: `DATABASE_URL` (or `DB_URL` for Drizzle), `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `AUTH_SECRET`, `TEBEX_*` variables for payment processing.
+
+MySQL variables for legacy game integration: `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`.
+
+**Image Hosting**:
+External image uploads go through proxy.dokku.co.kr and screenshot.dokku.co.kr domains (configured in Next.js image optimization).
+
+**TypeScript Configuration**:
+Uses relaxed TypeScript with `noImplicitAny: false` for legacy compatibility. Path mapping `@/*` resolves to project root.

@@ -15,7 +15,7 @@ const VALIDATION_OPTIONS = {
   chatTitle: {
     maxSizeKB: 500,
     allowedFormats: ["image/png", "image/webp", "image/gif"] as const,
-    maxWidth: 200, // 정확히 200x50px
+    maxWidth: 200,
     maxHeight: 50,
     minWidth: 200,
     minHeight: 50,
@@ -23,9 +23,9 @@ const VALIDATION_OPTIONS = {
   killfeed: {
     maxSizeKB: 300,
     allowedFormats: ["image/png", "image/webp", "image/gif"] as const,
-    maxWidth: 600, // 정확히 600x140px
+    maxWidth: 640,
     maxHeight: 140,
-    minWidth: 600,
+    minWidth: 640,
     minHeight: 140,
   },
 } as const;
