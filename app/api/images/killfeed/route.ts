@@ -88,18 +88,8 @@ export async function POST(request: NextRequest) {
         // 관리자가 수동으로 처리할 수 있도록 로그만 남김
       }
 
-      // 게임 서버에 새 아이템 알림 (pending 상태로 생성됨을 알림)
-      try {
-        await imageService.refreshUserBoardItem({
-          insert_id: result.id,
-          user_id: gameUserId,
-          isNew: true // 새로 생성된 아이템
-        });
-        console.log(`[KillfeedAPI] User board item creation notified for user ${gameUserId}, insert_id: ${result.id}`);
-      } catch (refreshError) {
-        console.error("[KillfeedAPI] Error notifying user board item creation:", refreshError);
-        // 알림 실패해도 업로드는 성공으로 처리
-      }
+      // 업로드 완료 (pending 상태) - 승인 시에만 refreshUserBoardItem 호출됨
+      console.log(`[KillfeedAPI] Killfeed uploaded successfully for user ${gameUserId}, insert_id: ${result.id} (pending approval)`);
 
       // 응답 반환
       return NextResponse.json({
