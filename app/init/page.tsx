@@ -104,7 +104,7 @@ export default async function InitPage() {
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-2">유저 정보 확인</h1>
           <p className="text-muted-foreground">
-            Discord 계정 정보를 확인하고 초기화를 완료해주세요.
+          인게임 연동 정보를 확인하고 완료해주세요.
           </p>
         </div>
         <InitForm

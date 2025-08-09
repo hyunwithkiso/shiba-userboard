@@ -104,7 +104,7 @@ export default async function ProfilePage() {
               기본 정보
             </CardTitle>
             <CardDescription>
-              Discord 계정으로 연동된 기본 정보입니다
+              인게임 연동된 기본 정보입니다
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

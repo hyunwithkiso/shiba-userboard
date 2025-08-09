@@ -91,7 +91,7 @@ export default function InitForm({ discordProfile, gameId }: InitFormProps) {
       <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg p-1">
         <div className="bg-white dark:bg-gray-900 rounded-md p-4">
           <h2 className="text-lg font-semibold text-center mb-2">
-            Discord 계정 연결 완료
+            인게임 연동
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
             아래 정보를 확인하고 완료 버튼을 눌러주세요.
@@ -184,7 +184,9 @@ export default function InitForm({ discordProfile, gameId }: InitFormProps) {
         {gameId === null && (
           <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
             <p className="text-sm text-red-800 dark:text-red-200">
-              <strong>오류:</strong> 지정된 Discord 서버의 멤버가 아닙니다, 관리자에게 문의해주세요
+              <strong>오류:</strong> 현재 인게임에서 디스코드 연동이 완료되지 않았습니다.<br />
+              ESC 메뉴에서 디스코드 연동을 먼저 진행해주시기 바랍니다.<br />
+              만약 인게임에서 디스코드 연동 메뉴가 표시되지 않을 경우, 고객센터로 문의해주시기 바랍니다.
             </p>
           </div>
         )}
@@ -226,7 +228,7 @@ export default function InitForm({ discordProfile, gameId }: InitFormProps) {
                 clipRule="evenodd"
               />
             </svg>
-초기화가 완료되었습니다. 3초 후 메인 페이지로 이동합니다...
+연동이 완료되었습니다. 3초 후 메인 페이지로 이동합니다...
           </div>
         </div>
       )}
@@ -282,7 +284,7 @@ export default function InitForm({ discordProfile, gameId }: InitFormProps) {
             완료됨
           </div>
         ) : gameId !== null ? (
-          "초기화 완료"
+          "연동 완료"
         ) : (
           "등록되지 않은 계정"
         )}

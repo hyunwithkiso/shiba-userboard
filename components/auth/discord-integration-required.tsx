@@ -17,14 +17,14 @@ export function DiscordIntegrationRequired() {
               <Bot className="w-8 h-8 text-purple-600 dark:text-purple-400" />
             </div>
             <CardTitle className="text-xl text-purple-800 dark:text-purple-300">
-              디스코드 연동이 필요합니다
+              인게임 연동이 필요합니다
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
               <Info className="h-4 w-4 stroke-purple-600 dark:stroke-purple-400" />
               <AlertDescription className="text-purple-800 dark:text-purple-200 text-sm">
-                SHIBA 유저보드의 모든 기능을 이용하려면 디스코드 계정 연동이 필요합니다.
+                SHIBA 유저보드의 모든 기능을 이용하려면 인게임 연동이 필요합니다.
               </AlertDescription>
             </Alert>
             
@@ -39,7 +39,7 @@ export function DiscordIntegrationRequired() {
                   className="flex items-center justify-center gap-2"
                 >
                   <Bot className="w-4 h-4" />
-                디스코드 연동하기
+                인게임 연동하기
                   <ExternalLink className="w-3 h-3" />
                 </Link>
               </Button>
