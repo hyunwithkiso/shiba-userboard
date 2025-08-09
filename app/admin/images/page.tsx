@@ -69,7 +69,7 @@ export default async function AdminImagesPage({
     // 데이터 형식 변환 (기존 client 컴포넌트와 호환)
     const formattedSubmissions = submissions.map((sub: any) => ({
       id: sub.id.toString(),
-      userId: sub.user_id.toString(),
+      userId: sub.user_id ? sub.user_id.toString() : undefined,
       userNickname: sub.user_nickname || "Unknown",
       type: (sub.type === "killfeed" ? "killfeed" : "chat") as "killfeed" | "chat",
       filePath: `https://screenshot.dokku.co.kr/${sub.type === "killfeed" ? "killfeed-api" : "chat-api"}/${sub.image}`,

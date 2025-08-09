@@ -119,6 +119,7 @@ export default function AdminImagesClient({
   const [type, setType] = useState(currentType);
   const [status, setStatus] = useState(currentStatus);
   const [nameSearch, setNameSearch] = useState(currentName);
+  const [pageInput, setPageInput] = useState(currentPage.toString());
   const [chatTitleDialogOpen, setChatTitleDialogOpen] = useState(false);
   const [selectedChatTitleData, setSelectedChatTitleData] = useState<{
     id: string;
@@ -171,6 +172,22 @@ export default function AdminImagesClient({
       ...(nameSearch && { name: nameSearch }),
     });
     router.push(`/admin/images?${searchParams.toString()}`);
+  };
+
+  const handlePageInputBlur = () => {
+    const pageNum = parseInt(pageInput);
+    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+      handlePageChange(pageNum);
+    } else {
+      // 유효하지 않은 값이면 현재 페이지로 되돌리기
+      setPageInput(currentPage.toString());
+    }
+  };
+
+  const handlePageInputKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handlePageInputBlur();
+    }
   };
 
   const handleDelete = async () => {
@@ -544,7 +561,7 @@ export default function AdminImagesClient({
           </Table>
 
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2 pt-4">
+            <div className="flex justify-center items-center gap-2 pt-4 flex-wrap">
               <Button
                 variant="outline"
                 onClick={() => handlePageChange(currentPage - 1)}
@@ -552,18 +569,59 @@ export default function AdminImagesClient({
               >
                 이전
               </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
-                    size="icon"
-                    onClick={() => handlePageChange(page)}
-                  >
-                    {page}
-                  </Button>
-                )
-              )}
+              
+              {/* 스마트 페이지네이션 */}
+              {(() => {
+                const delta = 2; // 현재 페이지 양쪽으로 보여줄 페이지 수
+                const rangeWithDots: (number | string)[] = [];
+
+                // 시작과 끝 계산
+                const start = Math.max(1, currentPage - delta);
+                const end = Math.min(totalPages, currentPage + delta);
+
+                // 첫 페이지
+                if (start > 1) {
+                  rangeWithDots.push(1);
+                  if (start > 2) {
+                    rangeWithDots.push('...');
+                  }
+                }
+
+                // 현재 페이지 주변
+                for (let i = start; i <= end; i++) {
+                  rangeWithDots.push(i);
+                }
+
+                // 마지막 페이지
+                if (end < totalPages) {
+                  if (end < totalPages - 1) {
+                    rangeWithDots.push('...');
+                  }
+                  rangeWithDots.push(totalPages);
+                }
+
+                return rangeWithDots.map((page, index) => {
+                  if (page === '...') {
+                    return (
+                      <span key={`dots-${index}`} className="px-2 text-muted-foreground">
+                        ...
+                      </span>
+                    );
+                  }
+                  
+                  return (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="icon"
+                      onClick={() => handlePageChange(page as number)}
+                    >
+                      {page}
+                    </Button>
+                  );
+                });
+              })()}
+
               <Button
                 variant="outline"
                 onClick={() => handlePageChange(currentPage + 1)}
@@ -571,6 +629,22 @@ export default function AdminImagesClient({
               >
                 다음
               </Button>
+              
+              {/* 페이지 직접 입력 */}
+              <div className="flex items-center gap-2 ml-4 text-sm text-muted-foreground">
+                <span>페이지</span>
+                <input
+                  type="number"
+                  min="1"
+                  max={totalPages}
+                  value={pageInput}
+                  onChange={(e) => setPageInput(e.target.value)}
+                  onBlur={handlePageInputBlur}
+                  onKeyPress={handlePageInputKeyPress}
+                  className="w-16 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+                <span>/ {totalPages}</span>
+              </div>
             </div>
           )}
         </CardContent>
