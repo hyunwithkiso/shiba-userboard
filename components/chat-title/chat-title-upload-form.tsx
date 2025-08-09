@@ -11,6 +11,17 @@ import ChatTitleExample from "@/components/chat/chat-title-example";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ChatTitleUploadFormProps {
   onSuccess?: () => void;
@@ -24,6 +35,7 @@ export default function ChatTitleUploadForm({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imageName, setImageName] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   
   // 중복 검사 상태
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
@@ -103,7 +115,7 @@ export default function ChatTitleUploadForm({
   // 고정된 마진 형식: -5px -10px 0
   const getMarginString = () => `${marginTop}px ${marginSide}px ${marginBottom}px`;
 
-  const handleUpload = async () => {
+  const handleUploadClick = () => {
     if (!selectedFile) return;
     if (!imageName.trim()) {
       toast.error("이름을 입력해주세요.");
@@ -115,8 +127,17 @@ export default function ChatTitleUploadForm({
       return;
     }
 
+    // 확인 모달 표시
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!selectedFile) return;
+
     try {
       setIsUploading(true);
+      setShowConfirmDialog(false);
+      
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("name", imageName.trim());
@@ -330,23 +351,43 @@ export default function ChatTitleUploadForm({
       )}
 
       <div className="flex justify-end">
-        <Button
-          onClick={handleUpload}
-          disabled={isUploading || !selectedFile || !imageName.trim() || isDuplicate}
-          className="min-w-32"
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              업로드 중...
-            </>
-          ) : (
-            <>
-              <Upload className="w-4 h-4 mr-2" />
-              업로드
-            </>
-          )}
-        </Button>
+        <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <AlertDialogTrigger asChild>
+            <Button
+              onClick={handleUploadClick}
+              disabled={isUploading || !selectedFile || !imageName.trim() || isDuplicate}
+              className="min-w-32"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  업로드 중...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  업로드
+                </>
+              )}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>업로드 확인</AlertDialogTitle>
+              <AlertDialogDescription>
+                신청한 아이템 이름은 <strong>"{imageName} 채팅 칭호"</strong>로 생성됩니다.
+                <br />
+                계속 진행하시겠습니까?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmUpload}>
+                확인
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
