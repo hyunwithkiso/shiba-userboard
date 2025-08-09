@@ -285,28 +285,59 @@ export default function ChatTitleUploadForm({
         <div className="space-y-3">
           <Label>여백 조정 (px)</Label>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="marginTop" className="text-xs">상단 여백</Label>
+            {/* 상단 여백 */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="marginTop" className="text-xs">상단 여백</Label>
+                <span className="text-xs text-muted-foreground">{marginTop}px</span>
+              </div>
+              <Slider
+                id="marginTop-slider"
+                value={[marginTop]}
+                onValueChange={(value) => setMarginTop(value[0])}
+                min={-15}
+                max={15}
+                step={1}
+                disabled={isUploading}
+                className="mb-2"
+              />
               <Input
                 id="marginTop"
                 type="number"
                 value={marginTop}
-                onChange={(e) => setMarginTop(parseInt(e.target.value) || 0)}
-                min={-20}
-                max={10}
+                onChange={(e) => setMarginTop(Math.max(-15, Math.min(15, parseInt(e.target.value) || 0)))}
+                min={-15}
+                max={15}
                 disabled={isUploading}
+                className="text-xs h-8"
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="marginSide" className="text-xs">좌우 여백</Label>
+            
+            {/* 좌우 여백 */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="marginSide" className="text-xs">좌우 여백</Label>
+                <span className="text-xs text-muted-foreground">{marginSide}px</span>
+              </div>
+              <Slider
+                id="marginSide-slider"
+                value={[marginSide]}
+                onValueChange={(value) => setMarginSide(value[0])}
+                min={-15}
+                max={15}
+                step={1}
+                disabled={isUploading}
+                className="mb-2"
+              />
               <Input
                 id="marginSide"
                 type="number"
                 value={marginSide}
-                onChange={(e) => setMarginSide(parseInt(e.target.value) || 0)}
-                min={-20}
-                max={10}
+                onChange={(e) => setMarginSide(Math.max(-15, Math.min(15, parseInt(e.target.value) || 0)))}
+                min={-15}
+                max={15}
                 disabled={isUploading}
+                className="text-xs h-8"
               />
             </div>
           </div>

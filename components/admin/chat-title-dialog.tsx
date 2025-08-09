@@ -203,45 +203,60 @@ export default function ChatTitleDialog({
               <div className="space-y-3">
                 <Label>여백 조정 (px)</Label>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label htmlFor="marginTop" className="text-xs">상단 여백</Label>
+                  {/* 상단 여백 */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="marginTop" className="text-xs">상단 여백</Label>
+                      <span className="text-xs text-muted-foreground">{marginTop}px</span>
+                    </div>
+                    <Slider
+                      id="marginTop-slider"
+                      value={[marginTop]}
+                      onValueChange={(value) => setMarginTop(value[0])}
+                      min={-15}
+                      max={15}
+                      step={1}
+                      disabled={isProcessing}
+                      className="mb-2"
+                    />
                     <Input
-  id="marginTop"
-  type="text"
-  inputMode="numeric"
-  pattern="-?\\d*"
-  value={marginTop}
-  onChange={e => {
-    let val = e.target.value.replace(/[^-\d]/g, "");
-    let num = parseInt(val, 10);
-    if (isNaN(num)) num = 0;
-    if (num < -10) num = -10;
-    if (num > 10) num = 10;
-    setMarginTop(num);
-  }}
-  maxLength={3}
-/>
-
+                      id="marginTop"
+                      type="number"
+                      value={marginTop}
+                      onChange={(e) => setMarginTop(Math.max(-15, Math.min(15, parseInt(e.target.value) || 0)))}
+                      min={-15}
+                      max={15}
+                      disabled={isProcessing}
+                      className="text-xs h-8"
+                    />
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="marginSide" className="text-xs">좌우 여백</Label>
+                  
+                  {/* 좌우 여백 */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="marginSide" className="text-xs">좌우 여백</Label>
+                      <span className="text-xs text-muted-foreground">{marginSide}px</span>
+                    </div>
+                    <Slider
+                      id="marginSide-slider"
+                      value={[marginSide]}
+                      onValueChange={(value) => setMarginSide(value[0])}
+                      min={-15}
+                      max={15}
+                      step={1}
+                      disabled={isProcessing}
+                      className="mb-2"
+                    />
                     <Input
-  id="marginSide"
-  type="text"
-  inputMode="numeric"
-  pattern="-?\\d*"
-  value={marginSide}
-  onChange={e => {
-    let val = e.target.value.replace(/[^-\d]/g, "");
-    let num = parseInt(val, 10);
-    if (isNaN(num)) num = 0;
-    if (num < -10) num = -10;
-    if (num > 10) num = 10;
-    setMarginSide(num);
-  }}
-  maxLength={3}
-/>
-
+                      id="marginSide"
+                      type="number"
+                      value={marginSide}
+                      onChange={(e) => setMarginSide(Math.max(-15, Math.min(15, parseInt(e.target.value) || 0)))}
+                      min={-15}
+                      max={15}
+                      disabled={isProcessing}
+                      className="text-xs h-8"
+                    />
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
