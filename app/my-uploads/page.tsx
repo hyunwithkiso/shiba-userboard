@@ -19,9 +19,13 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { formatFileSize } from "@/lib/utils";
 import { FileIcon } from "lucide-react";
+
+// 페이지네이션 상수
+const ITEMS_PER_PAGE = 12;
 
 export const metadata: Metadata = {
   title: "내 업로드 내역 | SHIBA 유저보드",
@@ -39,11 +43,19 @@ interface SubmissionItem {
   reason?: string | null;
 }
 
-export default async function MyUploadsPage() {
+export default async function MyUploadsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login");
   }
+
+  // searchParams 비동기로 받기
+  const params = await searchParams;
+  const currentPage = Number(params.page) || 1;
 
   const userData = await getCurrentUserData();
   if (!userData) {
@@ -102,6 +114,13 @@ export default async function MyUploadsPage() {
     );
   }
 
+  // 페이지네이션 계산
+  const totalItems = submissions.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedSubmissions = submissions.slice(startIndex, endIndex);
+
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8 md:py-12 space-y-8">
       <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 p-8">
@@ -124,8 +143,15 @@ export default async function MyUploadsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {submissions.map((file) => (
+        <>
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-muted-foreground">
+              총 {totalItems}개의 업로드 ({currentPage} / {totalPages} 페이지)
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {paginatedSubmissions.map((file) => (
             <Card key={file.id} className="overflow-hidden flex flex-col">
               {/* 이미지 썸네일 */}
               <div className="relative w-full h-40 bg-muted flex items-center justify-center">
@@ -179,7 +205,80 @@ export default async function MyUploadsPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
+          </div>
+
+          {/* 페이지네이션 */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 pt-4 flex-wrap">
+              <Button
+                variant="outline"
+                onClick={() => window.location.href = `/my-uploads?page=${currentPage - 1}`}
+                disabled={currentPage === 1}
+              >
+                이전
+              </Button>
+              
+              {/* 스마트 페이지네이션 */}
+              {(() => {
+                const delta = 2;
+                const rangeWithDots: (number | string)[] = [];
+                const start = Math.max(1, currentPage - delta);
+                const end = Math.min(totalPages, currentPage + delta);
+
+                if (start > 1) {
+                  rangeWithDots.push(1);
+                  if (start > 2) {
+                    rangeWithDots.push('...');
+                  }
+                }
+
+                for (let i = start; i <= end; i++) {
+                  rangeWithDots.push(i);
+                }
+
+                if (end < totalPages) {
+                  if (end < totalPages - 1) {
+                    rangeWithDots.push('...');
+                  }
+                  rangeWithDots.push(totalPages);
+                }
+
+                return rangeWithDots.map((page, index) => {
+                  if (page === '...') {
+                    return (
+                      <span key={`dots-${index}`} className="px-2 text-muted-foreground">
+                        ...
+                      </span>
+                    );
+                  }
+                  
+                  return (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="icon"
+                      onClick={() => window.location.href = `/my-uploads?page=${page}`}
+                    >
+                      {page}
+                    </Button>
+                  );
+                });
+              })()}
+
+              <Button
+                variant="outline"
+                onClick={() => window.location.href = `/my-uploads?page=${currentPage + 1}`}
+                disabled={currentPage === totalPages}
+              >
+                다음
+              </Button>
+              
+              <div className="text-sm text-muted-foreground ml-4">
+                {currentPage} / {totalPages} 페이지
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -8,6 +8,17 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface UploadFormProps {
   type: "killfeed" | "chat";
@@ -42,6 +53,7 @@ export function UploadForm({
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imageName, setImageName] = useState("");
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const router = useRouter();
   
   // 중복 검사 상태
@@ -99,7 +111,7 @@ export function UploadForm({
     setImageName(value);
   };
 
-  const handleUpload = async () => {
+  const handleUploadClick = () => {
     if (!selectedFile) return;
     if (!imageName.trim()) {
       toast.error("이름을 입력해주세요.");
@@ -111,8 +123,17 @@ export function UploadForm({
       return;
     }
 
+    // 확인 모달 표시
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!selectedFile) return;
+
     try {
       setIsUploading(true);
+      setShowConfirmDialog(false);
+      
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("name", imageName.trim());
@@ -228,23 +249,43 @@ export function UploadForm({
       </div>
 
       <div className="flex justify-end">
-        <Button
-          onClick={handleUpload}
-          disabled={isUploading || !selectedFile || !imageName.trim() || isDuplicate}
-          className="min-w-32"
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              업로드 중...
-            </>
-          ) : (
-            <>
-              <Upload className="w-4 h-4 mr-2" />
-              업로드
-            </>
-          )}
-        </Button>
+        <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <AlertDialogTrigger asChild>
+            <Button
+              onClick={handleUploadClick}
+              disabled={isUploading || !selectedFile || !imageName.trim() || isDuplicate}
+              className="min-w-32"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  업로드 중...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  업로드
+                </>
+              )}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>업로드 확인</AlertDialogTitle>
+              <AlertDialogDescription>
+                신청한 아이템 이름은 <strong>"{imageName} {type === 'killfeed' ? '킬피드' : '채팅칭호'}"</strong>로 생성됩니다.
+                <br />
+                계속 진행하시겠습니까?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmUpload}>
+                확인
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
