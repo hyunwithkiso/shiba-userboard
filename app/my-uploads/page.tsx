@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { getCurrentUserData } from "@/lib/user-validation";
 import { imageService } from "@/services/image-service";
 import { getGameIdByDiscordId } from "@/services/game-service";
 import {
@@ -44,13 +45,18 @@ export default async function MyUploadsPage() {
     redirect("/login");
   }
 
-  let gameUserId: number | null = session.user.userId
-    ? Number(session.user.userId)
+  const userData = await getCurrentUserData();
+  if (!userData) {
+    redirect("/login");
+  }
+
+  let gameUserId: number | null = userData.userId
+    ? Number(userData.userId)
     : null;
 
-  if (!gameUserId && session.user.discordId) {
+  if (!gameUserId && userData.discordId) {
     try {
-      const fetchedId = await getGameIdByDiscordId(session.user.discordId);
+      const fetchedId = await getGameIdByDiscordId(userData.discordId);
       if (fetchedId !== null) {
         gameUserId = typeof fetchedId === "string" ? Number(fetchedId) : fetchedId;
       }

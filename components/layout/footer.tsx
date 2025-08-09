@@ -8,7 +8,7 @@ export const Footer = () => {
   const quickLinks = [
     { href: "/notices", label: "공지사항" },
     { href: "/killfeed", label: "킬피드 업로드" },
-    { href: "/chat-title", label: "칭호 업로드" },
+    { href: "/chat-title", label: "채팅 칭호 업로드" },
     { href: "/events", label: "이벤트" },
     { href: "/shop", label: "상점" },
   ];
@@ -16,6 +16,7 @@ export const Footer = () => {
   const infoLinks = [
     { href: "/terms", label: "이용약관" }, // 약관 페이지 필요
     { href: "/privacy", label: "개인정보처리방침" }, // 개인정보처리방침 페이지 필요
+    { href: "https://docs.dokku.co.kr/shiba/guide/shiba/undefined", label: "결제약관" },
   ];
 
   const socialLinks = [

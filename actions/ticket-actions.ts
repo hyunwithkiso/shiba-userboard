@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { getCurrentUserData } from "@/lib/user-validation";
 import { realtimeService } from "@/services/realtime-service";
 import { revalidatePath } from "next/cache";
 
@@ -14,14 +15,19 @@ export async function deductKillFeedTicketAction(userId?: string) {
       return { success: false, error: "인증이 필요합니다." };
     }
 
+    const userData = await getCurrentUserData();
+    if (!userData) {
+      return { success: false, error: "사용자 정보를 찾을 수 없습니다." };
+    }
+
     // userId가 제공되지 않으면 현재 사용자의 userId 사용
-    const targetUserId = userId || session.user.userId;
+    const targetUserId = userId || userData.userId;
     if (!targetUserId) {
       return { success: false, error: "사용자 ID를 찾을 수 없습니다." };
     }
 
     // 관리자가 아닌 경우 본인의 티켓만 차감 가능
-    if (!session.user.isAdmin && targetUserId !== session.user.userId) {
+    if (!userData.isAdmin && targetUserId !== userData.userId) {
       return { success: false, error: "권한이 없습니다." };
     }
 
@@ -53,14 +59,19 @@ export async function deductChatTitleTicketAction(userId?: string) {
       return { success: false, error: "인증이 필요합니다." };
     }
 
+    const userData = await getCurrentUserData();
+    if (!userData) {
+      return { success: false, error: "사용자 정보를 찾을 수 없습니다." };
+    }
+
     // userId가 제공되지 않으면 현재 사용자의 userId 사용
-    const targetUserId = userId || session.user.userId;
+    const targetUserId = userId || userData.userId;
     if (!targetUserId) {
       return { success: false, error: "사용자 ID를 찾을 수 없습니다." };
     }
 
     // 관리자가 아닌 경우 본인의 티켓만 차감 가능
-    if (!session.user.isAdmin && targetUserId !== session.user.userId) {
+    if (!userData.isAdmin && targetUserId !== userData.userId) {
       return { success: false, error: "권한이 없습니다." };
     }
 
@@ -92,8 +103,13 @@ export async function rollbackKillFeedTicketAction(userId: string) {
       return { success: false, error: "인증이 필요합니다." };
     }
 
+    const userData = await getCurrentUserData();
+    if (!userData) {
+      return { success: false, error: "사용자 정보를 찾을 수 없습니다." };
+    }
+
     // 관리자만 롤백 가능
-    if (!session.user.isAdmin) {
+    if (!userData.isAdmin) {
       return { success: false, error: "관리자 권한이 필요합니다." };
     }
 
@@ -122,8 +138,13 @@ export async function rollbackChatTitleTicketAction(userId: string) {
       return { success: false, error: "인증이 필요합니다." };
     }
 
+    const userData = await getCurrentUserData();
+    if (!userData) {
+      return { success: false, error: "사용자 정보를 찾을 수 없습니다." };
+    }
+
     // 관리자만 롤백 가능
-    if (!session.user.isAdmin) {
+    if (!userData.isAdmin) {
       return { success: false, error: "관리자 권한이 필요합니다." };
     }
 
@@ -152,7 +173,12 @@ export async function checkKillFeedTicketAction(userId?: string) {
       return { success: false, error: "인증이 필요합니다." };
     }
 
-    const targetUserId = userId || session.user.userId;
+    const userData = await getCurrentUserData();
+    if (!userData) {
+      return { success: false, error: "사용자 정보를 찾을 수 없습니다." };
+    }
+
+    const targetUserId = userId || userData.userId;
     if (!targetUserId) {
       return { success: false, error: "사용자 ID를 찾을 수 없습니다." };
     }
@@ -179,7 +205,12 @@ export async function checkChatTitleTicketAction(userId?: string) {
       return { success: false, error: "인증이 필요합니다." };
     }
 
-    const targetUserId = userId || session.user.userId;
+    const userData = await getCurrentUserData();
+    if (!userData) {
+      return { success: false, error: "사용자 정보를 찾을 수 없습니다." };
+    }
+
+    const targetUserId = userId || userData.userId;
     if (!targetUserId) {
       return { success: false, error: "사용자 ID를 찾을 수 없습니다." };
     }

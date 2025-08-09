@@ -11,7 +11,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"; // 경로 수정
 import { auth } from "@/lib/auth"; // auth 임포트
 import { redirect } from "next/navigation"; // redirect 임포트
-import { checkUserInitialization } from "@/lib/auth-utils";
 import { basketService } from "@/services/basket-service"; // Import basket service
 import { getBasket as getTebexBasket } from "@/lib/tebex"; // getTebexBasket import 추가
 import { BasketAuthRequired } from "@/components/basket/basket-auth-required"; // 인증 필요 컴포넌트 import

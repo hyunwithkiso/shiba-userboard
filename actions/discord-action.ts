@@ -5,6 +5,7 @@ import { db, users } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { basketService } from "@/services/basket-service";
+import { AuthRateLimitingService } from "@/services/auth-rate-limiting";
 
 // init-form 에서 전달받는 Discord 역할 객체 타입
 type DiscordRole = {
@@ -88,7 +89,7 @@ export async function checkGuildMembershipAndFetchProfile(
       if (memberResponse.status === 404) {
         return {
           success: false,
-          error: "지정된 Discord 서버의 멤버가 아닙니다.",
+          error: "현재 로그인한 Discord 계정이 시바서버 Discord의 멤버가 아닙니다.",
         };
       }
       console.error(
@@ -187,26 +188,69 @@ export async function updateUserMetadataAction(
   discordRoles: DiscordRole[],
   gameId: number | string | null
 ): Promise<{ success: boolean; error?: string }> {
+  let rateLimitData: { userId: string; discordId: string } | null = null;
+  
   try {
     const session = await auth();
     const currentUserId = session?.user?.id;
+    const discordId = session?.user?.discordId;
 
     // 권한 확인
     if (!currentUserId || currentUserId !== userId) {
       return { success: false, error: "권한 없는 접근입니다." };
     }
 
-    // 입력값 유효성 검사 (gameId 포함)
+    // Discord ID 확인
+    if (!discordId) {
+      return { success: false, error: "Discord ID를 찾을 수 없습니다. 다시 로그인해주세요." };
+    }
+
+    // 속도 제한 확인
+    const rateLimitCheck = await AuthRateLimitingService.checkRateLimit(userId, discordId);
+    if (!rateLimitCheck.allowed) {
+      // 실패한 시도 기록 (속도 제한으로 인한 차단)
+      await AuthRateLimitingService.recordAttempt({
+        userId,
+        discordId,
+        attemptType: "init",
+        success: false,
+        errorMessage: `Rate limited: ${rateLimitCheck.message}`,
+      });
+      
+      return { 
+        success: false, 
+        error: rateLimitCheck.message || "요청이 너무 많습니다. 잠시 후 다시 시도해주세요." 
+      };
+    }
+
+    rateLimitData = { userId, discordId };
+
+    // gameId가 없으면 연동 실패
+    if (gameId === null) {
+      // 실패한 시도 기록
+      await AuthRateLimitingService.recordAttempt({
+        userId,
+        discordId,
+        attemptType: "init",
+        success: false,
+        errorMessage: "User not found in game server",
+      });
+      
+      return { 
+        success: false, 
+        error: "지정된 Discord 서버의 멤버가 아닙니다, 관리자에게 문의해주세요" 
+      };
+    }
+
+    // 입력값 유효성 검사
     if (
       !userId ||
       typeof nickname !== "string" ||
-      !Array.isArray(discordRoles) ||
-      gameId === undefined // gameId가 null일 수는 있지만 undefined는 안됨
+      !Array.isArray(discordRoles)
     ) {
       return {
         success: false,
-        error:
-          "잘못된 입력: userId, nickname, discordRoles 배열, gameId가 필요합니다.",
+        error: "잘못된 입력: userId, nickname, discordRoles 배열이 필요합니다.",
       };
     }
 
@@ -236,12 +280,12 @@ export async function updateUserMetadataAction(
 
     const roleNames = discordRoles.map((role) => role.name);
 
-    // 업데이트할 데이터 준비 (isInit: true 추가)
+    // 업데이트할 데이터 준비 (gameId가 확실히 있으므로 isInit: true)
     const updateData: Partial<typeof users.$inferInsert> = {
       nickname: nickname,
       roles: roleNames,
-      userId: gameId !== null ? String(gameId) : null,
-      isInit: true, // isInit 필드를 true로 설정
+      userId: String(gameId),
+      isInit: true,
       updatedAt: new Date(),
     };
 
@@ -253,6 +297,16 @@ export async function updateUserMetadataAction(
       `[Action:updateUserMetadata] 사용자 ${userId} 정보 업데이트 성공`
     );
 
+    // 성공한 시도 기록
+    if (rateLimitData) {
+      await AuthRateLimitingService.recordAttempt({
+        userId: rateLimitData.userId,
+        discordId: rateLimitData.discordId,
+        attemptType: "init",
+        success: true,
+      });
+    }
+
     // 캐시 무효화 (기존 유지)
     revalidatePath("/profile");
     revalidatePath("/");
@@ -263,6 +317,19 @@ export async function updateUserMetadataAction(
       `[Action:updateUserMetadata] 사용자 ${userId} 정보 업데이트 실패`,
       error
     );
+
+    // 실패한 시도 기록
+    if (rateLimitData) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown server error";
+      await AuthRateLimitingService.recordAttempt({
+        userId: rateLimitData.userId,
+        discordId: rateLimitData.discordId,
+        attemptType: "init",
+        success: false,
+        errorMessage,
+      });
+    }
+
     // 데이터베이스 오류 등 상세 정보 로깅 고려
     if (error instanceof Error && error.message.includes("unique constraint")) {
       return {

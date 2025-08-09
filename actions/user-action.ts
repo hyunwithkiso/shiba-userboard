@@ -1,10 +1,10 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { userService } from "@/services/user-service";
 import { db, users } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { userService } from "@/services/user-service";
 
 // init-form 에서 전달받는 Discord 역할 객체 타입
 type DiscordRole = {
@@ -112,7 +112,7 @@ export async function updateUserIdAction(
     }
 
     console.log(
-      `[Action:updateUserId] 관리자 ${session.user.id}가 사용자 ${targetUserId}의 고유번호를 ${newUserId}로 변경 시도`
+      `[Action:updateUserId] 관리자 ${session.user?.id}가 사용자 ${targetUserId}의 고유번호를 ${newUserId}로 변경 시도`
     );
 
     // 서비스 호출
@@ -132,6 +132,25 @@ export async function updateUserIdAction(
       `[Action:updateUserId] 고유번호 변경 실패`,
       error
     );
+    return { success: false, error: "서버 오류가 발생했습니다." };
+  }
+}
+
+/**
+ * 현재 로그인한 사용자의 정보를 가져옵니다.
+ * @returns 사용자 정보
+ */
+export async function getCurrentUserInfo() {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "로그인이 필요합니다." };
+    }
+
+    const result = await userService.getUserInfo(session.user.id);
+    return result;
+  } catch (error) {
+    console.error("[Action:getCurrentUserInfo] 사용자 정보 조회 실패", error);
     return { success: false, error: "서버 오류가 발생했습니다." };
   }
 }

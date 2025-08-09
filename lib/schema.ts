@@ -306,6 +306,31 @@ export const payments = pgTable(
   })
 );
 
+// 인증 시도 추적을 위한 테이블
+export const authAttempts = pgTable(
+  "auth_attempts",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    discordId: text("discord_id").notNull(),
+    attemptType: text("attempt_type").notNull(), // 'init', 'reauth', etc.
+    success: boolean("success").default(false).notNull(),
+    errorMessage: text("error_message"),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    authAttemptsUserIdx: index("auth_attempts_user_idx").on(table.userId),
+    authAttemptsDiscordIdx: index("auth_attempts_discord_idx").on(table.discordId),
+    authAttemptsCreatedAtIdx: index("auth_attempts_created_at_idx").on(table.createdAt),
+  })
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
   sessions: many(sessions),
@@ -321,6 +346,7 @@ export const usersRelations = relations(users, ({ many }) => ({
     relationName: "ChatTitleReviewer",
   }),
   payments: many(payments),
+  authAttempts: many(authAttempts),
 }));
 
 export const killfeedSubmissionRelations = relations(
@@ -363,6 +389,13 @@ export const purchasesRelations = relations(purchases, ({ one }) => ({
 export const paymentsRelations = relations(payments, ({ one }) => ({
   user: one(users, {
     fields: [payments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const authAttemptsRelations = relations(authAttempts, ({ one }) => ({
+  user: one(users, {
+    fields: [authAttempts.userId],
     references: [users.id],
   }),
 }));

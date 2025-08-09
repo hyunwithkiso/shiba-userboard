@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { Target } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { getCurrentUserData } from "@/lib/user-validation";
 import { UploadForm } from "@/components/shared/upload-form";
 import { checkUserInitialization } from "@/lib/auth-utils";
 import { realtimeService } from "@/services/realtime-service";
@@ -14,25 +15,41 @@ export const metadata: Metadata = {
 };
 
 export default async function KillfeedPage() {
-  await checkUserInitialization();
-  const session = await auth();
-  if (!session) {
-    redirect("/login");
-  }
-  const userId = session.user?.userId;
+  try {
+    // 병렬로 인증 체크 및 사용자 데이터 확인
+    const [, session, userData] = await Promise.all([
+      checkUserInitialization(),
+      auth(),
+      getCurrentUserData()
+    ]);
 
-  if (!userId) {
-    redirect("/login");
-  }
-  if (session.user && session.user?.nickname === null) {
-    redirect("/init");
-  }
+    if (!session) {
+      redirect("/login");
+    }
+    
+    if (!userData?.userId) {
+      redirect("/init");
+    }
+    
+    if (!userData.nickname) {
+      redirect("/init");
+    }
 
-  const ticketInfo = await realtimeService.getCheckAvailableKillFeed(
-    Number(userId)
-  );
-  const isAdmin = !!session.user?.isAdmin;
-  const hasTicket = ticketInfo.amount > 0;
+    // 티켓 정보 조회 (타임아웃 적용)
+    let ticketInfo;
+    try {
+      ticketInfo = await Promise.race([
+        realtimeService.getCheckAvailableKillFeed(Number(userData.userId)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+      ]);
+    } catch (error) {
+      console.warn('티켓 정보 조회 실패:', error);
+      // 기본값으로 fallback
+      ticketInfo = { amount: 0 };
+    }
+
+    const isAdmin = userData.isAdmin;
+    const hasTicket = ticketInfo.amount > 0;
 
   return (
     <main className="container max-w-5xl py-6 space-y-8 mx-auto">
@@ -94,4 +111,10 @@ export default async function KillfeedPage() {
       </div>
     </main>
   );
+  } catch (error) {
+    console.error('킬피드 페이지 로딩 실패:', error);
+    
+    // 에러 발생 시 로그인 페이지로 리다이렉트
+    redirect("/login");
+  }
 }

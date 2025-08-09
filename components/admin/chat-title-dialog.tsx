@@ -59,13 +59,15 @@ export default function ChatTitleDialog({
   const marginBottom = 0; // 고정값
   const [adminNotes, setAdminNotes] = useState(initialAdminNotes || "");
 
-  // Reset state when initialMetadata changes (e.g., opening dialog for different image)
+  // Reset state when dialog opens or initialMetadata changes
   useEffect(() => {
-    setScale((initialMetadata?.scale || 0.7) * 100);
-    setMarginTop(initialMetadata?.marginTop || -5);
-    setMarginSide(initialMetadata?.marginRight || -10);
-    setAdminNotes(initialAdminNotes || "");
-  }, [initialMetadata, initialAdminNotes]);
+    if (open) {
+      setScale((initialMetadata?.scale || 0.7) * 100);
+      setMarginTop(initialMetadata?.marginTop || -5);
+      setMarginSide(initialMetadata?.marginRight || -10);
+      setAdminNotes(initialAdminNotes || "");
+    }
+  }, [open, initialMetadata, initialAdminNotes]);
 
   // 현재 에디터 상태로 metadata 객체 생성 (개선된 형식)
   const getCurrentMetadata = () => ({
@@ -247,16 +249,6 @@ export default function ChatTitleDialog({
                 </p>
               </div>
 
-              {/* Width - 고정값 표시 */}
-              <div className="space-y-2">
-                <Label>Width (고정값)</Label>
-                <div className="p-2 bg-background border rounded text-sm text-muted-foreground">
-                  100px (조정 불가)
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  채팅창에서의 width는 100px로 고정됩니다.
-                </p>
-              </div>
 
               {/* Admin Notes */}
               <div className="space-y-2">

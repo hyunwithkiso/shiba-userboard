@@ -31,14 +31,77 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "../ui/theme-toggle";
 import { MiniCart } from "../cart/mini-cart";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { getCurrentUserInfo } from "@/actions/user-action";
 
 const navLinks = [
   { href: "/notices", label: "공지사항" },
   { href: "/killfeed", label: "킬피드 업로드" },
-  { href: "/chat-title", label: "칭호 업로드" },
+  { href: "/chat-title", label: "채팅 칭호 업로드" },
   { href: "/events", label: "이벤트" },
   { href: "/shop", label: "상점" },
 ];
+
+// 보호된 라우트들
+const protectedRoutes = ["/killfeed", "/chat-title", "/shop"];
+
+// 보호된 링크 컴포넌트
+function ProtectedLink({ 
+  href, 
+  children, 
+  className, 
+  onClick 
+}: { 
+  href: string; 
+  children: React.ReactNode; 
+  className?: string;
+  onClick?: () => void;
+}) {
+  const router = useRouter();
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (protectedRoutes.includes(href)) {
+      try {
+        const response = await fetch("/api/user/check-userid");
+        const result = await response.json();
+
+        if (!result.success || !result.hasUserId) {
+          toast.error("인증되지 않은 계정입니다.");
+          return;
+        }
+
+        // userId가 있으면 정상적으로 이동
+        router.push(href);
+      } catch (error) {
+        console.error("userId 검사 실패:", error);
+        toast.error("인증 확인 중 오류가 발생했습니다.");
+        return;
+      }
+    } else {
+      // 보호되지 않은 라우트는 바로 이동
+      router.push(href);
+    }
+
+    // onClick 콜백 실행 (모바일 메뉴 닫기 등)
+    if (onClick) {
+      onClick();
+    }
+  };
+
+  return (
+    <a
+      href={href}
+      onClick={handleClick}
+      className={className}
+    >
+      {children}
+    </a>
+  );
+}
 
 function SignOutButton() {
   return (
@@ -60,16 +123,57 @@ function SignOutButton() {
 
 export const Header = () => {
   const { data: session, status } = useSession();
-  const isAdmin = session?.user?.isAdmin ?? false;
   const isAuthenticated = status === "authenticated";
-  const hasUserId = !!session?.user?.userId;
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userData, setUserData] = useState({
+    isAdmin: false,
+    hasUserId: false,
+    userId: null as string | null,
+    nickname: null as string | null,
+    email: null as string | null,
+    name: null as string | null,
+    image: null as string | null,
+  });
+
+  // 실시간 사용자 데이터 조회
+  useEffect(() => {
+    if (isAuthenticated && session?.user) {
+      const fetchUserData = async () => {
+        try {
+          const result = await getCurrentUserInfo();
+          if (result.success && result.user) {
+            setUserData({
+              isAdmin: result.user.isAdmin,
+              hasUserId: !!result.user.userId,
+              userId: result.user.userId,
+              nickname: result.user.nickname,
+              email: result.user.email,
+              name: result.user.name,
+              image: result.user.image,
+            });
+          }
+        } catch (error) {
+          console.error('Failed to fetch user data:', error);
+        }
+      };
+      fetchUserData();
+    } else {
+      setUserData({
+        isAdmin: false,
+        hasUserId: false,
+        userId: null,
+        nickname: null,
+        email: null,
+        name: null,
+        image: null,
+      });
+    }
+  }, [isAuthenticated]);
 
   const filteredNavLinks = navLinks.filter((link) => {
-    const protectedRoutes = ["/killfeed", "/chat-title", "/shop"];
-    if (protectedRoutes.includes(link.href)) {
-      return isAuthenticated && (isAdmin || hasUserId);
-    }
-    return true;
+    const isProtected = protectedRoutes.includes(link.href);
+    const hasAccess = userData.hasUserId || userData.isAdmin;
+    return !isProtected || hasAccess;
   });
 
   console.log(session?.user);
@@ -88,13 +192,13 @@ export const Header = () => {
 
         <nav className="hidden md:flex items-center gap-6 text-sm">
           {filteredNavLinks.map((link) => (
-            <Link
+            <ProtectedLink
               key={link.href}
               href={link.href}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               {link.label}
-            </Link>
+            </ProtectedLink>
           ))}
         </nav>
 
@@ -110,11 +214,11 @@ export const Header = () => {
                     tabIndex={0}
                   >
                     <AvatarImage
-                      src={session.user?.image || undefined}
-                      alt={session.user?.nickname || "사용자 프로필"}
+                      src={userData.image || session.user?.image || undefined}
+                      alt={userData.nickname || userData.name || "사용자 프로필"}
                     />
                     <AvatarFallback>
-                      {session.user?.nickname?.charAt(0)?.toUpperCase() || ""}
+                      {(userData.nickname || userData.name || session.user?.name)?.charAt(0)?.toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
@@ -122,17 +226,23 @@ export const Header = () => {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        {session.user?.nickname || ""}
+                        {userData.nickname || userData.name || session.user?.name || "사용자"}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {session.user?.email}
+                        {userData.email || session.user?.email}
                       </p>
                     </div>
                   </DropdownMenuLabel>
                   <div className="text-xs text-muted-foreground ml-1">
-                    {session.user?.userId && `고유번호 : ${session.user.userId}`}
+                    {userData.userId && `고유번호 : ${userData.userId}`}
                   </div>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>내 프로필</span>
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/my-uploads">
                       <UploadCloud className="mr-2 h-4 w-4" />
@@ -151,7 +261,7 @@ export const Header = () => {
                       <span>장바구니</span>
                     </Link>
                   </DropdownMenuItem>
-                  {isAdmin && (
+                  {userData.isAdmin && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
@@ -184,7 +294,7 @@ export const Header = () => {
             )}
           </div>
           <div className="md:hidden flex items-center">
-            <Sheet>
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="메뉴 열기">
                   <Menu className="h-6 w-6" />
@@ -201,18 +311,26 @@ export const Header = () => {
                     <span>SHIBA 유저보드</span>
                   </Link>
                   {filteredNavLinks.map((link) => (
-                    <SheetClose asChild key={link.href}>
-                      <Link
-                        href={link.href}
-                        className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                      >
-                        {link.label}
-                      </Link>
-                    </SheetClose>
+                    <ProtectedLink
+                      key={link.href}
+                      href={link.href}
+                      className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {link.label}
+                    </ProtectedLink>
                   ))}
                   <div className="mt-auto pt-6 border-t">
                     {status === "authenticated" ? (
                       <div className="space-y-4">
+                        <SheetClose asChild>
+                          <Link
+                            href="/profile"
+                            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                          >
+                            <User className="h-5 w-5" /> 내 프로필
+                          </Link>
+                        </SheetClose>
                         <SheetClose asChild>
                           <Link
                             href="/my-uploads"
@@ -237,7 +355,7 @@ export const Header = () => {
                             <ShoppingCart className="h-5 w-5" /> 장바구니
                           </Link>
                         </SheetClose>
-                        {isAdmin && (
+                        {userData.isAdmin && (
                           <>
                             <SheetClose asChild>
                               <Link

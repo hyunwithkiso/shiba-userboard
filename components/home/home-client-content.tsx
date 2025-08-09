@@ -141,7 +141,7 @@ export const HomeClientContent = ({
                 환경을 즐겨보세요.
               </p>
               <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-                <Link href="fivem://connect/95.214.178.186">
+                <Link href="fivem://connect/141.11.194.130">
                   <Button
                     size="lg"
                     className="bg-blue-600 hover:bg-blue-700 text-white border border-blue-500/20 shadow-lg shadow-blue-900/30 transition-all hover:scale-105"
@@ -253,174 +253,206 @@ export const HomeClientContent = ({
         </Card>
       </section>
 
-      {/* 카드 디자인 통일된 공지사항 및 이벤트 섹션 */}
-      <div className="container mx-auto max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        {/* Notices Section */}
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight">
-                공지사항
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                SHIBA의 최신 소식을 확인하세요
-              </p>
-            </div>
-            <Link
-              href="/notices"
-              className="text-sm font-medium text-blue-500 hover:text-blue-600 hover:underline flex items-center bg-blue-500/10 px-3 py-1 rounded-full"
-            >
-              더보기 <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
-          <Card className="border-blue-500/20 shadow-lg h-[280px] overflow-hidden">
-            <CardContent className="pt-6 h-full flex flex-col">
-              {notices.length === 0 ? (
-                <div className="flex flex-col items-center justify-center space-y-4 text-center text-muted-foreground h-full">
-                  <div className="p-4 rounded-full bg-blue-500/5 border border-blue-500/10">
-                    <Info className="h-8 w-8 text-blue-500/70" />
-                  </div>
-                  <span>등록된 공지사항이 없습니다</span>
+      {/* 새로운 공지사항 및 이벤트 섹션 - 매력적이고 생동감 있는 디자인 */}
+      <div className="container mx-auto max-w-7xl mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Notices Section - 개선된 디자인 */}
+          <section className="group">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-lg">
+                  <Bell className="h-6 w-6" />
                 </div>
-              ) : (
-                <ul className="space-y-3">
-                  {notices.map((notice) => (
-                    <li key={notice.id}>
-                      <Link
-                        href={`/notices/${notice.id}`}
-                        className="block p-3 rounded-lg border border-blue-500/10 hover:bg-blue-500/5 transition-colors"
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          {notice.isPinned && (
-                            <Badge variant="destructive" className="text-xs">
-                              <PinIcon className="h-3 w-3 mr-1" />
-                              중요
-                            </Badge>
-                          )}
-                          <h3 className="font-medium text-primary line-clamp-1">
-                            {notice.title}
-                          </h3>
-                        </div>
-                        <div className="flex items-center text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {format(
-                            new Date(notice.createdAt),
-                            "yyyy년 MM월 dd일",
-                            { locale: ko }
-                          )}
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Events Section */}
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight">
-                진행중인 이벤트
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                특별한 이벤트에 참여하고 보상을 받아가세요
-              </p>
-            </div>
-            <Link
-              href="/events"
-              className="text-sm font-medium text-blue-500 hover:text-blue-600 hover:underline flex items-center bg-blue-500/10 px-3 py-1 rounded-full"
-            >
-              더보기 <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
-          <Card className="border-blue-500/20 shadow-lg h-[280px] overflow-hidden">
-            <CardContent className="pt-6 h-full flex flex-col">
-              {events.length === 0 ? (
-                <div className="flex flex-col items-center justify-center space-y-4 text-center text-muted-foreground h-full">
-                  <div className="p-4 rounded-full bg-blue-500/5 border border-blue-500/10">
-                    <CalendarDays className="h-8 w-8 text-blue-500/70" />
-                  </div>
-                  <span>진행 중인 이벤트가 없습니다</span>
+                <div>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                    공지사항
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    SHIBA의 최신 소식을 확인하세요
+                  </p>
                 </div>
-              ) : (
-                <ul className="space-y-3">
-                  {events.map((event) => {
-                    const status = getEventStatus(
-                      event.startDate,
-                      event.endDate
-                    );
-
-                    return (
-                      <li key={event.id}>
+              </div>
+              <Link
+                href="/notices"
+                className="group flex items-center space-x-1 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/10 to-red-500/10 hover:from-orange-500/20 hover:to-red-500/20 border border-orange-500/20 hover:border-orange-500/30 transition-all duration-300"
+              >
+                <span className="text-sm font-medium text-orange-600 dark:text-orange-400">더보기</span>
+                <ChevronRight className="h-4 w-4 text-orange-600 dark:text-orange-400 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+            
+            <div className="relative">
+              <Card className="relative border-orange-500/20 shadow-xl bg-gradient-to-br from-white/80 to-orange-50/50 dark:from-gray-900/80 dark:to-orange-950/30 backdrop-blur-sm overflow-hidden">
+                {/* 배경 장식 */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-red-500/10 to-transparent rounded-full translate-y-12 -translate-x-12"></div>
+                
+                <CardContent className="relative p-6">
+                  {notices.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center space-y-4 text-center py-12">
+                      <div className="p-4 rounded-full bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20">
+                        <Info className="h-8 w-8 text-orange-500" />
+                      </div>
+                      <p className="text-muted-foreground font-medium">등록된 공지사항이 없습니다</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {notices.map((notice, index) => (
                         <Link
-                          href={`/events/${event.id}`}
-                          className="flex items-start gap-3 p-3 rounded-lg border border-blue-500/10 hover:bg-blue-500/5 transition-colors"
+                          key={notice.id}
+                          href={`/notices/${notice.id}`}
+                          className="group block p-4 rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-orange-500/10 hover:border-orange-500/30 hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
                         >
-                          <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-blue-500/10 flex items-center justify-center">
-                            {event.thumbnailImage ? (
-                              <Image
-                                src={event.thumbnailImage}
-                                alt={event.title}
-                                width={64}
-                                height={64}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <CalendarDays className="h-8 w-8 text-blue-500/70" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              {event.isPinned && (
-                                <Badge
-                                  variant="default"
-                                  className="bg-primary/80 text-xs"
-                                >
-                                  <PinIcon className="h-3 w-3 mr-1" />
-                                  중요
-                                </Badge>
-                              )}
-                              {status === "ongoing" ? (
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-green-500/80 text-white text-xs"
-                                >
-                                  진행중
-                                </Badge>
-                              ) : status === "upcoming" ? (
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-blue-500/80 text-white text-xs"
-                                >
-                                  예정
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-xs">
-                                  종료
-                                </Badge>
-                              )}
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center space-x-2">
+                                {notice.isPinned && (
+                                  <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs">
+                                    <PinIcon className="h-3 w-3 mr-1" />
+                                    중요
+                                  </Badge>
+                                )}
+                                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-orange-400 to-red-400"></div>
+                              </div>
+                              <h3 className="font-semibold text-foreground group-hover:text-orange-600 transition-colors line-clamp-2">
+                                {notice.title}
+                              </h3>
+                              <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                <span>{format(new Date(notice.createdAt), "MM월 dd일", { locale: ko })}</span>
+                              </div>
                             </div>
-                            <h3 className="font-medium text-primary line-clamp-1">
-                              {event.title}
-                            </h3>
-                            <div className="flex items-center text-xs text-muted-foreground mt-1">
-                              <CalendarDays className="h-3 w-3 mr-1" />
-                              {formatEventDate(event.startDate)} ~{" "}
-                              {formatEventDate(event.endDate)}
-                            </div>
+                            <ChevronRight className="h-5 w-5 text-orange-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                           </div>
                         </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </section>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+
+          {/* Events Section - 개선된 디자인 */}
+          <section className="group">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-lg">
+                  <CalendarDays className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent">
+                    진행중인 이벤트
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    특별한 이벤트에 참여하고 보상을 받아가세요
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/events"
+                className="group flex items-center space-x-1 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 hover:from-emerald-500/20 hover:to-cyan-500/20 border border-emerald-500/20 hover:border-emerald-500/30 transition-all duration-300"
+              >
+                <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">더보기</span>
+                <ChevronRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            <div className="relative">
+              <Card className="relative border-emerald-500/20 shadow-xl bg-gradient-to-br from-white/80 to-emerald-50/50 dark:from-gray-900/80 dark:to-emerald-950/30 backdrop-blur-sm overflow-hidden">
+                {/* 배경 장식 */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-cyan-500/10 to-transparent rounded-full translate-y-12 -translate-x-12"></div>
+                
+                <CardContent className="relative p-6">
+                  {events.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center space-y-4 text-center py-12">
+                      <div className="p-4 rounded-full bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20">
+                        <CalendarDays className="h-8 w-8 text-emerald-500" />
+                      </div>
+                      <p className="text-muted-foreground font-medium">진행 중인 이벤트가 없습니다</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {events.map((event, index) => {
+                        const status = getEventStatus(event.startDate, event.endDate);
+                        
+                        return (
+                          <Link
+                            key={event.id}
+                            href={`/events/${event.id}`}
+                            className="group block p-4 rounded-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-emerald-500/10 hover:border-emerald-500/30 hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                          >
+                            <div className="flex items-start space-x-4">
+                              <div className="relative flex-shrink-0">
+                                <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 flex items-center justify-center">
+                                  {event.thumbnailImage ? (
+                                    <Image
+                                      src={event.thumbnailImage}
+                                      alt={event.title}
+                                      width={64}
+                                      height={64}
+                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                    />
+                                  ) : (
+                                    <CalendarDays className="h-8 w-8 text-emerald-500" />
+                                  )}
+                                </div>
+                                {status === "ongoing" && (
+                                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                                )}
+                              </div>
+                              
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-center space-x-2 flex-wrap gap-1">
+                                  {event.isPinned && (
+                                    <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs">
+                                      <PinIcon className="h-3 w-3 mr-1" />
+                                      중요
+                                    </Badge>
+                                  )}
+                                  {status === "ongoing" && (
+                                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs">
+                                      <div className="w-2 h-2 bg-white rounded-full mr-1"></div>
+                                      진행중
+                                    </Badge>
+                                  )}
+                                  {status === "upcoming" && (
+                                    <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-xs">
+                                      예정
+                                    </Badge>
+                                  )}
+                                  {status === "ended" && (
+                                    <Badge variant="outline" className="text-xs">
+                                      종료
+                                    </Badge>
+                                  )}
+                                </div>
+                                
+                                <h3 className="font-semibold text-foreground group-hover:text-emerald-600 transition-colors line-clamp-2">
+                                  {event.title}
+                                </h3>
+                                
+                                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                  <CalendarDays className="h-3 w-3" />
+                                  <span>
+                                    {formatEventDate(event.startDate)} ~ {formatEventDate(event.endDate)}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <ChevronRight className="h-5 w-5 text-emerald-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        </div>
       </div>
     </main>
   );

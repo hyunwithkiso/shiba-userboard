@@ -105,6 +105,59 @@ class UserService {
   }
 
   /**
+   * 사용자의 userId가 설정되어 있는지 확인합니다.
+   * @param id 사용자의 ID (NextAuth ID)
+   * @returns userId 존재 여부와 사용자 정보
+   */
+  async checkUserIdExists(id: string): Promise<{
+    success: boolean;
+    hasUserId: boolean;
+    user?: any;
+    error?: string;
+  }> {
+    if (!id) {
+      return { success: false, hasUserId: false, error: "사용자 ID가 필요합니다." };
+    }
+
+    try {
+      const user = await db
+        .select({
+          id: users.id,
+          userId: users.userId,
+          nickname: users.nickname,
+          discordId: users.discordId,
+        })
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1);
+
+      if (user.length === 0) {
+        return { 
+          success: false, 
+          hasUserId: false, 
+          error: "사용자를 찾을 수 없습니다." 
+        };
+      }
+
+      const userData = user[0];
+      const hasUserId = !!userData.userId;
+
+      return {
+        success: true,
+        hasUserId,
+        user: userData,
+      };
+    } catch (error) {
+      console.error(`[UserService] Error checking userId for ${id}:`, error);
+      return {
+        success: false,
+        hasUserId: false,
+        error: error instanceof Error ? error.message : "사용자 정보 확인 중 오류가 발생했습니다.",
+      };
+    }
+  }
+
+  /**
    * 사용자의 userId(고유번호)를 변경합니다.
    * @param id 사용자의 ID (NextAuth ID)
    * @param newUserId 새로운 userId
@@ -143,6 +196,71 @@ class UserService {
       return {
         success: false,
         error: error instanceof Error ? error.message : "고유번호 변경 중 오류가 발생했습니다.",
+      };
+    }
+  }
+
+  /**
+   * 사용자의 전체 정보를 가져옵니다.
+   * @param id 사용자의 ID (NextAuth ID)
+   * @returns 사용자 정보
+   */
+  async getUserInfo(id: string): Promise<{
+    success: boolean;
+    user?: {
+      id: string;
+      email: string | null;
+      name: string | null;
+      image: string | null;
+      nickname: string | null;
+      userId: string | null;
+      discordId: string | null;
+      isAdmin: boolean;
+      isInit: boolean;
+      basketIdent: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+    error?: string;
+  }> {
+    if (!id) {
+      return { success: false, error: "사용자 ID가 필요합니다." };
+    }
+
+    try {
+      const userResult = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1);
+
+      if (userResult.length === 0) {
+        return { success: false, error: "사용자를 찾을 수 없습니다." };
+      }
+
+      const user = userResult[0];
+      return {
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          nickname: user.nickname,
+          userId: user.userId,
+          discordId: user.discordId,
+          isAdmin: user.isAdmin ?? false,
+          isInit: user.isInit ?? false,
+          basketIdent: user.basketIdent,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        },
+      };
+    } catch (error) {
+      console.error(`[UserService] Error fetching user info for ${id}:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "사용자 정보 조회 중 오류가 발생했습니다.",
       };
     }
   }

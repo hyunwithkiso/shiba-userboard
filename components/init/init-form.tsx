@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { updateUserMetadataAction } from "@/actions/discord-action";
 
 type DiscordRole = {
@@ -25,8 +24,7 @@ interface InitFormProps {
 }
 
 export default function InitForm({ discordProfile, gameId }: InitFormProps) {
-  const { data: session, update: updateSession } = useSession();
-  const router = useRouter();
+  const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -44,21 +42,22 @@ export default function InitForm({ discordProfile, gameId }: InitFormProps) {
     }
     const userId = session.user.id;
 
+    // gameId가 없으면 초기화 불가
+    if (gameId === null) {
+      setError("지정된 Discord 서버의 멤버가 아닙니다, 관리자에게 문의해주세요");
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
 
-      // 장바구니 생성은 이제 basketService.getUserBasket 호출 시 자동으로 처리됨
-
-      // 사용자 메타데이터 업데이트 (닉네임, 역할만 전달)
-      // const metadataToUpdate = { ... }; // No longer needed
-
-      // Call the server action to update user data in the database
+      // 사용자 메타데이터 업데이트
       const updateResult = await updateUserMetadataAction(
         userId,
-        discordProfile.nickname, // Pass nickname directly
-        discordProfile.roles, // Pass roles array directly
-        gameId // gameId 전달
+        discordProfile.nickname,
+        discordProfile.roles,
+        gameId
       );
       if (!updateResult?.success) {
         throw new Error(
@@ -66,18 +65,13 @@ export default function InitForm({ discordProfile, gameId }: InitFormProps) {
         );
       }
 
-      // 초기화 성공 후 로그아웃 실행
-      setSuccess(true); // 성공 상태 먼저 설정 (UI 표시용)
-      await signOut({ redirect: false }); // 자동 리다이렉트 방지하며 로그아웃
-      // updateSession()은 로그아웃하므로 호출 의미 없음
-
-      // 로그아웃 후 메시지 표시 및 명시적 리다이렉션 (선택적)
-      // setTimeout(() => { router.push("/login"); }, 1500);
-      // 페이지 새로고침 및 리다이렉션 로직 제거
-      // setTimeout(() => {
-      //   router.refresh();
-      //   router.push("/");
-      // }, 1000);
+      // 초기화 성공 - 로그아웃 제거 (이제 실시간 DB 조회로 인해 바로 사용 가능)
+      setSuccess(true);
+      
+      // 3초 후 메인 페이지로 리다이렉트
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 3000);
     } catch (error) {
       console.error("초기화 오류:", error);
       setError(
@@ -85,7 +79,7 @@ export default function InitForm({ discordProfile, gameId }: InitFormProps) {
           ? error.message
           : "사용자 정보 업데이트 중 오류가 발생했습니다."
       );
-      setSuccess(false); // 실패 시 success 상태 초기화
+      setSuccess(false);
     } finally {
       setIsLoading(false);
     }
@@ -182,11 +176,18 @@ export default function InitForm({ discordProfile, gameId }: InitFormProps) {
         </h4>
         <p
           className={`text-lg font-semibold ${
-            gameId !== null ? "text-primary" : "text-muted-foreground italic"
+            gameId !== null ? "text-primary" : "text-destructive"
           }`}
         >
-          {gameId !== null ? gameId : "고유번호 없음"}
+          {gameId !== null ? gameId : "등록되지 않은 계정"}
         </p>
+        {gameId === null && (
+          <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+            <p className="text-sm text-red-800 dark:text-red-200">
+              <strong>오류:</strong> 지정된 Discord 서버의 멤버가 아닙니다, 관리자에게 문의해주세요
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 상태 메시지 */}
@@ -225,7 +226,7 @@ export default function InitForm({ discordProfile, gameId }: InitFormProps) {
                 clipRule="evenodd"
               />
             </svg>
-            초기화가 완료되었습니다. 잠시 후 로그아웃됩니다...
+초기화가 완료되었습니다. 3초 후 메인 페이지로 이동합니다...
           </div>
         </div>
       )}
@@ -233,9 +234,9 @@ export default function InitForm({ discordProfile, gameId }: InitFormProps) {
       {/* 완료 버튼 */}
       <button
         onClick={handleInitialize}
-        disabled={isLoading || success}
+        disabled={isLoading || success || gameId === null}
         className={`w-full py-3 px-4 rounded-md text-white font-medium transition-all ${
-          isLoading || success
+          isLoading || success || gameId === null
             ? "bg-gray-400 cursor-not-allowed"
             : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-md hover:shadow-lg"
         }`}
@@ -280,8 +281,10 @@ export default function InitForm({ discordProfile, gameId }: InitFormProps) {
             </svg>
             완료됨
           </div>
-        ) : (
+        ) : gameId !== null ? (
           "초기화 완료"
+        ) : (
+          "등록되지 않은 계정"
         )}
       </button>
     </div>

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import InitForm from "@/components/init/init-form";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { checkGuildMembershipAndFetchProfile } from "@/actions/discord-action";
 import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/schema";
@@ -21,7 +21,8 @@ function ErrorDisplay({ message }: { message: string }) {
       >
         <strong className="font-bold">오류:</strong>
         <span className="block sm:inline"> {message}</span>
-        <p className="text-sm mt-2">문제가 지속되면 관리자에게 문의해주세요.</p>
+        <p>웹 Discord에 접속하여 계정 정보를 확인해 주세요.</p>
+        <p className="text-sm mt-2">문제가 지속될 경우 관리자에게 문의해 주시기 바랍니다.</p>
       </div>
     </div>
   );

@@ -9,6 +9,8 @@ import AddToCartForm from "@/components/add-to-cart-form"; // 새로 만든 컴�
 import { auth } from "@/lib/auth"; // auth 임포트
 import { getUserBasketAction } from "@/actions/basket-action"; // 장바구니 정보 가져오기
 import { CartSummary } from "@/components/cart/cart-summary"; // 장바구니 요약 컴포넌트 추가
+import { getExchangeRate } from "@/lib/currency";
+import PriceDisplay from "@/components/price-display";
 
 type Props = {
   params: Promise<{ packageId: string }>;
@@ -75,6 +77,16 @@ export default async function PackageDetailPage({ params }: Props) {
   const displayPrice = total_price !== undefined ? total_price : price?.amount;
   const displayCurrency = currency || price?.currency;
 
+  // 환율 정보 가져오기 (USD인 경우에만)
+  let exchangeRate: number | undefined;
+  if (displayCurrency === 'USD') {
+    try {
+      exchangeRate = await getExchangeRate();
+    } catch (error) {
+      console.warn('환율 정보를 가져오는데 실패했습니다:', error);
+    }
+  }
+
   return (
     // 가운데 정렬 및 최대 너비 설정
     <div className="container mx-auto max-w-6xl px-4 py-10 md:py-16">
@@ -112,9 +124,11 @@ export default async function PackageDetailPage({ params }: Props) {
             </div>
 
             {/* 가격 */}
-            <span className="text-4xl font-bold text-primary">
-              {formatPrice(displayPrice, displayCurrency)}
-            </span>
+            <PriceDisplay 
+              price={displayPrice}
+              currency={displayCurrency}
+              exchangeRate={exchangeRate}
+            />
           </div>
 
           <Separator className="my-6" />

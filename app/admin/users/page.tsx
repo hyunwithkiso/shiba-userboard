@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { checkCurrentUserAdmin } from "@/lib/user-validation";
 import { db, users } from "@/lib/schema";
 import { desc, asc } from "drizzle-orm";
 import AdminUsersClient from "./client";
@@ -12,7 +13,12 @@ export const metadata = {
 export default async function AdminUsersPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session) {
+    redirect("/login");
+  }
+
+  const isAdmin = await checkCurrentUserAdmin();
+  if (!isAdmin) {
     redirect("/");
   }
 

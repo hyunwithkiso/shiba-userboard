@@ -223,15 +223,8 @@ export default function AdminImagesClient({
     router.refresh();
   };
 
-  // 필터링
-  const filteredData = submissions.filter((item) => {
-    const statusMatch = status === "all" || item.status === status;
-    const nameMatch = !nameSearch || 
-      item.name?.toLowerCase().includes(nameSearch.toLowerCase()) ||
-      item.fileName?.toLowerCase().includes(nameSearch.toLowerCase());
-    
-    return statusMatch && nameMatch;
-  });
+  // 서버에서 이미 필터링된 데이터를 그대로 사용
+  const filteredData = submissions;
 
   // 승인/거절 핸들러
   const handleApproval = async (id: string, action: "approved" | "rejected") => {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { getCurrentUserId } from "@/lib/user-validation";
 import { realtimeService } from "@/services/realtime-service";
 import { imageService } from "@/services/image-service";
 import { UploadService } from "@/services/upload-service";
@@ -7,8 +8,13 @@ import { UploadService } from "@/services/upload-service";
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user?.userId) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "User ID not found" }, { status: 401 });
     }
 
     const formData = await request.formData();
@@ -29,7 +35,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const gameUserId = Number(session.user.userId); // 게임 유저 ID
+    const gameUserId = Number(userId); // 게임 유저 ID
 
     // 티켓 확인 (모든 사용자 대상)
     const ticketInfo = await realtimeService.getCheckAvailableKillFeed(gameUserId);

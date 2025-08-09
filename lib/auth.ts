@@ -134,10 +134,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!token.discordId && (profile as any)?.id) {
           token.discordId = String((profile as any).id);
         }
-
-        if (!token.userId && (profile as any)?.id) {
-          token.userId = String((profile as any).id);
-        }
       }
       if (account?.provider === "discord" && account.providerAccountId) {
         token.discordId = account.providerAccountId;

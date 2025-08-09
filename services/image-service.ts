@@ -40,7 +40,7 @@ class ImageService {
         [
           data.userId,
           fullCode,
-          data.type === "chattitle" ? `${data.name} 채팅 칭호` : `${data.name} 킬피드`,
+          data.name,
           data.type,
           data.fileName,
           metadataString,

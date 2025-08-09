@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { checkCurrentUserAdmin } from "@/lib/user-validation";
 import { imageService } from "@/services/image-service";
 import { UploadService } from "@/services/upload-service";
 import { revalidatePath } from "next/cache";
@@ -24,7 +25,12 @@ interface ActionResult {
 export async function updateImageNameAction(id: number, name: string): Promise<ActionResult> {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!session?.user?.id) {
+      return { success: false, error: "인증이 필요합니다." };
+    }
+
+    const isAdmin = await checkCurrentUserAdmin();
+    if (!isAdmin) {
       return { success: false, error: "관리자 권한이 필요합니다." };
     }
 
@@ -57,7 +63,12 @@ export async function updateImageNameAction(id: number, name: string): Promise<A
 export async function updateImageAction(options: UpdateImageOptions): Promise<ActionResult> {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!session?.user?.id) {
+      return { success: false, error: "인증이 필요합니다." };
+    }
+
+    const isAdmin = await checkCurrentUserAdmin();
+    if (!isAdmin) {
       return { success: false, error: "관리자 권한이 필요합니다." };
     }
 
@@ -155,7 +166,12 @@ export async function updateChatTitleMetadataAction(
 ): Promise<ActionResult> {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!session?.user?.id) {
+      return { success: false, error: "인증이 필요합니다." };
+    }
+
+    const isAdmin = await checkCurrentUserAdmin();
+    if (!isAdmin) {
       return { success: false, error: "관리자 권한이 필요합니다." };
     }
 

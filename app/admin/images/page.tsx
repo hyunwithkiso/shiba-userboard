@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { checkCurrentUserAdmin } from "@/lib/user-validation";
 import AdminImagesClient from "./client";
 import { imageService } from "@/services/image-service";
 
@@ -17,7 +18,12 @@ export default async function AdminImagesPage({
   }>;
 }) {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  if (!session) {
+    redirect("/login");
+  }
+
+  const isAdmin = await checkCurrentUserAdmin();
+  if (!isAdmin) {
     redirect("/");
   }
 

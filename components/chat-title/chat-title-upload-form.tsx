@@ -294,16 +294,6 @@ export default function ChatTitleUploadForm({
           </p>
         </div>
 
-        {/* Width 고정 안내 */}
-        <div className="space-y-2">
-          <Label>Width (고정값)</Label>
-          <div className="p-2 bg-background border rounded text-sm text-muted-foreground">
-            100px (조정 불가)
-          </div>
-          <p className="text-xs text-muted-foreground">
-            채팅창에서의 width는 100px로 고정됩니다.
-          </p>
-        </div>
       </div>
 
       {imagePreview && (
