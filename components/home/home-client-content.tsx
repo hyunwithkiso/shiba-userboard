@@ -257,7 +257,7 @@ export const HomeClientContent = ({
       <div className="container mx-auto max-w-7xl mb-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Notices Section - 개선된 디자인 */}
-          <section className="group">
+          <section>
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-lg">
@@ -334,7 +334,7 @@ export const HomeClientContent = ({
           </section>
 
           {/* Events Section - 개선된 디자인 */}
-          <section className="group">
+          <section>
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-lg">

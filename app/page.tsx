@@ -27,8 +27,6 @@ export default async function HomePage() {
   const hasUserId = !!userData?.userId;
   const needsDiscordIntegration = isAuthenticated && !hasUserId;
 
-  console.log(session, userData);
-  
   // Discord 연동이 필요한 경우 인증 화면 표시
   if (needsDiscordIntegration) {
     return <DiscordIntegrationRequired />;
@@ -42,16 +40,9 @@ export default async function HomePage() {
       latestNotices,
       currentEvents
     ] = await Promise.allSettled([
-      // 실시간 데이터 (타임아웃 설정)
-      Promise.race([
-        realtimeService.getPlayersCount(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 1000))
-      ]),
-      Promise.race([
-        realtimeService.getPlayers(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 1000))
-      ]),
-      
+      // 실시간 데이터
+      realtimeService.getPlayersCount(),
+      realtimeService.getPlayers(),      
       // PostgreSQL 데이터
       db
         .select({
