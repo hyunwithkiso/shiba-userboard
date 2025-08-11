@@ -830,6 +830,44 @@ export class BasketService {
       };
     }
   }
+
+  /**
+   * 사용자의 basketIdent를 초기화(로그아웃)합니다.
+   * DB에서 basketIdent를 null로 설정하여 다음 접속 시 새 장바구니가 생성되도록 합니다.
+   */
+  async logoutBasket(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const session = await auth();
+      const userId = session?.user?.id;
+
+      if (!userId) {
+        return { success: false, error: "User not authenticated" };
+      }
+
+      console.log(`[BasketService] Logging out basket for user: ${userId}`);
+
+      // DB에서 사용자의 basketIdent를 null로 업데이트
+      await db
+        .update(users)
+        .set({ basketIdent: null, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+
+      console.log(
+        `[BasketService] Successfully logged out basket for user ${userId}`
+      );
+
+      return { success: true };
+    } catch (error) {
+      console.error("[BasketService] Error logging out basket:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to logout basket",
+      };
+    }
+  }
 }
 
 // Export an instance of the service

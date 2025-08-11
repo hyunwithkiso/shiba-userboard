@@ -297,7 +297,7 @@ export default function AdminImagesClient({
               <SelectContent>
                 <SelectItem value="all">전체</SelectItem>
                 <SelectItem value="killfeed">킬피드</SelectItem>
-                <SelectItem value="chat">채팅 타이틀</SelectItem>
+                <SelectItem value="chattitle">채팅 칭호</SelectItem>
               </SelectContent>
             </Select>
 

@@ -14,6 +14,7 @@ import { redirect } from "next/navigation"; // redirect 임포트
 import { basketService } from "@/services/basket-service"; // Import basket service
 import { getBasket as getTebexBasket } from "@/lib/tebex"; // getTebexBasket import 추가
 import { BasketAuthRequired } from "@/components/basket/basket-auth-required"; // 인증 필요 컴포넌트 import
+import { BasketWelcome } from "@/components/basket/basket-welcome"; // 환영 메시지 컴포넌트 import
 import { TebexAuthLink } from "@/lib/tebex"; // 타입 import
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info, CheckCircle2 } from "lucide-react";
@@ -381,18 +382,7 @@ export default async function ShopPage() {
                 <AlertDescription>{authFetchError}</AlertDescription>
               </Alert>
             ) : basketUsername ? (
-              <Alert
-                variant="default"
-                className="mb-6 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300"
-              >
-                <CheckCircle2 className="h-4 w-4 stroke-current" />
-                <AlertTitle className="font-semibold">
-                  환영합니다, {basketUsername}님!
-                </AlertTitle>
-                <AlertDescription>
-                  상점 이용이 가능합니다. 원하시는 상품을 둘러보세요.
-                </AlertDescription>
-              </Alert>
+              <BasketWelcome basketUsername={basketUsername} />
             ) : null /* basketUsername도 없고 인증 필요도 아닌 경우 (예: 초기 로딩 실패)는 아무것도 표시 안 함 */
           }
 
