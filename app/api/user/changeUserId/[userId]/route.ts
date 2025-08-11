@@ -8,11 +8,11 @@ export async function PUT(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    // 인증 확인
-    const session = await auth();
-    if (!session?.user?.id) {
+    // API 키 인증 체크 (대시보드에서 서버-투-서버 호출)
+    const apiKey = request.headers.get('X-API-Key');
+    if (!apiKey || apiKey !== process.env.EXTERNAL_API_KEY) {
       return NextResponse.json(
-        { success: false, error: "인증이 필요합니다." },
+        { success: false, error: "유효하지 않은 API 키입니다." },
         { status: 401 }
       );
     }
@@ -30,7 +30,7 @@ export async function PUT(
 
     // 현재 userId를 가진 사용자 찾기
     const existingUser = await db
-      .select({ id: users.id, isAdmin: users.isAdmin })
+      .select({ id: users.id })
       .from(users)
       .where(eq(users.userId, userId))
       .limit(1);
@@ -39,25 +39,6 @@ export async function PUT(
       return NextResponse.json(
         { success: false, error: "해당 userId를 가진 사용자를 찾을 수 없습니다." },
         { status: 404 }
-      );
-    }
-
-    const targetUser = existingUser[0];
-
-    // 권한 확인: 본인이거나 관리자여야 함
-    const currentUser = await db
-      .select({ isAdmin: users.isAdmin })
-      .from(users)
-      .where(eq(users.id, session.user.id))
-      .limit(1);
-
-    const isAdmin = currentUser[0]?.isAdmin ?? false;
-    const isSelf = targetUser.id === session.user.id;
-
-    if (!isAdmin && !isSelf) {
-      return NextResponse.json(
-        { success: false, error: "권한이 없습니다." },
-        { status: 403 }
       );
     }
 
@@ -83,6 +64,9 @@ export async function PUT(
         updatedAt: new Date()
       })
       .where(eq(users.userId, userId));
+
+    // 외부 API 호출 로그 기록
+    console.log(`[API] External changeUserId: ${userId} → ${newUserId}`);
 
     return NextResponse.json({
       success: true,

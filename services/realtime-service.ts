@@ -16,8 +16,7 @@ export class RealtimeService {
             "Content-Type": "application/json",
             key: process.env.SHIBA_API_KEY || "",
           },
-          // 빌드 시 타임아웃 방지
-
+          body: JSON.stringify({}),
           cache: "no-store",
         }
       );
@@ -50,7 +49,7 @@ export class RealtimeService {
             "Content-Type": "application/json",
             key: process.env.SHIBA_API_KEY || "",
           },
-          // 빌드 시 타임아웃 방지
+          body: JSON.stringify({}),
           cache: "no-store",
         }
       );
