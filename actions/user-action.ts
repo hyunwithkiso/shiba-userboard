@@ -90,8 +90,13 @@ export async function updateUserIdAction(
   try {
     const session = await auth();
 
-    // 관리자 권한 확인
-    if (!session?.user?.isAdmin) {
+    if (!session?.user?.id) {
+      return { success: false, error: "로그인이 필요합니다." };
+    }
+
+    const isAdmin = await userService.getUserInfo(session.user.id);
+
+    if (!isAdmin.success || !isAdmin.user?.isAdmin) {
       return { success: false, error: "관리자 권한이 필요합니다." };
     }
 

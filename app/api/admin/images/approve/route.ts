@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { imageService } from "@/services/image-service";
 import { realtimeService } from "@/services/realtime-service";
+import { userService } from "@/services/user-service";
 
 // gameDbMetadata 타입 정의
 interface Metadata {
@@ -18,7 +19,16 @@ interface Metadata {
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "로그인이 필요합니다." },
+        { status: 401 }
+      );
+    }
+
+    const isAdmin = await userService.getUserInfo(session.user.id);
+
+    if (!isAdmin.success || !isAdmin.user?.isAdmin) {
       return NextResponse.json(
         { error: "관리자만 접근할 수 있습니다." },
         { status: 401 }

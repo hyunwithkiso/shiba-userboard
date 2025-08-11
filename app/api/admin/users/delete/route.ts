@@ -2,11 +2,18 @@ import { auth } from "@/lib/auth";
 import { db, users } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { userService } from "@/services/user-service";
 
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!session?.user?.id) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const isAdmin = await userService.getUserInfo(session.user.id);
+
+    if (!isAdmin.success || !isAdmin.user?.isAdmin) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 

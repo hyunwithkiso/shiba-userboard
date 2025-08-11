@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { basketService } from "@/services/basket-service";
 import { AuthRateLimitingService } from "@/services/auth-rate-limiting";
+import { userService } from "@/services/user-service";
 
 // init-form 에서 전달받는 Discord 역할 객체 타입
 type DiscordRole = {
@@ -193,7 +194,13 @@ export async function updateUserMetadataAction(
   try {
     const session = await auth();
     const currentUserId = session?.user?.id;
-    const discordId = session?.user?.discordId;
+
+    if (!session?.user?.id) {
+      return { success: false, error: "로그인이 필요합니다." };
+    }
+
+    const getUserInfo = await userService.getUserInfo(session.user.id);
+    const discordId = getUserInfo.user?.discordId;  
 
     // 권한 확인
     if (!currentUserId || currentUserId !== userId) {
