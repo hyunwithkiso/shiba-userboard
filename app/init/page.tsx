@@ -3,8 +3,8 @@ import InitForm from "@/components/init/init-form";
 import { redirect } from "next/navigation";
 import { checkGuildMembershipAndFetchProfile } from "@/actions/discord-action";
 import { auth } from "@/lib/auth";
-import { db, users } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { accounts, db, users } from "@/lib/schema";
+import { and, eq } from "drizzle-orm";
 import { getGameIdByDiscordId } from "@/services/game-service";
 
 export const metadata: Metadata = {
@@ -37,14 +37,17 @@ export default async function InitPage() {
   const userId = session.user.id;
 
   const userDataResult = await db
-    .select({
-      discordId: users.discordId,
-      isInit: users.isInit,
-    })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-
+  .select({
+    isInit: users.isInit,
+    discordId: accounts.providerAccountId,
+  })
+  .from(users)
+  .leftJoin(
+    accounts,
+    and(eq(accounts.userId, users.id), eq(accounts.provider, "discord"))
+  )
+  .where(eq(users.id, userId))
+  .limit(1);
   const userData = userDataResult[0];
 
   if (userData?.isInit) {
