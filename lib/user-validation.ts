@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
-import { db, users } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { db, users, accounts } from "@/lib/schema";
+import { eq, and } from "drizzle-orm";
 
 /**
  * 현재 세션 사용자의 실시간 DB 정보를 가져옵니다
@@ -17,11 +17,15 @@ export async function getCurrentUserData() {
         id: users.id,
         userId: users.userId,
         isAdmin: users.isAdmin,
-        discordId: users.discordId,
+        discordId: accounts.providerAccountId,
         nickname: users.nickname,
         isInit: users.isInit,
       })
       .from(users)
+      .leftJoin(
+        accounts,
+        and(eq(accounts.userId, users.id), eq(accounts.provider, "discord"))
+      )
       .where(eq(users.id, session.user.id))
       .limit(1);
 

@@ -1,5 +1,5 @@
-import { db, users } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { db, users, accounts } from "@/lib/schema";
+import { eq, and } from "drizzle-orm";
 import { createBasket } from "@/lib/tebex"; // Tebex API 함수 임포트
 
 /**
@@ -93,13 +93,17 @@ class UserService {
     const user = await db
       .select({
         id: users.id,
-        discordId: users.discordId,
+        discordId: accounts.providerAccountId,
         nickname: users.nickname,
         role: users.roles,
         isInit: users.isInit,
         basketIdent: users.basketIdent, // basketIdent도 선택하도록 추가
       })
       .from(users)
+      .leftJoin(
+        accounts,
+        and(eq(accounts.userId, users.id), eq(accounts.provider, "discord"))
+      )
       .where(eq(users.id, userId));
     return user;
   }
@@ -125,9 +129,13 @@ class UserService {
           id: users.id,
           userId: users.userId,
           nickname: users.nickname,
-          discordId: users.discordId,
+          discordId: accounts.providerAccountId,
         })
         .from(users)
+        .leftJoin(
+          accounts,
+          and(eq(accounts.userId, users.id), eq(accounts.provider, "discord"))
+        )
         .where(eq(users.id, id))
         .limit(1);
 
@@ -229,8 +237,25 @@ class UserService {
 
     try {
       const userResult = await db
-        .select()
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          image: users.image,
+          nickname: users.nickname,
+          userId: users.userId,
+          discordId: accounts.providerAccountId,
+          isAdmin: users.isAdmin,
+          isInit: users.isInit,
+          basketIdent: users.basketIdent,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        })
         .from(users)
+        .leftJoin(
+          accounts,
+          and(eq(accounts.userId, users.id), eq(accounts.provider, "discord"))
+        )
         .where(eq(users.id, id))
         .limit(1);
 
