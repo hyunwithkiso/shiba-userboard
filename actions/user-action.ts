@@ -149,14 +149,14 @@ export async function getCurrentUserInfo() {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return null;
+      return { success: false, error: "로그인이 필요합니다." };
     }
 
-    const user = await userService.getUserInfo(session.user.id);
-    return user.success ? user.user : null;
+    const result = await userService.getUserInfo(session.user.id);
+    return result;
   } catch (error) {
     console.error("[getCurrentUserInfo] Error:", error);
-    return null;
+    return { success: false, error: "사용자 정보 조회 중 오류가 발생했습니다." };
   }
 }
 

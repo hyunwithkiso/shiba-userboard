@@ -34,7 +34,7 @@ export default function HeaderAvatar() {
       const fetchUserData = async () => {
         try {
           const result = await getCurrentUserInfo();
-          if (result.success && result.user) {
+          if (result && result.success && result.user) {
             setUserData({
               isAdmin: result.user.isAdmin,
               hasUserId: !!result.user.userId,
