@@ -49,6 +49,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { makeAdminAction, removeAdminAction } from "@/actions/user-action";
 import { updateUserIdAction } from "@/actions/user-action";
 
 interface AdminUsersPageProps {
@@ -62,9 +63,10 @@ interface AdminUsersPageProps {
     isAdmin: boolean | null;
     createdAt: Date;
   }>;
+  currentUserUserId?: string | null;
 }
 
-export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
+export default function AdminUsersClient({ userList, currentUserUserId }: AdminUsersPageProps) {
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [search, setSearch] = useState("");
@@ -77,8 +79,16 @@ export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
   const [newUserId, setNewUserId] = useState("");
   const [isUserIdDialogOpen, setIsUserIdDialogOpen] = useState(false);
 
+  // 마스터 권한 체크 (userId가 "1"인 사용자만)
+  const isMaster = currentUserUserId === "1";
+
+  // 중복 제거된 유저 목록 (클라이언트 사이드에서도 안전장치)
+  const uniqueUserList = userList.filter((user, index, self) => 
+    index === self.findIndex(u => u.id === user.id)
+  );
+
   // 필터링된 유저 목록
-  const filteredUsers = userList.filter((user) => {
+  const filteredUsers = uniqueUserList.filter((user) => {
     if (!search || !filter) return true;
 
     const searchLower = search.toLowerCase();
@@ -151,24 +161,34 @@ export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
   const handleMakeAdmin = async (userId: string, userName: string) => {
     try {
       setIsProcessing(true);
-      const response = await fetch("/api/admin/users/make-admin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId }),
-      });
+      const result = await makeAdminAction(userId);
 
-      if (!response.ok) {
-        throw new Error("어드민 권한 부여에 실패했습니다.");
+      if (result.success) {
+        toast.success(`${userName}님에게 어드민 권한이 부여되었습니다.`);
+        router.refresh();
+      } else {
+        toast.error(result.error || "어드민 권한 부여에 실패했습니다.");
       }
-
-      toast.success(`${userName}님에게 어드민 권한이 부여되었습니다.`);
-      router.refresh();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다."
-      );
+      toast.error("어드민 권한 부여 중 오류가 발생했습니다.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRemoveAdmin = async (userId: string, userName: string) => {
+    try {
+      setIsProcessing(true);
+      const result = await removeAdminAction(userId);
+
+      if (result.success) {
+        toast.success(`${userName}님의 어드민 권한이 제거되었습니다.`);
+        router.refresh();
+      } else {
+        toast.error(result.error || "어드민 권한 제거에 실패했습니다.");
+      }
+    } catch (error) {
+      toast.error("어드민 권한 제거 중 오류가 발생했습니다.");
     } finally {
       setIsProcessing(false);
     }
@@ -204,7 +224,7 @@ export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
     <div className="container max-w-6xl py-6 space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">유저 관리</h1>
-        <p className="text-muted-foreground">총 {userList.length}명의 유저</p>
+        <p className="text-muted-foreground">총 {uniqueUserList.length}명의 유저</p>
       </div>
 
       <Card>
@@ -290,16 +310,18 @@ export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <span>{user.userId || "-"}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        title="고유번호 편집"
-                        onClick={() => openUserIdDialog(user)}
-                        disabled={isProcessing}
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
+                      {isMaster && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          title="고유번호 편집"
+                          onClick={() => openUserIdDialog(user)}
+                          disabled={isProcessing}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>{user.nickname || user.name || "-"}</TableCell>
@@ -313,7 +335,7 @@ export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-center gap-2">
-                      {!user.isAdmin && (
+                      {isMaster && !user.isAdmin && (
                         <>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -334,8 +356,7 @@ export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
                                   {user.nickname || user.name}님에게 어드민
-                                  권한을 부여하시겠습니까? 이 작업은 되돌릴 수
-                                  없습니다.
+                                  권한을 부여하시겠습니까?
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -349,6 +370,48 @@ export default function AdminUsersClient({ userList }: AdminUsersPageProps) {
                                   }
                                 >
                                   권한 부여
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
+                      )}
+                      {isMaster && user.isAdmin && (
+                        <>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8 text-orange-500 hover:text-orange-500"
+                                title="어드민 권한 제거"
+                                disabled={isProcessing}
+                              >
+                                <ShieldAlert className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  어드민 권한 제거
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {user.nickname || user.name}님의 어드민
+                                  권한을 제거하시겠습니까?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>취소</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-orange-500 hover:bg-orange-600"
+                                  onClick={() =>
+                                    handleRemoveAdmin(
+                                      user.id,
+                                      user.nickname || user.name || "알 수 없음"
+                                    )
+                                  }
+                                >
+                                  권한 제거
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

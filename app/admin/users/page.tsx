@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { checkCurrentUserAdmin } from "@/lib/user-validation";
+import { checkCurrentUserAdmin, getCurrentUserData } from "@/lib/user-validation";
 import { db, users, accounts } from "@/lib/schema";
 import { desc, asc, eq, and } from "drizzle-orm";
 import AdminUsersClient from "./client";
@@ -22,8 +22,11 @@ export default async function AdminUsersPage() {
     redirect("/");
   }
 
+  // 현재 사용자 정보 가져오기 (마스터 권한 확인용)
+  const currentUser = await getCurrentUserData();
+
   const userList = await db
-    .select({
+    .selectDistinct({
       id: users.id,
       name: users.name,
       email: users.email,
@@ -42,7 +45,7 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="container max-w-6xl py-6 space-y-8 mx-auto">
-      <AdminUsersClient userList={userList} />
+      <AdminUsersClient userList={userList} currentUserUserId={currentUser?.userId} />
     </div>
   );
 }

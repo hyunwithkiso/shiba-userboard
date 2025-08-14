@@ -149,13 +149,67 @@ export async function getCurrentUserInfo() {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return { success: false, error: "로그인이 필요합니다." };
+      return null;
     }
 
-    const result = await userService.getUserInfo(session.user.id);
-    return result;
+    const user = await userService.getUserInfo(session.user.id);
+    return user.success ? user.user : null;
   } catch (error) {
-    console.error("[Action:getCurrentUserInfo] 사용자 정보 조회 실패", error);
-    return { success: false, error: "서버 오류가 발생했습니다." };
+    console.error("[getCurrentUserInfo] Error:", error);
+    return null;
+  }
+}
+
+/**
+ * 사용자에게 어드민 권한을 부여합니다.
+ * @param userId 권한을 부여할 사용자의 ID
+ * @returns 성공 또는 실패를 나타내는 객체
+ */
+export async function makeAdminAction(userId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/admin/users/make-admin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
+    });
+
+    if (!response.ok) {
+      return { success: false, error: '어드민 권한 부여에 실패했습니다.' };
+    }
+
+    revalidatePath('/admin/users');
+    return { success: true };
+  } catch (error) {
+    console.error('[makeAdminAction] Error:', error);
+    return { success: false, error: '서버 오류가 발생했습니다.' };
+  }
+}
+
+/**
+ * 사용자의 어드민 권한을 제거합니다.
+ * @param userId 권한을 제거할 사용자의 ID
+ * @returns 성공 또는 실패를 나타내는 객체
+ */
+export async function removeAdminAction(userId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/admin/users/remove-admin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
+    });
+
+    if (!response.ok) {
+      return { success: false, error: '어드민 권한 제거에 실패했습니다.' };
+    }
+
+    revalidatePath('/admin/users');
+    return { success: true };
+  } catch (error) {
+    console.error('[removeAdminAction] Error:', error);
+    return { success: false, error: '서버 오류가 발생했습니다.' };
   }
 }
