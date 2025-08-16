@@ -16,7 +16,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, ShieldAlert, Trash2, ArrowUpDown, Edit } from "lucide-react";
+import { Shield, ShieldAlert, Trash2, ArrowUpDown, Edit, MoreHorizontal } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +44,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -334,127 +341,128 @@ export default function AdminUsersClient({ userList, currentUserUserId }: AdminU
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="flex justify-center gap-2">
-                      {isMaster && !user.isAdmin && (
-                        <>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8"
-                                title="어드민으로 전환"
-                                disabled={isProcessing}
-                              >
-                                <Shield className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
+                    <div className="flex justify-center">
+                      {isMaster && user.userId !== "1" && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              disabled={isProcessing}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {!user.isAdmin && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <Shield className="mr-2 h-4 w-4" />
                                   어드민 권한 부여
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {user.nickname || user.name}님에게 어드민
-                                  권한을 부여하시겠습니까?
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>취소</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    handleMakeAdmin(
-                                      user.id,
-                                      user.nickname || user.name || "알 수 없음"
-                                    )
-                                  }
-                                >
-                                  권한 부여
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </>
-                      )}
-                      {isMaster && user.isAdmin && (
-                        <>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8 text-orange-500 hover:text-orange-500"
-                                title="어드민 권한 제거"
-                                disabled={isProcessing}
-                              >
-                                <ShieldAlert className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    어드민 권한 부여
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {user.nickname || user.name}님에게 어드민
+                                    권한을 부여하시겠습니까?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>취소</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() =>
+                                      handleMakeAdmin(
+                                        user.id,
+                                        user.nickname || user.name || "알 수 없음"
+                                      )
+                                    }
+                                  >
+                                    권한 부여
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                          {user.isAdmin && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <ShieldAlert className="mr-2 h-4 w-4 text-orange-500" />
                                   어드민 권한 제거
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {user.nickname || user.name}님의 어드민
-                                  권한을 제거하시겠습니까?
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>취소</AlertDialogCancel>
-                                <AlertDialogAction
-                                  className="bg-orange-500 hover:bg-orange-600"
-                                  onClick={() =>
-                                    handleRemoveAdmin(
-                                      user.id,
-                                      user.nickname || user.name || "알 수 없음"
-                                    )
-                                  }
-                                >
-                                  권한 제거
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-8 w-8 text-red-500 hover:text-red-500"
-                                title="유저 삭제"
-                                disabled={isProcessing}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>유저 삭제</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {user.nickname || user.name}님의 계정을
-                                  삭제하시겠습니까? 이 작업은 되돌릴 수 없으며,
-                                  모든 데이터가 삭제됩니다.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>취소</AlertDialogCancel>
-                                <AlertDialogAction
-                                  className="bg-red-500 hover:bg-red-600"
-                                  onClick={() =>
-                                    handleDeleteUser(
-                                      user.id,
-                                      user.nickname || user.name || "알 수 없음"
-                                    )
-                                  }
-                                >
-                                  삭제
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </>
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    어드민 권한 제거
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {user.nickname || user.name}님의 어드민
+                                    권한을 제거하시겠습니까?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>취소</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-orange-500 hover:bg-orange-600"
+                                    onClick={() =>
+                                      handleRemoveAdmin(
+                                        user.id,
+                                        user.nickname || user.name || "알 수 없음"
+                                      )
+                                    }
+                                  >
+                                    권한 제거
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                          {(user.isAdmin || !user.isAdmin) && (
+                            <>
+                              {user.isAdmin && <DropdownMenuSeparator />}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                                    유저 삭제
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>유저 삭제</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      {user.nickname || user.name}님의 계정을
+                                      삭제하시겠습니까? 이 작업은 되돌릴 수 없으며,
+                                      모든 데이터가 삭제됩니다.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>취소</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      className="bg-red-500 hover:bg-red-600"
+                                      onClick={() =>
+                                        handleDeleteUser(
+                                          user.id,
+                                          user.nickname || user.name || "알 수 없음"
+                                        )
+                                      }
+                                    >
+                                      삭제
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                   </TableCell>
