@@ -218,6 +218,10 @@
     }
   }
 
+  * {
+    font-family: Pretendard, sans-serif;
+  }
+
   /* 다크 모드 Prose 스타일 */
   .dark .prose {
     @apply text-foreground; /* 다크모드 기본 텍스트 */

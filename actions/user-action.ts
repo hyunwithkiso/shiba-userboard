@@ -167,17 +167,24 @@ export async function getCurrentUserInfo() {
  */
 export async function makeAdminAction(userId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const response = await fetch('/api/admin/users/make-admin', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ userId }),
-    });
-
-    if (!response.ok) {
-      return { success: false, error: '어드민 권한 부여에 실패했습니다.' };
+    // 인증 확인
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: '로그인이 필요합니다.' };
     }
+
+    // 권한 확인 (현 사용자 어드민 여부)
+    const current = await userService.getUserInfo(session.user.id);
+    if (!current.success || !current.user?.isAdmin) {
+      return { success: false, error: '관리자 권한이 필요합니다.' };
+    }
+
+    // 입력값 검사
+    if (!userId) {
+      return { success: false, error: 'userId가 필요합니다.' };
+    }
+
+    await db.update(users).set({ isAdmin: true, updatedAt: new Date() }).where(eq(users.id, userId));
 
     revalidatePath('/admin/users');
     return { success: true };
@@ -194,17 +201,24 @@ export async function makeAdminAction(userId: string): Promise<{ success: boolea
  */
 export async function removeAdminAction(userId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const response = await fetch('/api/admin/users/remove-admin', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ userId }),
-    });
-
-    if (!response.ok) {
-      return { success: false, error: '어드민 권한 제거에 실패했습니다.' };
+    // 인증 확인
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: '로그인이 필요합니다.' };
     }
+
+    // 권한 확인 (현 사용자 어드민 여부)
+    const current = await userService.getUserInfo(session.user.id);
+    if (!current.success || !current.user?.isAdmin) {
+      return { success: false, error: '관리자 권한이 필요합니다.' };
+    }
+
+    // 입력값 검사
+    if (!userId) {
+      return { success: false, error: 'userId가 필요합니다.' };
+    }
+
+    await db.update(users).set({ isAdmin: false, updatedAt: new Date() }).where(eq(users.id, userId));
 
     revalidatePath('/admin/users');
     return { success: true };
