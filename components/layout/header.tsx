@@ -42,10 +42,11 @@ const navLinks = [
   { href: "/chat-title", label: "채팅 칭호 업로드" },
   { href: "/events", label: "이벤트" },
   { href: "/shop", label: "상점" },
+  { href: "/image-tools", label: "이미지 압축" },
 ];
 
 // 보호된 라우트들
-const protectedRoutes = ["/killfeed", "/chat-title", "/shop"];
+const protectedRoutes = ["/killfeed", "/chat-title", "/shop", "/image-tools"];
 
 // 보호된 링크 컴포넌트
 function ProtectedLink({ 
