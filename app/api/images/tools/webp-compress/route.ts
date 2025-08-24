@@ -18,18 +18,23 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+    const qualityParam = formData.get("quality") as string | null;
+    
     if (!file) {
       return NextResponse.json({ error: "파일이 선택되지 않았습니다." }, { status: 400 });
     }
 
+    // Parse quality parameter (default: 80, range: 10-100)
+    const quality = qualityParam ? Math.max(10, Math.min(100, parseInt(qualityParam))) : 80;
+
     const arrayBuffer = await file.arrayBuffer();
     const input = Buffer.from(arrayBuffer);
 
-    // Re-encode as WEBP with quality 80
-    const webpBuffer = await sharp(input).webp({ quality: 80, effort: 4 }).toBuffer();
+    // Re-encode as WEBP with adjustable quality
+    const webpBuffer = await sharp(input).webp({ quality, effort: 4 }).toBuffer();
 
     const baseName = (file.name || "output").replace(/\.[^/.]+$/, "");
-    const finalName = `${baseName}_q80.webp`;
+    const finalName = `${baseName}_q${quality}.webp`;
     const asciiFallback = finalName.replace(/[^\x20-\x7E]/g, "_");
     const encoded = encodeURIComponent(finalName);
     return new NextResponse(webpBuffer, {
