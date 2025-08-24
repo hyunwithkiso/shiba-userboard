@@ -6,7 +6,7 @@ import { getCurrentUserData } from "@/lib/user-validation";
 import { checkUserInitialization } from "@/lib/auth-utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
-import ImageToolsTabs from "@/components/tools/ImageToolsTabs";
+import ImageCompressionTool from "@/components/tools/ImageCompressionTool";
 
 export const metadata: Metadata = {
   title: "이미지 압축 도구",
@@ -38,7 +38,7 @@ export default async function ImageToolsPage() {
           </div>
         </div>
 
-        <ImageToolsTabs />
+        <ImageCompressionTool />
       </main>
     );
   } catch (error) {
