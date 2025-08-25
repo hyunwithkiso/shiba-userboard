@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
 
     const arrayBuffer = await file.arrayBuffer();
     const input = Buffer.from(arrayBuffer);
+    const originalSize = input.length;
 
     // Convert animated GIF -> animated WEBP with adjustable quality
     const webpBuffer = await sharp(input, { animated: true })
@@ -39,13 +40,24 @@ export async function POST(request: NextRequest) {
     const finalName = `${baseName}.webp`;
     const asciiFallback = finalName.replace(/[^\x20-\x7E]/g, "_");
     const encoded = encodeURIComponent(finalName);
-    return new NextResponse(webpBuffer, {
+    const optimizedSize = webpBuffer.length;
+    const compressionRatio = ((originalSize - optimizedSize) / originalSize * 100).toFixed(1);
+    // Use Uint8Array (ArrayBufferView) to satisfy DOM BodyInit typing
+    const bodyView = new Uint8Array(
+      webpBuffer.buffer as ArrayBuffer,
+      webpBuffer.byteOffset,
+      webpBuffer.byteLength
+    );
+    return new NextResponse(bodyView, {
       status: 200,
       headers: {
         "Content-Type": "image/webp",
         // ASCII fallback + RFC 5987 for UTF-8 filename to avoid ByteString errors on non-ASCII
         "Content-Disposition": `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`,
         "Cache-Control": "no-store",
+        "X-Original-Size": originalSize.toString(),
+        "X-Optimized-Size": optimizedSize.toString(),
+        "X-Compression-Ratio": compressionRatio,
       },
     });
   } catch (error: any) {

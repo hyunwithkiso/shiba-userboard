@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -27,6 +27,12 @@ export default function ImageCompressionTool() {
     optimizedSize: number;
     compressionRatio: string;
   } | null>(null);
+  const [estimatedInfo, setEstimatedInfo] = useState<{
+    originalSize: number;
+    optimizedSize: number;
+    compressionRatio: string;
+  } | null>(null);
+  const [estimating, setEstimating] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const fileNameBase = useMemo(() => (file ? file.name.replace(/\.[^/.]+$/, "") : "output"), [file]);
@@ -54,6 +60,7 @@ export default function ImageCompressionTool() {
     setFile(f);
     setOutputUrl(null);
     setCompressionInfo(null);
+    setEstimatedInfo(null);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -78,8 +85,78 @@ export default function ImageCompressionTool() {
     setFile(f);
     setOutputUrl(null);
     setCompressionInfo(null);
+    setEstimatedInfo(null);
     e.target.value = "";
   };
+
+  // Debounced estimation when inputs change
+  useEffect(() => {
+    if (!file) {
+      setEstimatedInfo(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    setEstimating(true);
+    const timeoutId = setTimeout(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        // quality is used for non-lossless or non-webp cases
+        fd.append("quality", quality.toString());
+        if (isWebpFile) {
+          fd.append("effort", "4");
+          fd.append("lossless", lossless.toString());
+        }
+        fd.append("estimate", "1");
+
+        const endpoint = isWebpFile
+          ? "/api/images/tools/webp-optimize"
+          : "/api/images/tools/image-to-webp";
+
+        const res = await fetch(endpoint, {
+          method: "POST",
+          body: fd,
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          // don't toast on estimation errors aggressively, just reset
+          setEstimatedInfo(null);
+          setEstimating(false);
+          return;
+        }
+
+        const data = await res.json();
+        const originalSize = Number(data?.originalSize) || 0;
+        const optimizedSize = Number(data?.optimizedSize) || 0;
+        let compressionRatio = data?.compressionRatio;
+        if (!compressionRatio && originalSize && optimizedSize) {
+          compressionRatio = (((originalSize - optimizedSize) / originalSize) * 100).toFixed(1);
+        }
+        if (originalSize && optimizedSize) {
+          setEstimatedInfo({
+            originalSize,
+            optimizedSize,
+            compressionRatio: String(compressionRatio || "0"),
+          });
+        } else {
+          setEstimatedInfo(null);
+        }
+      } catch (err: any) {
+        if (err?.name !== "AbortError") {
+          console.error("estimate error", err);
+        }
+      } finally {
+        setEstimating(false);
+      }
+    }, 300);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [file, isWebpFile, quality, lossless]);
 
   const processImage = async () => {
     if (!file) {
@@ -111,19 +188,12 @@ export default function ImageCompressionTool() {
         throw new Error(data.error || "처리 실패");
       }
       
-      // WEBP 최적화의 경우 압축 정보 추출
-      if (isWebpFile) {
-        const originalSize = parseInt(res.headers.get("X-Original-Size") || "0");
-        const optimizedSize = parseInt(res.headers.get("X-Optimized-Size") || "0");
-        const compressionRatio = res.headers.get("X-Compression-Ratio") || "0";
-        
-        if (originalSize && optimizedSize) {
-          setCompressionInfo({
-            originalSize,
-            optimizedSize,
-            compressionRatio
-          });
-        }
+      // 모든 경우 압축/변환 정보 추출 (서버 헤더 일관화)
+      const originalSize = parseInt(res.headers.get("X-Original-Size") || "0");
+      const optimizedSize = parseInt(res.headers.get("X-Optimized-Size") || "0");
+      const compressionRatio = res.headers.get("X-Compression-Ratio") || "0";
+      if (originalSize && optimizedSize) {
+        setCompressionInfo({ originalSize, optimizedSize, compressionRatio });
       }
       
       const blob = await res.blob();
@@ -238,9 +308,22 @@ export default function ImageCompressionTool() {
           </div>
         </div>
 
+        {estimatedInfo && (
+          <div className="rounded-lg border bg-muted/50 p-4">
+            <Label className="block mb-2 font-medium">예상 용량</Label>
+            <div className="space-y-1 text-sm">
+              <div>원본 크기: {formatFileSize(estimatedInfo.originalSize)}</div>
+              <div>예상 결과: {formatFileSize(estimatedInfo.optimizedSize)}</div>
+              <div className="font-medium text-muted-foreground">
+                예상 압축률: {estimatedInfo.compressionRatio}% 감소 {estimating ? "(계산 중)" : ""}
+              </div>
+            </div>
+          </div>
+        )}
+
         {compressionInfo && (
           <div className="rounded-lg border bg-muted/50 p-4">
-            <Label className="block mb-2 font-medium">압축 정보</Label>
+            <Label className="block mb-2 font-medium">처리 결과</Label>
             <div className="space-y-1 text-sm">
               <div>원본 크기: {formatFileSize(compressionInfo.originalSize)}</div>
               <div>최적화 크기: {formatFileSize(compressionInfo.optimizedSize)}</div>

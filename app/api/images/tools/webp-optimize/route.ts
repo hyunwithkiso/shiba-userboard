@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     const qualityParam = formData.get("quality") as string | null;
     const effortParam = formData.get("effort") as string | null;
     const losslessParam = formData.get("lossless") as string | null;
+    const estimateParam = formData.get("estimate") as string | null;
     
     if (!file) {
       return NextResponse.json({ error: "파일이 선택되지 않았습니다." }, { status: 400 });
@@ -71,8 +72,24 @@ export async function POST(request: NextRequest) {
     const finalName = `${baseName}_optimized_${suffix}.webp`;
     const asciiFallback = finalName.replace(/[^\x20-\x7E]/g, "_");
     const encoded = encodeURIComponent(finalName);
-    
-    return new NextResponse(optimizedBuffer, {
+
+    if (estimateParam === "1" || estimateParam === "true") {
+      return NextResponse.json({
+        originalSize,
+        optimizedSize: optimizedBuffer.length,
+        compressionRatio,
+        filename: finalName,
+        estimated: true,
+      });
+    }
+
+    // Use Uint8Array (ArrayBufferView) to satisfy DOM BodyInit typing
+    const bodyView = new Uint8Array(
+      optimizedBuffer.buffer as ArrayBuffer,
+      optimizedBuffer.byteOffset,
+      optimizedBuffer.byteLength
+    );
+    return new NextResponse(bodyView, {
       status: 200,
       headers: {
         "Content-Type": "image/webp",

@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const qualityParam = formData.get("quality") as string | null;
+    const estimateParam = formData.get("estimate") as string | null;
     
     if (!file) {
       return NextResponse.json({ error: "파일이 선택되지 않았습니다." }, { status: 400 });
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
 
     const arrayBuffer = await file.arrayBuffer();
     const input = Buffer.from(arrayBuffer);
+    const originalSize = input.length;
 
     // Check if input is animated GIF
     const isAnimatedGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
@@ -64,14 +66,37 @@ export async function POST(request: NextRequest) {
     const finalName = `${baseName}_q${quality}.webp`;
     const asciiFallback = finalName.replace(/[^\x20-\x7E]/g, "_");
     const encoded = encodeURIComponent(finalName);
-    
-    return new NextResponse(webpBuffer, {
+
+    const optimizedSize = webpBuffer.length;
+    const compressionRatio = ((originalSize - optimizedSize) / originalSize * 100).toFixed(1);
+
+    // if estimate flag present, return JSON instead of binary
+    if (estimateParam === "1" || estimateParam === "true") {
+      return NextResponse.json({
+        originalSize,
+        optimizedSize,
+        compressionRatio,
+        filename: finalName,
+        estimated: true,
+      });
+    }
+
+    // Use Uint8Array (ArrayBufferView) to satisfy DOM BodyInit typing
+    const bodyView = new Uint8Array(
+      webpBuffer.buffer as ArrayBuffer,
+      webpBuffer.byteOffset,
+      webpBuffer.byteLength
+    );
+    return new NextResponse(bodyView, {
       status: 200,
       headers: {
         "Content-Type": "image/webp",
         // ASCII fallback + RFC 5987 for UTF-8 filename to avoid ByteString errors on non-ASCII
         "Content-Disposition": `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`,
         "Cache-Control": "no-store",
+        "X-Original-Size": originalSize.toString(),
+        "X-Optimized-Size": optimizedSize.toString(),
+        "X-Compression-Ratio": compressionRatio,
       },
     });
   } catch (error: any) {

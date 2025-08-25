@@ -37,7 +37,13 @@ export async function POST(request: NextRequest) {
     const finalName = `${baseName}_q${quality}.webp`;
     const asciiFallback = finalName.replace(/[^\x20-\x7E]/g, "_");
     const encoded = encodeURIComponent(finalName);
-    return new NextResponse(webpBuffer, {
+    // Use Uint8Array (ArrayBufferView) to satisfy DOM BodyInit typing
+    const bodyView = new Uint8Array(
+      webpBuffer.buffer as ArrayBuffer,
+      webpBuffer.byteOffset,
+      webpBuffer.byteLength
+    );
+    return new NextResponse(bodyView, {
       status: 200,
       headers: {
         "Content-Type": "image/webp",

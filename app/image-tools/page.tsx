@@ -4,8 +4,6 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getCurrentUserData } from "@/lib/user-validation";
 import { checkUserInitialization } from "@/lib/auth-utils";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info } from "lucide-react";
 import ImageCompressionTool from "@/components/tools/ImageCompressionTool";
 
 export const metadata: Metadata = {
