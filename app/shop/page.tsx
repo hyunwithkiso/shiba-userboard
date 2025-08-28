@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { fetchPackages } from "@/lib/tebex"; // Tebex API 함수 경로 확인
+import { fetchPackages, TebexPackage } from "@/lib/tebex"; // Tebex API 함수 경로 확인
 import ProductCard from "@/components/product-card"; // ProductCard 컴포넌트 경로 확인
 import {
   Card,
