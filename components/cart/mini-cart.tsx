@@ -30,7 +30,7 @@ export function MiniCart() {
     async function loadBasket() {
       try {
         setLoading(true);
-        const result = await getUserBasketAction();
+        const result = await getUserBasketAction(); // 이미 캐싱됨
 
         if (result.success && result.data) {
           setBasket(result.data);
@@ -49,6 +49,10 @@ export function MiniCart() {
     }
 
     loadBasket();
+    
+    // ✅ 5초마다 업데이트 (캐시된 데이터 사용으로 API 호출 최소화)
+    const interval = setInterval(loadBasket, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   return (

@@ -48,26 +48,7 @@ function StoreLoadingSkeleton() {
   );
 }
 
-// 상품 목록을 비동기로 로드하고 표시하는 내부 컴포넌트
-async function ProductList() {
-  const packages = await fetchPackages();
-
-  if (packages.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center rounded-md border border-dashed">
-        <p className="text-muted-foreground">등록된 상품이 없습니다.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {packages.map((product) => (
-        <ProductCard key={product.id} product={product} />
-      ))}
-    </div>
-  );
-}
+// ✅ 중복 제거: ProductList 컴포넌트 제거 (메인 컴포넌트에서 직접 처리)
 
 // 상점 페이지 메인 컴포넌트
 export default async function ShopPage() {
@@ -85,112 +66,66 @@ export default async function ShopPage() {
     redirect("/init");
   }
 
-  // --- 장바구니 생성 보장 ---
-  try {
-    console.log(`[ShopPage] Ensuring basket exists for user ${userId}...`);
-    // ensureUserBasket은 userId가 필요할 수 있음 (내부 구현 확인 필요)
-    const ensureResult = await basketService.ensureUserBasket(userId);
-    if (!ensureResult.success) {
-      console.error(
-        `[ShopPage] Failed to ensure basket for user ${userId}:`,
-        ensureResult.error
-      );
-    } else {
-      console.log(`[ShopPage] Basket ensured for user ${userId}.`);
-    }
-  } catch (error) {
-    console.error(
-      `[ShopPage] Error ensuring basket for user ${userId}:`,
-      error
-    );
-  }
-  // --- 장바구니 생성 보장 끝 ---
-
-  // --- 장바구니 정보 및 인증 상태 확인 ---
-  let basketIdent: string | null = null;
-  let fetchedBasketInfo: any = null;
+  // --- 최적화된 장바구니 및 상품 데이터 조회 ---
+  let basketInfo: any = null;
+  let packages: TebexPackage[] = [];
   let authLinks: TebexAuthLink[] | null = null;
   let needsAuthentication = false;
   let authFetchError: string | null = null;
-  let basketUsername: string | null = null; // username 저장 변수 추가
+  let basketUsername: string | null = null;
 
   try {
-    const initialBasketData = await basketService.getUserBasket();
-    if (
-      initialBasketData &&
-      typeof initialBasketData === "object" &&
-      "ident" in initialBasketData &&
-      typeof initialBasketData.ident === "string"
-    ) {
-      basketIdent = initialBasketData.ident;
-      console.log(
-        `[ShopPage] Retrieved Basket Identifier for user ${userId}:`,
-        basketIdent
-      );
+    console.log(`[ShopPage] Fetching data for user ${userId}...`);
+    
+    // ✅ 병렬로 필요한 데이터만 조회 (캐싱 적용됨)
+    const [packagesResult, basketResult] = await Promise.allSettled([
+      fetchPackages(), // 캐싱됨 (10분)
+      basketService.getUserBasket() // 최적화됨 (중복 API 호출 제거)
+    ]);
 
-      if (basketIdent) {
+    // 상품 목록 처리
+    if (packagesResult.status === 'fulfilled') {
+      packages = packagesResult.value;
+      console.log(`[ShopPage] Loaded ${packages.length} packages (cached)`);
+    } else {
+      console.error('[ShopPage] Failed to load packages:', packagesResult.reason);
+    }
+
+    // 장바구니 처리
+    if (basketResult.status === 'fulfilled') {
+      basketInfo = basketResult.value;
+      basketUsername = basketInfo.username;
+      
+      console.log(`[ShopPage] Loaded basket ${basketInfo.ident} (optimized)`);
+
+      // ✅ 인증 상태는 이미 조회된 데이터에서 확인 (추가 API 호출 없음)
+      if (basketUsername === null) {
+        console.log(`[ShopPage] Basket needs authentication`);
+        needsAuthentication = true;
+        
+        // 인증 링크는 필요할 때만 조회
         try {
-          fetchedBasketInfo = await getTebexBasket(basketIdent);
-          console.log(
-            `[ShopPage] Fetched Basket Info via ident (${basketIdent}):`,
-            fetchedBasketInfo
-          );
-
-          if (fetchedBasketInfo) {
-            basketUsername = fetchedBasketInfo.username; // username 추출
-            if (basketUsername === null) {
-              console.log(
-                `[ShopPage] Basket ${basketIdent} needs authentication (username is null).`
-              );
-              needsAuthentication = true;
-              try {
-                const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/shop`;
-                authLinks = await basketService.getBasketAuthUrl(
-                  basketIdent,
-                  returnUrl
-                );
-                if (!authLinks || authLinks.length === 0) {
-                  throw new Error("No auth links returned from service.");
-                }
-              } catch (authError) {
-                console.error(
-                  `[ShopPage] Failed to fetch auth links for basket ${basketIdent}:`,
-                  authError
-                );
-                authFetchError =
-                  authError instanceof Error
-                    ? authError.message
-                    : "인증 링크를 가져오는 중 오류 발생";
-                needsAuthentication = false;
-              }
-            }
-          } else {
-            // getTebexBasket이 null을 반환한 경우 (예: 404)
-            console.warn(
-              `[ShopPage] Basket info not found for ident ${basketIdent}`
-            );
-            // 이 경우, ident는 있지만 실제 장바구니가 없는 상태. 필요시 추가 처리.
+          const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/shop`;
+          authLinks = await basketService.getBasketAuthUrl(basketInfo.ident, returnUrl);
+          
+          if (!authLinks || authLinks.length === 0) {
+            throw new Error("No auth links returned from service.");
           }
-        } catch (fetchError) {
-          console.error(
-            `[ShopPage] Error fetching basket details with ident ${basketIdent}:`,
-            fetchError
-          );
+        } catch (authError) {
+          console.error(`[ShopPage] Failed to fetch auth links:`, authError);
+          authFetchError = authError instanceof Error 
+            ? authError.message 
+            : "인증 링크를 가져오는 중 오류 발생";
+          needsAuthentication = false;
         }
       }
     } else {
-      console.warn(
-        `[ShopPage] Could not retrieve valid basket data or ident for user ${userId}. Received:`,
-        initialBasketData
-      );
+      console.error('[ShopPage] Failed to load basket:', basketResult.reason);
     }
   } catch (error) {
-    console.error(
-      `[ShopPage] Error in initial basket retrieval/fetching process for user ${userId}:`,
-      error
-    );
+    console.error(`[ShopPage] Error in data fetching:`, error);
   }
-  // --- 장바구니 조회 끝 ---
+  // --- 최적화된 데이터 조회 끝 ---
 
   // 카테고리 로딩은 추후 추가
 
@@ -373,7 +308,7 @@ export default async function ShopPage() {
             needsAuthentication && authLinks ? (
               <BasketAuthRequired
                 authLinks={authLinks}
-                basketIdent={basketIdent!}
+                basketIdent={basketInfo?.ident || ''}
               />
             ) : authFetchError ? (
               <Alert variant="destructive" className="mb-6">
@@ -388,9 +323,19 @@ export default async function ShopPage() {
 
           {/* 상품 목록 (인증 완료 시에만 표시) */}
           {!needsAuthentication && !authFetchError && basketUsername && (
-            <Suspense fallback={<StoreLoadingSkeleton />}>
-              <ProductList />
-            </Suspense>
+            <>
+              {packages.length === 0 ? (
+                <div className="flex h-64 items-center justify-center rounded-md border border-dashed">
+                  <p className="text-muted-foreground">등록된 상품이 없습니다.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {packages.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

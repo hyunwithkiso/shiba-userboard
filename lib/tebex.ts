@@ -5,6 +5,108 @@ const TEBEX_API_URL =
 const TEBEX_PRIVATE_KEY = process.env.TEBEX_PRIVATE_KEY;
 const TEBEX_PUBLIC_TOKEN = process.env.TEBEX_PUBLIC_TOKEN; // 웹스토어 식별자 (Account ID)
 
+// 캐싱 시스템
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  expiresAt: number;
+}
+
+class TebexCache {
+  private cache = new Map<string, CacheEntry<any>>();
+  private pendingRequests = new Map<string, Promise<any>>();
+  
+  // 캐시 지속 시간 (밀리초)
+  private readonly CACHE_DURATIONS = {
+    packages: 10 * 60 * 1000,      // 상품 목록: 10분
+    package: 5 * 60 * 1000,       // 개별 상품: 5분
+    basket: 2 * 60 * 1000,        // 장바구니: 2분
+    auth: 1 * 60 * 1000,          // 인증 링크: 1분
+  };
+
+  getCacheKey(type: keyof typeof this.CACHE_DURATIONS, identifier?: string): string {
+    return identifier ? `${type}:${identifier}` : type;
+  }
+
+  get<T>(type: keyof typeof this.CACHE_DURATIONS, identifier?: string): T | null {
+    const key = this.getCacheKey(type, identifier);
+    const entry = this.cache.get(key);
+    
+    if (!entry) return null;
+    
+    // 만료 확인
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    console.log(`[Tebex Cache Hit] ${key}`);
+    return entry.data;
+  }
+
+  set<T>(type: keyof typeof this.CACHE_DURATIONS, data: T, identifier?: string): void {
+    const key = this.getCacheKey(type, identifier);
+    const duration = this.CACHE_DURATIONS[type];
+    const now = Date.now();
+    
+    this.cache.set(key, {
+      data,
+      timestamp: now,
+      expiresAt: now + duration
+    });
+    
+    console.log(`[Tebex Cache Set] ${key} (expires in ${duration}ms)`);
+  }
+
+  invalidate(type: keyof typeof this.CACHE_DURATIONS, identifier?: string): void {
+    const key = this.getCacheKey(type, identifier);
+    this.cache.delete(key);
+    console.log(`[Tebex Cache Invalidate] ${key}`);
+  }
+
+  // Request deduplication
+  async dedupRequest<T>(key: string, requestFn: () => Promise<T>): Promise<T> {
+    if (this.pendingRequests.has(key)) {
+      console.log(`[Tebex Dedup] Waiting for existing request: ${key}`);
+      return this.pendingRequests.get(key)!;
+    }
+
+    const promise = requestFn().finally(() => {
+      this.pendingRequests.delete(key);
+    });
+
+    this.pendingRequests.set(key, promise);
+    return promise;
+  }
+
+  // 전체 캐시 정리 (메모리 관리)
+  cleanup(): void {
+    const now = Date.now();
+    let cleaned = 0;
+    
+    for (const [key, entry] of this.cache.entries()) {
+      if (now > entry.expiresAt) {
+        this.cache.delete(key);
+        cleaned++;
+      }
+    }
+    
+    if (cleaned > 0) {
+      console.log(`[Tebex Cache] Cleaned ${cleaned} expired entries`);
+    }
+  }
+}
+
+// 전역 캐시 인스턴스
+const tebexCache = new TebexCache();
+
+// 정기적으로 캐시 정리 (서버 환경에서만)
+if (typeof window === 'undefined') {
+  setInterval(() => {
+    tebexCache.cleanup();
+  }, 5 * 60 * 1000); // 5분마다 정리
+}
+
 // Tebex 상품(패키지) 데이터 타입 정의 (API 응답 구조에 따라 수정 필요)
 export interface TebexPackage {
   id: number;
@@ -161,46 +263,75 @@ async function fetchTebexApi<T>(
 
 /**
  * Tebex 스토어의 모든 상품(패키지) 목록을 가져옵니다.
- * 참고: 실제 API 엔드포인트는 문서 확인 후 정확히 명시해야 합니다.
- * 현재는 '/packages'를 가정하고 작성합니다.
+ * 캐싱 적용: 10분간 캐시됨
  */
 export async function fetchPackages(): Promise<TebexPackage[]> {
-  try {
-    // `/accounts/{publicToken}/packages` 엔드포인트 사용, 인증 불필요
-    const packages = await fetchTebexApi<TebexPackage[]>(
-      "/packages",
-      {},
-      false,
-      true
-    );
-    return packages || [];
-  } catch (error) {
-    console.error("Failed to fetch Tebex packages:", error);
-    return [];
+  // 캐시 확인
+  const cached = tebexCache.get<TebexPackage[]>('packages');
+  if (cached) {
+    return cached;
   }
+
+  return tebexCache.dedupRequest('fetchPackages', async () => {
+    try {
+      console.log('[Tebex API] Fetching packages from API...');
+      const packages = await fetchTebexApi<TebexPackage[]>(
+        "/packages",
+        {},
+        false,
+        true
+      );
+      
+      const result = packages || [];
+      
+      // 캐시에 저장
+      tebexCache.set('packages', result);
+      
+      return result;
+    } catch (error) {
+      console.error("Failed to fetch Tebex packages:", error);
+      return [];
+    }
+  });
 }
 
 /**
  * 특정 ID를 가진 상품(패키지)의 상세 정보를 가져옵니다.
- * 참고: 실제 API 엔드포인트는 문서 확인 후 정확히 명시해야 합니다.
- * 현재는 '/packages/{packageId}'를 가정하고 작성합니다.
+ * 캐싱 적용: 5분간 캐시됨
  */
 export async function fetchPackage(
   packageId: string | number
 ): Promise<TebexPackage | null> {
-  try {
-    // `/accounts/{publicToken}/packages/{packageId}` 엔드포인트 사용, 인증 불필요
-    const pkg = await fetchTebexApi<TebexPackage>(
-      `/packages/${packageId}`,
-      {},
-      false,
-      true
-    );
-    return pkg || null;
-  } catch (error) {
-    console.error(`Failed to fetch Tebex package (ID: ${packageId}):`, error);
-    return null;
+  const cacheId = String(packageId);
+  
+  // 캐시 확인
+  const cached = tebexCache.get<TebexPackage>('package', cacheId);
+  if (cached) {
+    return cached;
   }
+
+  return tebexCache.dedupRequest(`fetchPackage:${cacheId}`, async () => {
+    try {
+      console.log(`[Tebex API] Fetching package ${packageId} from API...`);
+      const pkg = await fetchTebexApi<TebexPackage>(
+        `/packages/${packageId}`,
+        {},
+        false,
+        true
+      );
+      
+      if (pkg) {
+        // 캐시에 저장
+        tebexCache.set('package', pkg, cacheId);
+        return pkg;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Failed to fetch Tebex package (ID: ${packageId}):`, error);
+      return null;
+    }
+  });
 }
 
 /**
@@ -251,30 +382,43 @@ export async function createBasket(
 export async function getBasket(
   basketIdent: string
 ): Promise<TebexBasket | null> {
-  try {
-    // BasketService의 getUserBasket 참고: `/accounts/{publicToken}/baskets/{ident}` 호출
-    // 이 엔드포인트가 Secret Key 없이 접근 가능한지 확인 필요 (문서 권장)
-    // 우선은 Secret Key 없이 시도
-    const basket = await fetchTebexApi<TebexBasket>(
-      `/baskets/${basketIdent}`,
-      {},
-      false, // 인증 불필요 가정
-      true // /accounts/{token} 경로 사용
-    );
-    return basket || null;
-  } catch (error) {
-    // 404 Not Found 등의 오류는 null로 처리 (장바구니 없음 간주)
-    if (
-      error instanceof Error &&
-      (error.message.includes("404") ||
-        error.message.toLowerCase().includes("not found"))
-    ) {
-      console.warn(`Basket not found (ident: ${basketIdent})`);
-      return null;
-    }
-    console.error(`Failed to get Tebex basket (ident: ${basketIdent}):`, error);
-    throw error; // 다른 종류의 오류는 다시 throw
+  // 캐시 확인 (짧은 캐시 시간 - 2분)
+  const cached = tebexCache.get<TebexBasket>('basket', basketIdent);
+  if (cached) {
+    return cached;
   }
+
+  return tebexCache.dedupRequest(`getBasket:${basketIdent}`, async () => {
+    try {
+      console.log(`[Tebex API] Fetching basket ${basketIdent} from API...`);
+      const basket = await fetchTebexApi<TebexBasket>(
+        `/baskets/${basketIdent}`,
+        {},
+        false, // 인증 불필요 가정
+        true // /accounts/{token} 경로 사용
+      );
+      
+      if (basket) {
+        // 캐시에 저장
+        tebexCache.set('basket', basket, basketIdent);
+        return basket;
+      }
+      
+      return null;
+    } catch (error) {
+      // 404 Not Found 등의 오류는 null로 처리 (장바구니 없음 간주)
+      if (
+        error instanceof Error &&
+        (error.message.includes("404") ||
+          error.message.toLowerCase().includes("not found"))
+      ) {
+        console.warn(`Basket not found (ident: ${basketIdent})`);
+        return null;
+      }
+      console.error(`Failed to get Tebex basket (ident: ${basketIdent}):`, error);
+      throw error; // 다른 종류의 오류는 다시 throw
+    }
+  });
 }
 
 /**
@@ -289,12 +433,7 @@ export async function addPackageToBasket(
   packageId: number,
   quantity: number = 1
 ): Promise<TebexBasket> {
-  // BasketService는 추가된 상품 정보만 반환하지만, 여기서는 전체 바스켓 반환
-  // BasketService 참고: `/baskets/{ident}/packages` 엔드포인트, 인증 필요 없음?
-  // 하지만 BasketService의 `addPackageToTebexBasket`에는 Secret Key 언급이 없으나, Basket 생성에는 사용함.
-  // 일반적으로 장바구니 수정은 인증이 필요할 가능성이 높음.
-  // 우선 인증(Secret Key) 사용으로 구현.
-  return fetchTebexApi<TebexBasket>(
+  const result = await fetchTebexApi<TebexBasket>(
     `/baskets/${basketIdent}/packages`,
     {
       method: "POST",
@@ -306,6 +445,12 @@ export async function addPackageToBasket(
     true, // 인증 필요 가정
     false // /accounts/{token} 경로 아님
   );
+  
+  // 장바구니 캐시 무효화
+  tebexCache.invalidate('basket', basketIdent);
+  console.log(`[Tebex] Added package ${packageId} to basket ${basketIdent}, cache invalidated`);
+  
+  return result;
 }
 
 /**
@@ -318,8 +463,7 @@ export async function removePackageFromBasket(
   basketIdent: string,
   packageId: number // Tebex Package ID
 ): Promise<TebexBasket> {
-  // API 문서상 성공 시 Basket 객체 반환
-  return fetchTebexApi<TebexBasket>( // 반환 타입 TebexBasket으로 명시
+  const result = await fetchTebexApi<TebexBasket>(
     `/baskets/${basketIdent}/packages/remove`, // API 엔드포인트
     {
       method: "POST", // POST 요청
@@ -328,6 +472,12 @@ export async function removePackageFromBasket(
     true, // 인증 필요 가정
     false // /accounts/{token} 경로 아님
   );
+  
+  // 장바구니 캐시 무효화
+  tebexCache.invalidate('basket', basketIdent);
+  console.log(`[Tebex] Removed package ${packageId} from basket ${basketIdent}, cache invalidated`);
+  
+  return result;
 }
 
 /**
@@ -348,10 +498,9 @@ export async function updatePackageQuantity(
     console.warn(
       `Attempting to update quantity to ${quantity} for package ${packageId}. Consider using removePackageFromBasket instead.`
     );
-    // 0 이하 수량 요청 시 에러 발생시키는 것이 더 안전할 수 있음
-    // throw new Error("Quantity must be greater than 0. Use removePackageFromBasket to remove.");
   }
-  return fetchTebexApi<any>(
+  
+  const result = await fetchTebexApi<any>(
     `/baskets/${basketIdent}/packages/${packageId}`, // URL 경로에 packageId 사용
     {
       method: "PUT",
@@ -360,6 +509,12 @@ export async function updatePackageQuantity(
     true, // 인증 필요 가정
     false // /accounts/{token} 경로 아님
   );
+  
+  // 장바구니 캐시 무효화
+  tebexCache.invalidate('basket', basketIdent);
+  console.log(`[Tebex] Updated package ${packageId} quantity to ${quantity} in basket ${basketIdent}, cache invalidated`);
+  
+  return result;
 }
 
 /**
@@ -459,3 +614,53 @@ export async function getCheckoutBasket(
   );
   return result.json();
 }
+
+// ✅ 캐시 관리 유틸리티 함수들
+export const TebexCacheUtils = {
+  /**
+   * 특정 장바구니의 캐시를 무효화합니다
+   */
+  invalidateBasket(basketIdent: string) {
+    tebexCache.invalidate('basket', basketIdent);
+    console.log(`[TebexCache] Invalidated basket cache: ${basketIdent}`);
+  },
+
+  /**
+   * 상품 목록 캐시를 무효화합니다 (새 상품 추가 시 등)
+   */
+  invalidatePackages() {
+    tebexCache.invalidate('packages');
+    console.log(`[TebexCache] Invalidated packages cache`);
+  },
+
+  /**
+   * 특정 상품의 캐시를 무효화합니다
+   */
+  invalidatePackage(packageId: string | number) {
+    tebexCache.invalidate('package', String(packageId));
+    console.log(`[TebexCache] Invalidated package cache: ${packageId}`);
+  },
+
+  /**
+   * 모든 캐시를 강제로 정리합니다
+   */
+  clearAll() {
+    tebexCache.cleanup();
+    console.log(`[TebexCache] Cleared all cache`);
+  },
+
+  /**
+   * 캐시 통계를 출력합니다 (디버깅용)
+   */
+  getStats() {
+    const cache = (tebexCache as any).cache;
+    const pending = (tebexCache as any).pendingRequests;
+    
+    console.log(`[TebexCache Stats] Cache entries: ${cache.size}, Pending requests: ${pending.size}`);
+    
+    return {
+      cacheEntries: cache.size,
+      pendingRequests: pending.size
+    };
+  }
+};

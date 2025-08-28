@@ -173,44 +173,19 @@ export class BasketService {
   }
 
   /**
-   * 새 Tebex 장바구니를 생성하고 DB에 ident를 저장합니다.
+   * ❌ DEPRECATED: 중복 API 호출을 유발하므로 사용 금지
+   * getUserBasket()에서 직접 처리함
    */
-  async createNewBasket(
+  private async createNewBasket(
     userId: string
   ): Promise<{ success: boolean; basketIdent?: string; error?: string }> {
-    try {
-      console.log(`[BasketService] Creating new basket for user: ${userId}`);
-      // Tebex에서 먼저 장바구니 생성
-      const completeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/checkout/complete`; // Define URLs here
-      const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/checkout/cancel`;
-      const basketData = await createTebexBasket(completeUrl, cancelUrl); // Use imported function
-      console.log("[BasketService] Basket created in Tebex:", basketData);
-
-      // DB에 basketIdent 업데이트
-      await db
-        .update(users)
-        .set({ basketIdent: basketData.ident, updatedAt: new Date() })
-        .where(eq(users.id, userId));
-      console.log(
-        `[BasketService] Basket ident ${basketData.ident} saved to DB for user ${userId}.`
-      );
-
-      return { success: true, basketIdent: basketData.ident };
-    } catch (error) {
-      console.error("[BasketService] Error creating new basket:", error);
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to create new basket",
-      };
-    }
+    console.warn('[BasketService] createNewBasket is deprecated. Use getUserBasket() instead.');
+    return { success: false, error: "Deprecated method. Use getUserBasket() instead." };
   }
 
   /**
    * 사용자의 유효한 Tebex 장바구니를 가져옵니다.
-   * DB 조회 -> Tebex 유효성 검사 -> 없으면 생성 순서
+   * 최적화: 중복 API 호출 제거, 캐싱 활용
    */
   async getUserBasket(): Promise<TebexBasket> {
     const session = await auth();
@@ -230,49 +205,47 @@ export class BasketService {
       .limit(1);
     let basketIdent = userData[0]?.basketIdent;
 
-    // 2. ident가 있으면 Tebex에서 유효성 검사
+    // 2. ident가 있으면 캐싱된 Tebex 조회로 유효성 검사
     if (basketIdent) {
-      console.log(
-        `[BasketService] Found ident in DB: ${basketIdent}. Validating...`
-      );
+      console.log(`[BasketService] Found ident in DB: ${basketIdent}. Validating...`);
       try {
-        const basket = await getTebexBasket(basketIdent); // lib/tebex의 함수 사용
+        const basket = await getTebexBasket(basketIdent); // 캐싱됨
         if (basket && !basket.complete) {
-          console.log(`[BasketService] Ident ${basketIdent} is valid.`);
-          return basket; // 유효한 장바구니 반환
+          console.log(`[BasketService] Ident ${basketIdent} is valid (cached).`);
+          return basket; // ✅ 유효한 장바구니 반환 (추가 API 호출 없음)
         } else {
-          console.log(
-            `[BasketService] Ident ${basketIdent} is invalid or completed.`
-          );
+          console.log(`[BasketService] Ident ${basketIdent} is invalid or completed.`);
           basketIdent = null; // 유효하지 않음
         }
       } catch (error) {
-        console.warn(
-          `[BasketService] Validation failed for ident ${basketIdent}:`,
-          error
-        );
+        console.warn(`[BasketService] Validation failed for ident ${basketIdent}:`, error);
         basketIdent = null; // 검증 실패 시 유효하지 않음
       }
     }
 
-    // 3. 유효한 ident가 없으면 새로 생성
+    // 3. 유효한 ident가 없으면 새로 생성 (최적화: 생성 후 바로 반환)
     console.log("[BasketService] No valid basket found, creating new one...");
-    const creationResult = await this.createNewBasket(userId);
-    if (!creationResult.success || !creationResult.basketIdent) {
-      throw new Error(`Failed to create new basket: ${creationResult.error}`);
-    }
+    const completeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/checkout/complete`;
+    const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/checkout/cancel`;
 
-    // 4. 새로 생성된 장바구니 정보 반환
-    const newBasket = await getTebexBasket(creationResult.basketIdent);
-    if (!newBasket) {
-      throw new Error(
-        `Failed to retrieve newly created basket: ${creationResult.basketIdent}`
-      );
+    try {
+      // ✅ 직접 createBasket 호출로 중복 제거
+      const newBasket = await createTebexBasket(completeUrl, cancelUrl);
+      
+      // DB 업데이트
+      await db
+        .update(users)
+        .set({ basketIdent: newBasket.ident, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+
+      console.log(`[BasketService] Created and saved new basket: ${newBasket.ident}`);
+      
+      // ✅ 생성된 객체를 바로 반환 (추가 조회 API 호출 없음)
+      return newBasket;
+    } catch (error) {
+      console.error("[BasketService] Error creating new basket:", error);
+      throw new Error(`Failed to create new basket: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
-    console.log(
-      `[BasketService] Returning newly created basket: ${newBasket.ident}`
-    );
-    return newBasket;
   }
 
   /**
@@ -747,86 +720,23 @@ export class BasketService {
   }
 
   /**
-   * 사용자의 Tebex 장바구니를 확인하고, 없으면 생성하여 DB에 basketIdent를 저장합니다.
-   * @param userId 사용자 ID (NextAuth 세션에서 얻은 ID)
-   * @returns {Promise<{success: boolean, ident?: string | null, error?: string}>} 작업 성공 여부, basketIdent, 에러 메시지
+   * ❌ DEPRECATED: 중복 API 호출을 유발하므로 사용 금지
+   * getUserBasket()을 대신 사용하세요
    */
   async ensureUserBasket(userId: string): Promise<{
     success: boolean;
     ident?: string | null;
     error?: string;
   }> {
-    if (!userId) {
-      return { success: false, error: "User ID is required." };
-    }
-
-    // TODO: 실제 리디렉션 URL로 변경 필요
-    const completeUrl = "https://shiba.dokku.co.kr/checkout/success";
-    const cancelUrl = "https://shiba.dokku.co.kr/checkout/cancel";
-
+    console.warn('[BasketService] ensureUserBasket is deprecated. Use getUserBasket() instead.');
+    
     try {
-      // 1. DB에서 사용자의 basketIdent 확인
-      const userResult = await db
-        .select({ basketIdent: users.basketIdent })
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
-
-      const existingIdent = userResult[0]?.basketIdent;
-
-      if (existingIdent) {
-        console.log(
-          `[BasketService] Found existing basket ident for user ${userId}: ${existingIdent}`
-        );
-        // TODO: 필요시 Tebex API로 ident 유효성 검사 추가
-        return { success: true, ident: existingIdent };
-      }
-
-      // 2. basketIdent가 없으면 Tebex에서 새로 생성
-      console.log(
-        `[BasketService] No basket ident found for user ${userId}. Creating a new basket...`
-      );
-      // lib/tebex.ts 의 createBasket 함수 사용 (URL 인수 추가)
-      const basketResponse = await createBasket(completeUrl, cancelUrl);
-
-      if (!basketResponse || !basketResponse.ident) {
-        console.error(
-          "[BasketService] Failed to create basket in Tebex:",
-          basketResponse
-        );
-        return {
-          success: false,
-          error: "Failed to create basket via Tebex API.",
-        };
-      }
-
-      const newIdent = basketResponse.ident;
-      console.log(
-        `[BasketService] Created new basket with ident: ${newIdent} for user ${userId}`
-      );
-
-      // 3. 생성된 ident를 DB에 업데이트
-      await db
-        .update(users)
-        .set({ basketIdent: newIdent, updatedAt: new Date() })
-        .where(eq(users.id, userId));
-
-      console.log(
-        `[BasketService] Successfully updated basket ident for user ${userId}`
-      );
-
-      return { success: true, ident: newIdent };
+      const basket = await this.getUserBasket();
+      return { success: true, ident: basket.ident };
     } catch (error) {
-      console.error(
-        `[BasketService] Error ensuring user basket for ${userId}:`,
-        error
-      );
       return {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "An unknown error occurred while managing the basket.",
+        error: error instanceof Error ? error.message : "Failed to get basket"
       };
     }
   }
