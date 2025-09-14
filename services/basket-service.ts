@@ -15,6 +15,7 @@ import {
   removePackageFromBasket as removeTebexPackage,
   updatePackageQuantity as updateTebexPackageQuantity,
   createBasket,
+  TebexCacheUtils,
 } from "@/lib/tebex";
 
 export class BasketService {
@@ -119,6 +120,8 @@ export class BasketService {
       this.TEBEX_PUBLIC_TOKEN
     }/baskets/${basketIdent}/auth?returnUrl=${encodeURIComponent(returnUrl)}`;
     console.log(`[BasketService] Fetching auth URL: ${url}`);
+    // 인증 직전 캐시 무효화로 최신 상태 보장
+    try { TebexCacheUtils.invalidateBasket(basketIdent); } catch {}
 
     try {
       const response = await fetch(url, {
@@ -562,13 +565,22 @@ export class BasketService {
     userId: string,
     basketIdent: string,
     transactionId?: string
-  ): Promise<{ success: boolean; message?: string; purchaseIds?: string[] }> {
+  ): Promise<{ success: boolean; message?: string; purchaseIds?: string[]; purchase?: any }> {
     try {
       console.log(
         `[BasketService.createPurchase] Fetching basket info: ${basketIdent}`
       );
-      // getTebexBasket 사용
-      const basket = await getTebexBasket(basketIdent);
+      // getTebexBasket 사용 (레이트 리밋/네트워크 오류 시 Checkout API 폴백)
+      let basket = await getTebexBasket(basketIdent);
+      if (!basket) {
+        try {
+          const { getCheckoutBasket } = await import("@/lib/tebex");
+          basket = await getCheckoutBasket(basketIdent);
+          console.log(`[BasketService.createPurchase] Fallback checkout basket loaded for ${basketIdent}`);
+        } catch (fallbackErr) {
+          console.error(`[BasketService.createPurchase] Fallback checkout basket failed for ${basketIdent}:`, fallbackErr);
+        }
+      }
 
       if (!basket) {
         throw new Error(
@@ -667,7 +679,18 @@ export class BasketService {
           quantity: itemsArray[0]?.quantity || 1,
           basePrice: itemsArray[0]?.price || 0, // 주의: cents 단위 개당 가격
         });
-        return { success: true, purchaseIds: [purchaseId] };
+
+        // ✅ 구매 완료 시 해당 장바구니 캐시 무효화
+        TebexCacheUtils.invalidateBasket(basketIdent);
+        console.log(`[BasketService.createPurchase] Invalidated cache for completed basket: ${basketIdent}`);
+        
+        const purchaseSummary = {
+          id: purchaseId,
+          items: itemsArray,
+          totalAmount: totalBasketPrice,
+          currency: basket.currency || "USD",
+        };
+        return { success: true, purchaseIds: [purchaseId], purchase: purchaseSummary };
       } else {
         return { success: false, message: "장바구니에 상품이 없습니다." };
       }

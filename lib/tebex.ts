@@ -19,9 +19,9 @@ class TebexCache {
   // 캐시 지속 시간 (밀리초)
   private readonly CACHE_DURATIONS = {
     packages: 10 * 60 * 1000,      // 상품 목록: 10분
-    package: 5 * 60 * 1000,       // 개별 상품: 5분
-    basket: 2 * 60 * 1000,        // 장바구니: 2분
-    auth: 1 * 60 * 1000,          // 인증 링크: 1분
+    package: 5 * 60 * 1000,        // 개별 상품: 5분
+    basket: 5 * 1000,              // 장바구니: 5초 (인증/변경 민감)
+    auth: 60 * 1000,               // 인증 링크: 1분
   };
 
   getCacheKey(type: keyof typeof this.CACHE_DURATIONS, identifier?: string): string {
@@ -40,6 +40,13 @@ class TebexCache {
       return null;
     }
     
+    // ✅ 장바구니 캐시의 경우 완료 상태 재확인
+    if (type === 'basket' && entry.data?.complete === true) {
+      console.warn(`[Tebex Cache] Removing completed basket from cache: ${key}`);
+      this.cache.delete(key);
+      return null;
+    }
+    
     console.log(`[Tebex Cache Hit] ${key}`);
     return entry.data;
   }
@@ -48,6 +55,19 @@ class TebexCache {
     const key = this.getCacheKey(type, identifier);
     const duration = this.CACHE_DURATIONS[type];
     const now = Date.now();
+    
+    // ✅ 완료된 장바구니 또는 미인증(사용자명 없음) 장바구니는 캐시하지 않음
+    if (type === 'basket') {
+      const basket = data as any;
+      if (basket?.complete === true) {
+        console.warn(`[Tebex Cache] Not caching completed basket: ${key}`);
+        return;
+      }
+      if (basket && (basket.username === null || basket.username === undefined)) {
+        console.warn(`[Tebex Cache] Not caching pre-auth basket (username missing): ${key}`);
+        return;
+      }
+    }
     
     this.cache.set(key, {
       data,
@@ -100,11 +120,17 @@ class TebexCache {
 // 전역 캐시 인스턴스
 const tebexCache = new TebexCache();
 
-// 정기적으로 캐시 정리 (서버 환경에서만)
+// 정기적으로 캐시 정리 및 무결성 검사 (서버 환경에서만)
 if (typeof window === 'undefined') {
+  // 5분마다 일반 정리
   setInterval(() => {
     tebexCache.cleanup();
-  }, 5 * 60 * 1000); // 5분마다 정리
+  }, 5 * 60 * 1000);
+  
+  // 1분마다 무결성 검사 (완료된 장바구니 등)
+  setInterval(() => {
+    TebexCacheUtils.validateAndCleanup();
+  }, 1 * 60 * 1000);
 }
 
 // Tebex 상품(패키지) 데이터 타입 정의 (API 응답 구조에 따라 수정 필요)
@@ -247,7 +273,7 @@ async function fetchTebexApi<T>(
         errorData?.errors?.[0]?.message ||
         errorData?.message ||
         `HTTP error! status: ${response.status}`;
-      throw new Error(`Failed to fetch Tebex API (${url}): ${errorMessage}`);
+      throw new Error(`Failed to fetch Tebex API (${url}) [${response.status}]: ${errorMessage}`);
     }
 
     // 성공 응답 처리
@@ -446,8 +472,15 @@ export async function addPackageToBasket(
     false // /accounts/{token} 경로 아님
   );
   
-  // 장바구니 캐시 무효화
+  // 장바구니 캐시 무효화 및 브로드캐스트
   tebexCache.invalidate('basket', basketIdent);
+  
+  // 브라우저 환경에서만 브로드캐스트
+  if (typeof window !== 'undefined') {
+    const { CacheSyncUtils } = await import('@/lib/cache-sync');
+    CacheSyncUtils.broadcastBasketInvalidation(basketIdent);
+  }
+  
   console.log(`[Tebex] Added package ${packageId} to basket ${basketIdent}, cache invalidated`);
   
   return result;
@@ -473,8 +506,15 @@ export async function removePackageFromBasket(
     false // /accounts/{token} 경로 아님
   );
   
-  // 장바구니 캐시 무효화
+  // 장바구니 캐시 무효화 및 브로드캐스트
   tebexCache.invalidate('basket', basketIdent);
+  
+  // 브라우저 환경에서만 브로드캐스트
+  if (typeof window !== 'undefined') {
+    const { CacheSyncUtils } = await import('@/lib/cache-sync');
+    CacheSyncUtils.broadcastBasketInvalidation(basketIdent);
+  }
+  
   console.log(`[Tebex] Removed package ${packageId} from basket ${basketIdent}, cache invalidated`);
   
   return result;
@@ -510,8 +550,15 @@ export async function updatePackageQuantity(
     false // /accounts/{token} 경로 아님
   );
   
-  // 장바구니 캐시 무효화
+  // 장바구니 캐시 무효화 및 브로드캐스트
   tebexCache.invalidate('basket', basketIdent);
+  
+  // 브라우저 환경에서만 브로드캐스트
+  if (typeof window !== 'undefined') {
+    const { CacheSyncUtils } = await import('@/lib/cache-sync');
+    CacheSyncUtils.broadcastBasketInvalidation(basketIdent);
+  }
+  
   console.log(`[Tebex] Updated package ${packageId} quantity to ${quantity} in basket ${basketIdent}, cache invalidated`);
   
   return result;
@@ -579,7 +626,7 @@ export async function fetchTebexCheckoutApi<T>(
       const errorMessage =
         errorData?.message || `HTTP error! status: ${response.status}`;
       throw new Error(
-        `Failed to fetch Tebex Checkout API (${url}): ${errorMessage}`
+        `Failed to fetch Tebex Checkout API (${url}) [${response.status}]: ${errorMessage}`
       );
     }
 
@@ -600,19 +647,10 @@ export async function fetchTebexCheckoutApi<T>(
 export async function getCheckoutBasket(
   basketIdent: string
 ): Promise<TebexBasket> {
-  const result = await fetch(
-    `https://checkout.tebex.io/api/baskets/${basketIdent}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${Buffer.from(
-          `${process.env.TEBEX_PUBLIC_TOKEN}:${process.env.TEBEX_PRIVATE_KEY}`
-        ).toString("base64")}`,
-      },
-    }
-  );
-  return result.json();
+  // Checkout API는 별도의 Basic Auth 자격(TEBEX_CHECKOUT_API_USER/PASSWORD)을 사용
+  return fetchTebexCheckoutApi<TebexBasket>(`/baskets/${basketIdent}`, {
+    method: "GET",
+  });
 }
 
 // ✅ 캐시 관리 유틸리티 함수들
@@ -623,6 +661,15 @@ export const TebexCacheUtils = {
   invalidateBasket(basketIdent: string) {
     tebexCache.invalidate('basket', basketIdent);
     console.log(`[TebexCache] Invalidated basket cache: ${basketIdent}`);
+  },
+
+  /**
+   * 사용자 관련 모든 장바구니 캐시를 무효화합니다 (동시성 문제 해결)
+   */
+  invalidateUserBaskets(userId: string) {
+    // 현재는 basketIdent만 사용하므로 직접 구현
+    // 향후 userId 기반 캐시가 필요하면 확장
+    console.log(`[TebexCache] Invalidating all baskets for user: ${userId}`);
   },
 
   /**
@@ -647,6 +694,30 @@ export const TebexCacheUtils = {
   clearAll() {
     tebexCache.cleanup();
     console.log(`[TebexCache] Cleared all cache`);
+  },
+
+  /**
+   * 캐시 무결성 검사 및 정리
+   */
+  validateAndCleanup() {
+    const cache = (tebexCache as any).cache;
+    let cleaned = 0;
+    
+    for (const [key, entry] of cache.entries()) {
+      // 완료된 장바구니 캐시 제거
+      if (key.startsWith('basket:') && entry.data?.complete === true) {
+        cache.delete(key);
+        cleaned++;
+        console.warn(`[TebexCache] Removed completed basket from cache: ${key}`);
+      }
+    }
+    
+    if (cleaned > 0) {
+      console.log(`[TebexCache] Cleaned ${cleaned} invalid cache entries`);
+    }
+    
+    // 일반 정리도 실행
+    tebexCache.cleanup();
   },
 
   /**

@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  createPurchaseFromCheckout,
-  resetUserBasketAction,
-  getBasketAction,
-} from "@/actions/payment-actions";
+import { createPurchaseFromCheckout } from "@/actions/payment-actions";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -20,169 +16,55 @@ import {
 } from "lucide-react";
 
 // 상태를 나타내는 enum
-enum CheckoutStatus {
-  LOADING,
-  SUCCESS,
-  ALREADY_PROCESSED,
-  PENDING,
-  ERROR,
-  INVALID_BASKET,
-}
+enum CheckoutStatus { LOADING, SUCCESS, ERROR, INVALID }
 
-// Tebex 장바구니 응답 타입 정의
-interface TebexBasketDetails {
-  complete?: boolean;
-  links?: {
-    payment?: string[];
-    [key: string]: any;
-  };
-  id?: number;
-  ident?: string;
-  transaction_id?: string;
-  [key: string]: any;
-}
+// 장바구니/Checkout API 호출 금지: DB 구매내역만 조회
 
 // 클라이언트 컴포넌트 인터페이스 정의
-interface CheckoutCompleteClientProps {
-  basketIdent: string;
-  txn_id?: string;
-}
+interface CheckoutCompleteClientProps { basketIdent: string; txn_id?: string }
 
-export function CheckoutCompleteClient({
-  basketIdent,
-  txn_id,
-}: CheckoutCompleteClientProps) {
+export function CheckoutCompleteClient({ basketIdent, txn_id }: CheckoutCompleteClientProps) {
   const searchParams = useSearchParams();
   const transactionId = txn_id || searchParams.get("txn_id");
 
   const [status, setStatus] = useState<CheckoutStatus>(CheckoutStatus.LOADING);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [purchase, setPurchase] = useState<any | null>(null);
 
   useEffect(() => {
-    if (!basketIdent) {
-      console.error("Basket identifier not provided.");
-      setErrorMessage("결제 정보를 찾을 수 없습니다.");
-      setStatus(CheckoutStatus.INVALID_BASKET);
-      return;
-    }
-
-    console.log(
-      `[Client] Processing checkout for basket: ${basketIdent}, transaction_id: ${
-        transactionId || "N/A"
-      }`
-    );
-
-    const processCheckout = async () => {
-      setStatus(CheckoutStatus.LOADING);
-      setErrorMessage(null);
-
+    if (!transactionId) { setErrorMessage("거래 ID가 없습니다."); setStatus(CheckoutStatus.INVALID); return; }
+    if (!basketIdent) { setErrorMessage("장바구니 ID가 없습니다."); setStatus(CheckoutStatus.INVALID); return; }
+    let cancelled = false;
+    (async () => {
       try {
-        // 1. Tebex API 호출하여 결제 상태 확인 (fetchTebexCheckoutApi 대신 getBasketAction 사용)
-        console.log(`[${basketIdent}] Getting basket data...`);
-        const basketResult = await getBasketAction(basketIdent);
-
-        if (!basketResult.success) {
-          throw new Error(
-            basketResult.error || "장바구니 정보를 가져오는데 실패했습니다."
-          );
-        }
-
-        const basketDetails: TebexBasketDetails = basketResult.data;
-        console.log(`[${basketIdent}] Basket data:`, basketDetails);
-
-        // 결제 완료 여부 확인
-        const isPaymentComplete =
-          basketDetails?.complete === true ||
-          (basketDetails?.links?.payment &&
-            basketDetails.links.payment.length > 0);
-
-        if (isPaymentComplete) {
-          console.log(
-            `[${basketIdent}] Payment confirmed. Creating purchase record...`
-          );
-
-          // transactionId 확인 (URL 파라미터 또는 API 응답에서 가져옴)
-          const finalTransactionId =
-            transactionId || basketDetails.transaction_id;
-
-          if (finalTransactionId) {
-            console.log(
-              `[${basketIdent}] Using transaction ID: ${finalTransactionId}`
-            );
-          } else {
-            console.log(`[${basketIdent}] No transaction ID available.`);
-          }
-
-          // 2. 결제 완료 시, 서버 액션 호출하여 Purchase 생성
-          const result = await createPurchaseFromCheckout(
-            basketIdent,
-            finalTransactionId || undefined
-          );
-          console.log(`[${basketIdent}] Server Action Response:`, result);
-
-          // 3. 성공적으로 처리된 경우 basketIdent를 null로 리셋
-          if (result.success) {
-            console.log(
-              `[${basketIdent}] Purchase created successfully. Resetting basket ident...`
-            );
-            await resetUserBasketAction();
-            console.log(`[${basketIdent}] Basket ident reset completed.`);
+        const res = await createPurchaseFromCheckout(basketIdent, String(transactionId));
+        if (!cancelled) {
+          if (res.success && res.purchase) {
+            const p = (res.purchase as any)?.items ? res.purchase : (res.purchase as any)?.purchase ?? null;
+            if (p) setPurchase(p);
+            setStatus(CheckoutStatus.SUCCESS);
+          } else if (res.success) {
+            // 성공이지만 요약이 없는 경우(드문 케이스)
             setStatus(CheckoutStatus.SUCCESS);
           } else {
-            // 이미 처리된 구매인 경우도 basketIdent 리셋
-            if (result.error?.includes("already been recorded")) {
-              console.warn(
-                `[${basketIdent}] Purchase already processed. Resetting basket ident...`
-              );
-              await resetUserBasketAction();
-              console.log(`[${basketIdent}] Basket ident reset completed.`);
-              setStatus(CheckoutStatus.ALREADY_PROCESSED);
+            const msg = res.error || "";
+            if (/already/i.test(msg) || /이미/.test(msg)) {
+              // 이미 처리된 주문으로 간주하고 성공 화면으로 안내
+              setStatus(CheckoutStatus.SUCCESS);
             } else {
-              console.error(
-                `[${basketIdent}] Failed to create purchase:`,
-                result.error
-              );
-              setErrorMessage(
-                result.error || "구매 기록 생성 중 오류가 발생했습니다."
-              );
+              setErrorMessage(res.error || "구매 내역을 생성하지 못했습니다.");
               setStatus(CheckoutStatus.ERROR);
             }
           }
-        } else {
-          // 결제가 아직 완료되지 않은 경우
-          console.warn(`[${basketIdent}] Payment pending or not completed.`);
-          setStatus(CheckoutStatus.PENDING);
         }
-      } catch (error: unknown) {
-        console.error(`[${basketIdent}] Error processing checkout:`, error);
-        const message =
-          error instanceof Error
-            ? error.message
-            : "결제 상태 확인 중 알 수 없는 오류가 발생했습니다.";
-
-        // 오류 유형에 따른 처리
-        if (
-          message.includes("404") ||
-          message.toLowerCase().includes("not found")
-        ) {
-          setErrorMessage(
-            "유효하지 않은 결제 ID입니다. URL을 다시 확인해주세요."
-          );
-          setStatus(CheckoutStatus.INVALID_BASKET);
-        } else if (
-          message.includes("401") ||
-          message.toLowerCase().includes("unauthorized")
-        ) {
-          setErrorMessage("API 인증에 실패했습니다. 서버 설정을 확인해주세요.");
-          setStatus(CheckoutStatus.ERROR);
-        } else {
-          setErrorMessage(message);
+      } catch (e: any) {
+        if (!cancelled) {
+          setErrorMessage(e?.message || "구매 내역 생성 중 오류가 발생했습니다.");
           setStatus(CheckoutStatus.ERROR);
         }
       }
-    };
-
-    processCheckout();
+    })();
+    return () => { cancelled = true; };
   }, [basketIdent, transactionId]);
 
   // 상태에 따른 UI 렌더링
@@ -197,7 +79,6 @@ export function CheckoutCompleteClient({
           </div>
         );
       case CheckoutStatus.SUCCESS:
-      case CheckoutStatus.ALREADY_PROCESSED:
         return (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
@@ -206,10 +87,35 @@ export function CheckoutCompleteClient({
             <h1 className="text-3xl font-bold text-green-600 mb-3">
               결제가 성공적으로 완료되었습니다!
             </h1>
-            <p className="text-muted-foreground mb-8 max-w-md">
-              구매해 주셔서 감사합니다. 구매 내역에서 자세한 정보를 확인하실 수
-              있습니다.
-            </p>
+            {purchase ? (
+              <div className="text-sm text-left bg-muted/30 rounded-lg p-4 my-4 w-full max-w-xl">
+                <div className="font-semibold mb-2">주문 요약</div>
+                <ul className="space-y-1">
+                  {Array.isArray(purchase.items) && purchase.items.length > 0 ? (
+                    purchase.items.map((it: any, idx: number) => (
+                      <li key={idx} className="flex justify-between">
+                        <span>{it.name || '상품'} x {it.quantity || 1}</span>
+                        <span>
+                          {new Intl.NumberFormat('en-US', { style: 'currency', currency: purchase.currency || 'USD' }).format((it.totalPrice ?? it.price ?? 0) / 100)}
+                        </span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-muted-foreground">상품 정보가 없습니다.</li>
+                  )}
+                </ul>
+                <div className="flex justify-between font-semibold border-t pt-2 mt-2">
+                  <span>총 합계</span>
+                  <span>
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: purchase.currency || 'USD' }).format((purchase.totalAmount ?? 0)/100)}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-muted-foreground mb-8 max-w-md">
+                구매해 주셔서 감사합니다. 구매 내역에서 자세한 정보를 확인하실 수 있습니다.
+              </p>
+            )}
             <div className="flex gap-4">
               <Button asChild variant="outline" size="lg">
                 <Link href="/shop">
@@ -231,39 +137,19 @@ export function CheckoutCompleteClient({
             </div>
           </div>
         );
-      case CheckoutStatus.PENDING:
-        return (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-6">
-              <Hourglass className="h-10 w-10 text-yellow-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-yellow-600 mb-3">
-              결제 진행 중
-            </h1>
-            <p className="text-muted-foreground mb-8 max-w-md">
-              결제가 아직 처리 중입니다. 잠시 후 다시 확인해 주세요.
-            </p>
-            <Button asChild variant="outline" size="lg">
-              <Link href="/shop">
-                <ShoppingBag className="mr-2 h-4 w-4" />
-                상점으로 돌아가기
-              </Link>
-            </Button>
-          </div>
-        );
       case CheckoutStatus.ERROR:
-      case CheckoutStatus.INVALID_BASKET:
+      case CheckoutStatus.INVALID:
         return (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
               <XCircle className="h-10 w-10 text-red-600" />
             </div>
             <h1 className="text-3xl font-bold text-red-600 mb-3">
-              오류가 발생했습니다
+              {status === CheckoutStatus.INVALID ? "잘못된 요청" : "오류가 발생했습니다"}
             </h1>
             <p className="text-muted-foreground mb-8 max-w-md">
               {errorMessage ||
-                "결제 처리 중 문제가 발생했습니다. 다시 시도해 주세요."}
+                (status === CheckoutStatus.INVALID ? "거래 ID가 없습니다." : "구매 내역을 찾을 수 없습니다.")}
             </p>
             <Button asChild variant="outline" size="lg">
               <Link href="/shop">

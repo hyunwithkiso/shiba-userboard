@@ -39,10 +39,11 @@ export async function ensureUserBasket(userId: string): Promise<{
       `[BasketService] No basket ident found for user ${userId}. Creating a new basket...`
     );
     // lib/tebex.ts 의 createBasket 함수 사용
+    // 올바른 완료/취소 리디렉션 경로 구성
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const basketResponse = await createBasket(
-      process.env.NEXT_PUBLIC_APP_URL ||
-        "http://localhost:3000/checkout/success",
-      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000/checkout/cancel"
+      `${appUrl}/checkout/complete`,
+      `${appUrl}/checkout/cancel`
     );
 
     if (!basketResponse || !basketResponse.ident) {

@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/schema";
 import { users } from "@/lib/schema";
 import { eq } from "drizzle-orm";
+import { TebexCacheUtils } from "@/lib/tebex";
+import { purchaseService } from "@/services/purchase-service";
 
 /**
  * 사용자의 basketIdent를 DB에서 null로 설정하여 초기화합니다. (취소 시 사용)
@@ -26,18 +28,35 @@ export async function resetUserBasketAction(): Promise<{
   );
 
   try {
-    // DB에서 사용자의 basketIdent를 null로 업데이트
+    // 1. 기존 basketIdent 조회 (캐시 무효화용)
+    const userData = await db
+      .select({ basketIdent: users.basketIdent })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    
+    const oldBasketIdent = userData[0]?.basketIdent;
+
+    // 2. DB에서 사용자의 basketIdent를 null로 업데이트
     await db
       .update(users)
-      .set({ basketIdent: null, updatedAt: new Date() }) // basketIdent를 null로 설정
+      .set({ basketIdent: null, updatedAt: new Date() })
       .where(eq(users.id, userId));
 
     console.log(
       `[Action:resetUserBasket] Basket ident reset to null for user ${userId}.`
     );
 
-    // 장바구니 관련 캐시 무효화 (예: /cart 페이지)
+    // 3. ✅ Tebex 캐시 무효화 (중요!)
+    if (oldBasketIdent) {
+      TebexCacheUtils.invalidateBasket(oldBasketIdent);
+      console.log(`[Action:resetUserBasket] Invalidated Tebex cache for basket ${oldBasketIdent}`);
+    }
+
+    // 4. Next.js 페이지 캐시 무효화
     revalidatePath("/cart");
+    revalidatePath("/shop");
+    revalidatePath("/");
 
     return { success: true };
   } catch (error) {
@@ -72,11 +91,29 @@ export async function getBasketAction(basketIdent: string): Promise<{
 
     console.log(`[Action:getBasket] Fetching basket info for: ${basketIdent}`);
 
-    // 라이브러리에서 getTebexBasket 함수 가져오기
+    // 라이브러리 함수 동적 임포트 (헤드리스 우선, 실패 시 Checkout API 폴백)
     const { getBasket } = await import("@/lib/tebex");
+    let basket = null as any;
+    try {
+      basket = await getBasket(basketIdent);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      // 429 또는 레이트 리밋/네트워크 오류 시 Checkout API로 폴백 시도
+      const isRateLimited = /429|Too Many Requests|rate/i.test(msg);
+      const isNetworkish = /fetch|network|timeout/i.test(msg);
+      if (!(isRateLimited || isNetworkish)) {
+        throw err;
+      }
+    }
 
-    // 장바구니 정보 가져오기
-    const basket = await getBasket(basketIdent);
+    if (!basket) {
+      try {
+        const { getCheckoutBasket } = await import("@/lib/tebex");
+        basket = await getCheckoutBasket(basketIdent);
+      } catch (fallbackErr) {
+        console.error("[Action:getBasket] Fallback (Checkout API) failed:", fallbackErr);
+      }
+    }
 
     if (!basket) {
       return { success: false, error: "장바구니 정보를 찾을 수 없습니다." };
@@ -130,16 +167,26 @@ export async function createPurchaseFromCheckout(
       basketIdent,
       transactionId
     );
-
-    console.log(
-      `[Server Action] Purchase creation successful for basket: ${basketIdent}`,
+    if (purchase && (purchase as any).success) {
+      console.log(
+        `[Server Action] Purchase creation successful for basket: ${basketIdent}`,
+        purchase
+      );
+      // 구매 내역 페이지 등 관련 경로 재검증
+      revalidatePath("/purchases");
+      const summary = (purchase as any).purchase ?? null;
+      return { success: true, purchase: summary };
+    }
+    console.warn(
+      `[Server Action] Purchase creation failed for basket: ${basketIdent}`,
       purchase
     );
-
-    // 구매 내역 페이지 등 관련 경로를 재검증하여 캐시를 업데이트합니다.
-    revalidatePath("/my-purchases"); // 실제 구매 내역 페이지 경로로 변경해야 할 수 있습니다.
-
-    return { success: true, purchase };
+    return {
+      success: false,
+      error:
+        (purchase as any)?.message ||
+        "구매 기록 생성에 실패했습니다. 결제 완료 여부 또는 네트워크 상태를 확인해주세요.",
+    };
   } catch (error: unknown) {
     console.error(
       `[Server Action] Error creating purchase for basket ${basketIdent}:`,
@@ -157,5 +204,60 @@ export async function createPurchaseFromCheckout(
       };
     }
     return { success: false, error: errorMessage };
+  }
+}
+
+/**
+ * basketIdent로 이미 기록된 구매 내역을 조회합니다.
+ */
+export async function getPurchaseByBasketIdentAction(basketIdent: string): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> {
+  try {
+    if (!basketIdent) {
+      return { success: false, error: "유효하지 않은 장바구니 ID입니다." };
+    }
+    const purchase = await purchaseService.getPurchaseByBasketIdent(basketIdent);
+    if (!purchase) {
+      return { success: false, error: "구매 내역을 찾을 수 없습니다." };
+    }
+    return { success: true, data: purchase };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "구매 내역을 가져오는 중 오류가 발생했습니다.",
+    };
+  }
+}
+
+/**
+ * purchases.id(txn-id)로 단일 구매 내역을 조회합니다.
+ */
+export async function getPurchaseByIdAction(id: string): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> {
+  try {
+    if (!id) {
+      return { success: false, error: "유효하지 않은 거래 ID입니다." };
+    }
+    const { db, purchases } = await import("@/lib/schema");
+    const { eq } = await import("drizzle-orm");
+    const rows = await db.select().from(purchases).where(eq(purchases.id, id)).limit(1);
+    if (!rows || rows.length === 0) {
+      return { success: false, error: "구매 내역을 찾을 수 없습니다." };
+    }
+    return { success: true, data: rows[0] };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "구매 내역 조회 중 오류가 발생했습니다.",
+    };
   }
 }

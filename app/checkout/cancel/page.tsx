@@ -14,6 +14,8 @@ import { AlertTriangle, ShoppingCart, Home } from "lucide-react";
 import { Metadata } from "next";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db, users } from "@/lib/schema";
+import { auth } from "@/lib/auth";
+import { eq } from "drizzle-orm";
 
 export const metadata: Metadata = {
   title: "결제 취소",
@@ -25,7 +27,15 @@ function ResetButtonFallback() {
 }
 
 export default async function PaymentCancelPage() {
-  const result = await db.update(users).set({ basketIdent: null }).execute();
+  // 현재 사용자만 basketIdent를 초기화하도록 수정 (기존: 전체 사용자 초기화)
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (userId) {
+    await db
+      .update(users)
+      .set({ basketIdent: null, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
 
   return (
     <div className="container mx-auto flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] text-center px-4 py-10">

@@ -4,6 +4,8 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { cn } from "@/lib/utils";
 import ProviderWrapper from "@/components/wrapper/provider-wrapper";
+// ✅ 캐시 동기화 시스템 초기화 (클라이언트에서만 동작)
+import "@/lib/cache-sync";
 
 export const metadata: Metadata = {
   title: "SHIBA 유저보드",

@@ -110,7 +110,7 @@ export async function addPackageToBasketAction(
 export async function removePackageFromBasketAction(packageId: number) {
   try {
     const basket = await basketService.removePackageFromBasket(packageId);
-    revalidatePath("/store/cart");
+    revalidatePath("/cart");
     revalidatePath("/basket");
     // 성공 시 업데이트된 장바구니 또는 성공 메시지 반환 (서비스 구현에 따라 다름)
     return { success: true, data: basket };
@@ -141,7 +141,7 @@ export async function updatePackageQuantityAction(
       packageId,
       quantity
     );
-    revalidatePath("/store/cart");
+    revalidatePath("/cart");
     revalidatePath("/basket");
     // 성공 시 업데이트된 장바구니 반환
     return { success: true, data: basket };
@@ -163,7 +163,7 @@ export async function updatePackageQuantityAction(
 export async function applyCouponAction(couponCode: string) {
   try {
     const basket = await basketService.applyCouponToBasket(couponCode);
-    revalidatePath("/store/cart");
+    revalidatePath("/cart");
     revalidatePath("/basket");
     // 성공 시 쿠폰 적용 결과 또는 업데이트된 장바구니 반환
     return { success: true, data: basket };
@@ -229,7 +229,7 @@ export async function completeCheckoutAction(basketIdent: string) {
         `[Action:completeCheckout] Purchase created successfully for basket ${basketIdent}`
       );
       // 구매 완료 후 관련 페이지 캐시 무효화 (예: 구매 내역 페이지)
-      revalidatePath("/mypage/purchases"); // 예시 경로
+      revalidatePath("/purchases");
       revalidatePath("/store/cart"); // 장바구니 비우기 반영
       revalidatePath("/basket");
 
