@@ -110,24 +110,28 @@ export default async function HomePage() {
     }
 
     return (
-      <HomeClientContent
-        playerNum={playerNum}
-        players={players as Player[]}
-        notices={noticesData}
-        events={eventsData}
-      />
+      <div className="min-h-screen">
+        <HomeClientContent
+          notices={noticesData}
+          events={eventsData}
+          playerNum={playerNum}
+          players={players as Player[]}
+        />
+      </div>
     );
   } catch (error) {
     console.error('메인 페이지 데이터 로딩 실패:', error);
     
     // 에러 발생 시 fallback 데이터로 렌더링
     return (
-      <HomeClientContent
-        playerNum={0}
-        players={[]}
-        notices={[]}
-        events={[]}
-      />
+      <div className="min-h-screen">
+        <HomeClientContent
+          playerNum={0}
+          players={[]}
+          notices={[]}
+          events={[]}
+        />
+      </div>
     );
   }
 }

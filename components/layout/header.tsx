@@ -29,7 +29,6 @@ import {
   Settings,
   ImageIcon,
 } from "lucide-react";
-import { ThemeToggle } from "../ui/theme-toggle";
 import { MiniCart } from "../cart/mini-cart";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -38,9 +37,9 @@ import { getCurrentUserInfo } from "@/actions/user-action";
 
 const navLinks = [
   { href: "/notices", label: "공지사항" },
+  { href: "/events", label: "이벤트" },
   { href: "/killfeed", label: "킬피드 업로드" },
   { href: "/chat-title", label: "채팅 칭호 업로드" },
-  { href: "/events", label: "이벤트" },
   { href: "/shop", label: "상점" },
   { href: "/image-tools", label: "이미지 압축" },
 ];
@@ -178,121 +177,120 @@ export const Header = () => {
   });
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center justify-between mx-auto">
+    <header className="fixed top-0 z-50 w-full bg-background/20 backdrop-blur-md supports-[backdrop-filter]:bg-background/20">
+      <div className="container flex h-18 items-center mx-auto">
         <Link
           href="/"
-          className="flex items-center space-x-2 mr-6"
+          className="flex items-center space-x-2"
           aria-label="SHIBA 유저보드 홈"
         >
-          <Logo />
-          <span className="font-bold">SHIBA 유저보드</span>
+          <Logo className="w-16 h-16" />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6 text-sm">
-          {filteredNavLinks.map((link) => (
-            <ProtectedLink
-              key={link.href}
-              href={link.href}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {link.label}
-            </ProtectedLink>
-          ))}
-        </nav>
-
-        <div className="flex flex-1 items-center justify-end gap-4">
-          <ThemeToggle />
-          <div className="hidden md:flex items-center space-x-4">
-            {status === "authenticated" ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Avatar
-                    className="h-8 w-8 cursor-pointer"
-                    aria-label="사용자 메뉴 열기"
-                    tabIndex={0}
-                  >
-                    <AvatarImage
-                      src={userData.image || session.user?.image || undefined}
-                      alt={userData.nickname || userData.name || "사용자 프로필"}
-                    />
-                    <AvatarFallback>
-                      {(userData.nickname || userData.name || session.user?.name)?.charAt(0)?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {userData.nickname || userData.name || session.user?.name || "사용자"}
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {userData.email || session.user?.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <div className="text-xs text-muted-foreground ml-1">
-                    {userData.userId && `고유번호 : ${userData.userId}`}
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>내 프로필</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/my-uploads">
-                      <UploadCloud className="mr-2 h-4 w-4" />
-                      <span>내 업로드 현황</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/purchases">
-                      <History className="mr-2 h-4 w-4" />
-                      <span>구매 내역</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/cart">
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      <span>장바구니</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  {userData.isAdmin && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/users">
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>유저 관리</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/images">
-                          <ImageIcon className="mr-2 h-4 w-4" />
-                          <span>이미지 관리</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <SignOutButton />
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : status === "loading" ? (
-              <div className="h-8 w-8 animate-pulse rounded-full bg-muted"></div>
-            ) : (
-              <Link
-                href="/login"
-                className={buttonVariants({ size: "sm", variant: "outline" })}
+        <div className="flex flex-1 items-center justify-end gap-6">
+          <nav className="hidden md:flex items-center gap-6 text-sm">
+            {filteredNavLinks.map((link) => (
+              <ProtectedLink
+                key={link.href}
+                href={link.href}
+                className="text-foreground hover:text-foreground/80 transition-colors font-semibold"
               >
-                로그인
-              </Link>
-            )}
-          </div>
-          <div className="md:hidden flex items-center">
+                {link.label}
+              </ProtectedLink>
+            ))}
+          </nav>
+          
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center space-x-4">
+              {status === "authenticated" ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Avatar
+                      className="h-8 w-8 cursor-pointer"
+                      aria-label="사용자 메뉴 열기"
+                      tabIndex={0}
+                    >
+                      <AvatarImage
+                        src={userData.image || session.user?.image || undefined}
+                        alt={userData.nickname || userData.name || "사용자 프로필"}
+                      />
+                      <AvatarFallback>
+                        {(userData.nickname || userData.name || session.user?.name)?.charAt(0)?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">
+                          {userData.nickname || userData.name || session.user?.name || "사용자"}
+                        </p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {userData.email || session.user?.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <div className="text-xs text-muted-foreground ml-1">
+                      {userData.userId && `고유번호 : ${userData.userId}`}
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>내 프로필</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/my-uploads">
+                        <UploadCloud className="mr-2 h-4 w-4" />
+                        <span>내 업로드 현황</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/purchases">
+                        <History className="mr-2 h-4 w-4" />
+                        <span>구매 내역</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/cart">
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        <span>장바구니</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    {userData.isAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin/users">
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>유저 관리</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin/images">
+                            <ImageIcon className="mr-2 h-4 w-4" />
+                            <span>이미지 관리</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuSeparator />
+                    <SignOutButton />
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : status === "loading" ? (
+                <div className="h-8 w-8 animate-pulse rounded-full bg-muted"></div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="text-sm text-foreground hover:text-foreground/80 transition-colors font-semibold"
+                >
+                  로그인
+                </Link>
+              )}
+            </div>
+            <div className="md:hidden flex items-center">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="메뉴 열기">
@@ -306,8 +304,7 @@ export const Header = () => {
                     className="flex items-center gap-2 text-lg font-semibold mb-4"
                     aria-label="SHIBA 유저보드 홈"
                   >
-                    <Logo />
-                    <span>SHIBA 유저보드</span>
+                    <Logo className="w-12 h-12" />
                   </Link>
                   {filteredNavLinks.map((link) => (
                     <ProtectedLink
@@ -393,7 +390,7 @@ export const Header = () => {
                           <Link href="/login" className="w-full">
                             <Button
                               variant="outline"
-                              className="w-full justify-start"
+                              className="w-full justify-start font-semibold"
                             >
                               로그인
                             </Button>
@@ -405,6 +402,7 @@ export const Header = () => {
                 </nav>
               </SheetContent>
             </Sheet>
+          </div>
           </div>
         </div>
       </div>

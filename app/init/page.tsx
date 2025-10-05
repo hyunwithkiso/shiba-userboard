@@ -102,7 +102,7 @@ export default async function InitPage() {
   }
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-24">
       <div className="max-w-lg mx-auto space-y-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-2">유저 정보 확인</h1>

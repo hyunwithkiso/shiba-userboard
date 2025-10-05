@@ -3,8 +3,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -47,60 +45,25 @@
 
 :root {
   --radius: 0.625rem;
-  /* Light Mode Blue */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.08 0.01 238.47);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.08 0.01 238.47);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.08 0.01 238.47);
-  --primary: oklch(0.55 0.18 240); /* 밝은 파란색 */
-  --primary-foreground: oklch(1 0 0); /* 흰색 */
-  --secondary: oklch(0.94 0.02 240); /* 매우 옅은 파란색 */
-  --secondary-foreground: oklch(0.08 0.01 238.47);
-  --muted: oklch(0.94 0.02 240);
-  --muted-foreground: oklch(0.45 0.03 240); /* 조금 더 진한 회색-파랑 */
-  --accent: oklch(0.94 0.02 240);
-  --accent-foreground: oklch(0.08 0.01 238.47);
-  --destructive: oklch(0.577 0.245 27.325); /* 기존 유지 */
-  --border: oklch(0.9 0.03 240); /* 옅은 파란색 테두리 */
-  --input: oklch(0.9 0.03 240);
-  --ring: oklch(0.65 0.15 240); /* 기본 파란색보다 약간 연하게 */
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
-}
-
-.dark {
-  /* Dark Mode Blue */
-  --background: oklch(0.12 0.02 240); /* 매우 어두운 파란색 */
-  --foreground: oklch(0.98 0.01 240); /* 매우 옅은 파란색 */
-  --card: oklch(0.18 0.03 240); /* 어두운 파란색 */
-  --card-foreground: oklch(0.98 0.01 240);
-  --popover: oklch(0.18 0.03 240);
-  --popover-foreground: oklch(0.98 0.01 240);
-  --primary: oklch(0.65 0.15 240); /* 기본 파란색 */
-  --primary-foreground: oklch(0.08 0.01 238.47); /* 어두운 파란색 */
-  --secondary: oklch(0.25 0.04 240); /* 약간 더 밝은 어두운 파란색 */
-  --secondary-foreground: oklch(0.98 0.01 240);
-  --muted: oklch(0.25 0.04 240);
-  --muted-foreground: oklch(0.65 0.03 240); /* 중간 톤 회색-파랑 */
-  --accent: oklch(0.25 0.04 240);
-  --accent-foreground: oklch(0.98 0.01 240);
+  /* Dark Mode - Pure Black & White */
+  --background: oklch(0 0 0); /* 순수한 검정색 */
+  --foreground: oklch(1 0 0); /* 순수한 하얀색 */
+  --card: oklch(0.1 0 0); /* 매우 어두운 회색 */
+  --card-foreground: oklch(1 0 0); /* 순수한 하얀색 */
+  --popover: oklch(0.1 0 0); /* 매우 어두운 회색 */
+  --popover-foreground: oklch(1 0 0); /* 순수한 하얀색 */
+  --primary: oklch(0.65 0.15 240); /* 기본 파란색 유지 */
+  --primary-foreground: oklch(1 0 0); /* 순수한 하얀색 */
+  --secondary: oklch(0.2 0 0); /* 어두운 회색 */
+  --secondary-foreground: oklch(1 0 0); /* 순수한 하얀색 */
+  --muted: oklch(0.2 0 0); /* 어두운 회색 */
+  --muted-foreground: oklch(0.7 0 0); /* 밝은 회색 */
+  --accent: oklch(0.2 0 0); /* 어두운 회색 */
+  --accent-foreground: oklch(1 0 0); /* 순수한 하얀색 */
   --destructive: oklch(0.704 0.191 22.216); /* 기존 유지 */
-  --border: oklch(0.3 0.05 240); /* 어두운 파란색 테두리 */
-  --input: oklch(0.3 0.05 240);
-  --ring: oklch(0.55 0.18 240); /* 밝은 파란색 */
+  --border: oklch(0.3 0 0); /* 어두운 회색 테두리 */
+  --input: oklch(0.3 0 0); /* 어두운 회색 */
+  --ring: oklch(0.55 0.18 240); /* 밝은 파란색 유지 */
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -122,6 +85,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: 
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0);
+    background-size: 20px 20px;
   }
 
   /* Prose (Markdown) 스타일 커스터마이징 - Notion 스타일 */
@@ -220,57 +186,6 @@
 
   * {
     font-family: Pretendard, sans-serif;
-  }
-
-  /* 다크 모드 Prose 스타일 */
-  .dark .prose {
-    @apply text-foreground; /* 다크모드 기본 텍스트 */
-
-    a {
-      @apply text-primary;
-    }
-
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-      @apply text-foreground;
-    }
-    h2 {
-      @apply border-border;
-    }
-
-    blockquote {
-      @apply border-primary text-muted-foreground;
-    }
-
-    code {
-      @apply bg-muted text-foreground;
-    }
-    pre {
-      @apply bg-muted;
-    }
-    pre code {
-      @apply bg-transparent;
-    }
-
-    thead {
-      @apply border-border;
-    }
-    th {
-      @apply text-foreground;
-    }
-    tbody tr {
-      @apply border-border;
-    }
-    td {
-      @apply text-muted-foreground;
-    }
-    hr {
-      @apply border-border;
-    }
   }
 }
 

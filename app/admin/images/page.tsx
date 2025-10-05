@@ -90,7 +90,7 @@ export default async function AdminImagesPage({
     }));
 
     return (
-      <div className="container max-w-6xl py-6 space-y-8 mx-auto">
+      <div className="container max-w-6xl py-24 space-y-8 mx-auto">
         <AdminImagesClient
           submissions={formattedSubmissions}
           currentPage={currentPage}
@@ -105,7 +105,7 @@ export default async function AdminImagesPage({
     console.error("Error loading admin images:", error);
     // 에러 발생 시 빈 데이터로 표시
     return (
-      <div className="container max-w-6xl py-6 space-y-8 mx-auto">
+      <div className="container max-w-6xl py-24 space-y-8 mx-auto">
         <div className="text-center py-8">
           <p className="text-destructive">이미지 목록을 불러오는 중 오류가 발생했습니다.</p>
         </div>

@@ -1,17 +1,27 @@
+"use client";
+
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo"; // 로고 컴포넌트 사용
+import { useSession } from "next-auth/react";
 
 export const Footer = () => {
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === "authenticated";
   const currentYear = new Date().getFullYear();
 
   // 푸터 링크 정의 (프로젝트에 맞게 수정)
   const quickLinks = [
     { href: "/notices", label: "공지사항" },
-    { href: "/killfeed", label: "킬피드 업로드" },
-    { href: "/chat-title", label: "채팅 칭호 업로드" },
+    { href: "/killfeed", label: "킬피드 업로드", protected: true },
+    { href: "/chat-title", label: "채팅 칭호 업로드", protected: true },
     { href: "/events", label: "이벤트" },
     { href: "/shop", label: "상점" },
   ];
+
+  // 인증되지 않은 사용자에게는 보호된 링크를 숨김
+  const filteredQuickLinks = quickLinks.filter(link => 
+    !link.protected || isAuthenticated
+  );
 
   const infoLinks = [
     { href: "/terms", label: "이용약관" }, // 약관 페이지 필요
@@ -28,7 +38,7 @@ export const Footer = () => {
   ];
 
   return (
-    <footer className="border-t">
+    <footer className="bg-background/20 backdrop-blur-md supports-[backdrop-filter]:bg-background/20">
       <div className="container mx-auto max-w-7xl py-12 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Column 1: 로고 및 설명 */}
@@ -38,10 +48,9 @@ export const Footer = () => {
               className="flex items-center space-x-2"
               aria-label="SHIBA 유저보드 홈"
             >
-              <Logo />
-              <span className="font-bold text-lg">SHIBA 유저보드</span>
+              <Logo className="w-12 h-12" />
             </Link>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-foreground/70 text-sm">
               현실적인 경제 시스템, 창의적인 컨텐츠, 그리고 커뮤니티 중심의
               환경을 제공하는 게임 플랫폼입니다.
             </p>
@@ -53,11 +62,11 @@ export const Footer = () => {
               바로가기
             </h3>
             <ul className="space-y-2">
-              {quickLinks.map((link) => (
+              {filteredQuickLinks.map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-primary"
+                    className="text-sm text-foreground/70 hover:text-foreground transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -76,7 +85,7 @@ export const Footer = () => {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-primary"
+                    className="text-sm text-foreground/70 hover:text-foreground transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -97,21 +106,21 @@ export const Footer = () => {
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-muted-foreground hover:text-primary"
+                    className="text-sm text-foreground/70 hover:text-foreground transition-colors"
                   >
                     {link.label}
                   </a>
                 </li>
               ))}
             </ul>
+            
+            {/* Copyright moved here */}
+            <div className="mt-6 pt-4 border-t border-foreground/10">
+              <p className="text-xs text-foreground/60">
+                &copy; {currentYear} SHIBA. All rights reserved.
+              </p>
+            </div>
           </div>
-        </div>
-
-        {/* Copyright */}
-        <div className="mt-12 border-t border-border pt-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            &copy; {currentYear} SHIBA. All rights reserved.
-          </p>
         </div>
       </div>
     </footer>

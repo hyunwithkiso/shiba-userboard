@@ -1,6 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,28 +18,38 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 z-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 animate-gradient-xy bg-[length:200%_200%]" />
+    <div className="relative flex min-h-screen items-center justify-center py-24 bg-black">
+      {/* Grid pattern background - more visible */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-[url('/images/pattern-grid.svg')] opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/80" />
+        {/* Additional aceternity-style effects */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-purple-500/10" />
+      </div>
 
-      <div className="z-10 w-full max-w-md p-4">
-        <Card className="shadow-2xl bg-card/95 backdrop-blur-sm">
-          <CardHeader className="text-center space-y-4">
+      <div className="relative z-10 w-full max-w-md p-4">
+        <Card className="border-white/10 bg-black/60 backdrop-blur-xl shadow-2xl ring-1 ring-white/10">
+          <CardHeader className="text-center space-y-6">
             <div className="flex justify-center">
-              <Logo className="w-20 h-20" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-2xl animate-pulse" />
+                <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-xl" />
+                <Logo className="relative w-20 h-20 drop-shadow-2xl" />
+              </div>
             </div>
-            <div className="space-y-1">
-              <CardTitle className="text-2xl font-semibold">
+            <div className="space-y-2">
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
                 SHIBA 유저보드 로그인
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-gray-300">
                 Discord 계정으로 간편하게 시작하세요.
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <Button
               variant="default"
-              className="w-full text-base font-medium"
+              className="w-full text-base font-medium h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all duration-300 shadow-lg hover:shadow-xl border-0 text-white"
               onClick={handleDiscordLogin}
               aria-label="Discord로 로그인"
               tabIndex={0}
@@ -47,7 +58,7 @@ const LoginPage = () => {
               }}
             >
               <svg
-                className="mr-2 h-5 w-5"
+                className="mr-3 h-5 w-5"
                 fill="currentColor"
                 viewBox="0 0 24 24"
                 aria-hidden="true"
@@ -56,6 +67,26 @@ const LoginPage = () => {
               </svg>
               Discord로 로그인
             </Button>
+            
+            <div className="text-center">
+              <p className="text-xs text-gray-400">
+                로그인하면{" "}
+                <Link 
+                  href="/terms" 
+                  className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors"
+                >
+                  서비스 약관
+                </Link>
+                {" "}및{" "}
+                <Link 
+                  href="/privacy" 
+                  className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors"
+                >
+                  개인정보 처리방침
+                </Link>
+                에 동의하게 됩니다.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

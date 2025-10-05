@@ -44,7 +44,7 @@ export default async function AdminUsersPage() {
     .orderBy(desc(users.createdAt));
 
   return (
-    <div className="container max-w-6xl py-6 space-y-8 mx-auto">
+    <div className="container max-w-6xl py-24 space-y-8 mx-auto">
       <AdminUsersClient userList={userList} currentUserUserId={currentUser?.userId} />
     </div>
   );

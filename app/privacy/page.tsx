@@ -21,7 +21,7 @@ export default function PrivacyPage() {
   const contentHtml = md.render(fileContent);
 
   return (
-    <main className="flex-1 py-8 md:py-12">
+    <main className="flex-1 py-24 md:py-24">
       <div className="container mx-auto max-w-4xl px-4">
         <Link
           href="/"

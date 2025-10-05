@@ -33,53 +33,36 @@ function formatDate(dateString: string) {
 // 이벤트 배너 컴포넌트
 function EventBanner({ isAdmin }: { isAdmin: boolean }) {
   return (
-    <div className="relative w-full mb-8 overflow-hidden rounded-xl">
-      {/* 배경 이미지 - 게임 테마에 맞는 그라데이션 */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-900/90 via-cyan-800/80 to-blue-800/90 z-0">
-        <div className="absolute inset-0 bg-[url('/images/pattern-grid.svg')] opacity-20 mix-blend-soft-light"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-      </div>
-
-      {/* 장식 요소 - 반짝이는 효과 */}
-      <div className="absolute -top-10 -right-10 w-32 h-32 bg-cyan-500 rounded-full blur-3xl opacity-20 animate-pulse hidden md:block"></div>
-      <div className="absolute top-1/2 left-10 w-3 h-3 bg-blue-300 rounded-full shadow-lg shadow-blue-500/50 hidden md:block">
-        <div className="absolute inset-0 rounded-full animate-ping bg-blue-300 opacity-75"></div>
-      </div>
-      <div className="absolute bottom-5 right-1/3 w-2 h-2 bg-cyan-400 rounded-full shadow-lg shadow-cyan-500/50 hidden md:block">
-        <div className="absolute inset-0 rounded-full animate-ping bg-cyan-400 opacity-75 animation-delay-1000"></div>
-      </div>
-
+    <div className="relative w-full mb-8 overflow-hidden rounded-xl bg-card border border-border">
       {/* 배너 내용 */}
-      <div className="relative z-10 px-6 py-12 md:px-10 md:py-16 flex flex-col md:flex-row justify-between items-center">
+      <div className="relative px-6 py-12 md:px-10 md:py-16 flex flex-col md:flex-row justify-between items-center">
         <div className="flex items-center gap-4">
-          <div className="bg-blue-500/30 p-3 rounded-lg backdrop-blur-sm border border-blue-500/40">
-            <Trophy className="h-8 w-8 text-white" />
+          <div className="flex items-center justify-center rounded-full bg-primary/10 p-3 border border-primary/20">
+            <Trophy className="h-10 w-10 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
+            <h1 className="text-4xl font-bold text-foreground mb-2">
               이벤트
             </h1>
-            <p className="text-blue-50 max-w-xl">
-              SHIBA를 풍성하게 만들어주는 다양한 이벤트를 확인하세요.
+            <p className="text-muted-foreground max-w-lg">
+              다양한 이벤트에 참여하고 특별한 보상을 받아보세요
             </p>
           </div>
         </div>
 
         {isAdmin && (
           <Button
-            className="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white border-blue-800/50 shadow-lg shadow-blue-900/20 group transition-all duration-300 transform hover:scale-105"
+            size="lg"
+            className="mt-4 md:mt-0 bg-primary hover:bg-primary/90 text-primary-foreground border border-primary/20 shadow-sm"
             asChild
           >
             <Link href="/events/new" className="flex items-center gap-2">
               <span>새 이벤트 작성</span>
-              <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
+              <Sparkles className="w-4 h-4" />
             </Link>
           </Button>
         )}
       </div>
-
-      {/* 장식적 요소 - 배너 하단 */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600"></div>
     </div>
   );
 }
@@ -352,7 +335,7 @@ export default async function EventsPage({
   const isAdmin = await checkAdmin();
 
   return (
-    <main className="flex-1 py-8 md:py-12">
+    <main className="flex-1 py-24 md:py-24">
       <div className="container mx-auto max-w-7xl">
         {/* 이벤트 배너 */}
         <EventBanner isAdmin={isAdmin} />

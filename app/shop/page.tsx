@@ -130,7 +130,7 @@ export default async function ShopPage() {
   // 카테고리 로딩은 추후 추가
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background py-24">
       {/* 상점 헤더 (이전 코드 참고) */}
       <section className="relative overflow-hidden border-b">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 via-cyan-800/70 to-blue-900/80 z-0" />

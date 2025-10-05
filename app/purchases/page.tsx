@@ -61,7 +61,7 @@ export default async function PurchasesPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-8 md:py-12">
+    <div className="container mx-auto max-w-5xl px-4 py-24 md:py-24">
       <div className="flex items-center gap-3 mb-6">
         <ShoppingBag className="h-8 w-8 text-primary" />
         <h1 className="text-3xl font-bold tracking-tight">구매 내역</h1>

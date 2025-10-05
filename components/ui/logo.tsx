@@ -4,12 +4,14 @@ import { cn } from "@/lib/utils";
 
 export const Logo = ({ className }: { className?: string }) => {
   return (
+    <div className="flex items-center gap-2"> 
     <Image
       src={logo}
       alt="Logo"
-      width={64}
-      height={64}
-      className={cn("w-10 h-10", className)}
+      width={120}
+      height={40}
+      className={cn("w-16 h-16", className)}
     />
+    </div>
   );
 };

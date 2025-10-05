@@ -99,35 +99,18 @@ interface NoticeFilterParams {
 // --- 게임 스타일 배너 컴포넌트 ---
 function NoticeBanner({ isAdmin }: { isAdmin: boolean }) {
   return (
-    <div className="relative w-full overflow-hidden rounded-lg mb-8">
-      {/* 배경 이미지 및 그라데이션 오버레이 */}
-      <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/90 via-purple-900/80 to-indigo-900/90 z-10" />
-      <div className="absolute inset-0 bg-[url('/images/pattern-grid.svg')] opacity-10 z-10" />
-
-      {/* 장식적 요소들 */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full filter blur-3xl z-0 hidden md:block"></div>
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full filter blur-3xl z-0 hidden md:block"></div>
-
-      {/* 동적 움직임 요소 */}
-      <div className="absolute right-6 top-6 opacity-50 animate-pulse z-10 hidden md:block">
-        <Sparkles className="w-20 h-20 text-yellow-300/80" />
-      </div>
-
+    <div className="relative w-full overflow-hidden rounded-lg mb-8 bg-card border border-border">
       {/* 콘텐츠 */}
-      <div className="relative z-20 py-12 px-8 flex flex-col md:flex-row items-center justify-between">
+      <div className="relative py-12 px-8 flex flex-col md:flex-row items-center justify-between">
         <div className="flex items-center gap-4 mb-6 md:mb-0">
-          <div className="flex items-center justify-center rounded-full bg-primary/20 p-3 backdrop-blur-sm border border-primary/30">
-            <Megaphone className="h-10 w-10 text-primary-foreground" />
+          <div className="flex items-center justify-center rounded-full bg-primary/10 p-3 border border-primary/20">
+            <Megaphone className="h-10 w-10 text-primary" />
           </div>
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
+            <h1 className="text-4xl font-bold text-foreground mb-2 flex items-center">
               공지사항
-              <div className="relative ml-3">
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
-                <div className="relative w-2 h-2 bg-red-500 rounded-full" />
-              </div>
             </h1>
-            <p className="text-blue-100/80 max-w-lg">
+            <p className="text-muted-foreground max-w-lg">
               중요한 업데이트와 정보를 확인하세요. 게임 업데이트, 이벤트, 점검
               일정 등을 공유합니다.
             </p>
@@ -138,7 +121,7 @@ function NoticeBanner({ isAdmin }: { isAdmin: boolean }) {
           <Button
             asChild
             size="lg"
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 border border-indigo-400/30 shadow-lg shadow-indigo-900/30"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground border border-primary/20 shadow-sm"
           >
             <Link href="/notices/new" className="flex items-center gap-2">
               <BellRing className="h-5 w-5" />새 공지 작성
@@ -146,9 +129,6 @@ function NoticeBanner({ isAdmin }: { isAdmin: boolean }) {
           </Button>
         )}
       </div>
-
-      {/* 하단 장식선 */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
     </div>
   );
 }
@@ -408,7 +388,7 @@ export default async function NoticesPage({
   const isAdmin = await checkAdmin(); // 관리자 여부 확인
 
   return (
-    <main className="flex-1 py-8 md:py-12">
+    <main className="flex-1 py-24 md:py-24">
       <div className="container mx-auto max-w-4xl">
         {/* 게임 스타일 배너 */}
         <NoticeBanner isAdmin={isAdmin} />

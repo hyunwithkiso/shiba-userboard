@@ -52,59 +52,95 @@ export default async function ChatTitlePage() {
     const hasTicket = ticketInfo.amount > 0;
 
   return (
-    <main className="container max-w-5xl py-6 space-y-8 mx-auto">
-      <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 p-8">
+    <main className="container max-w-5xl py-24 space-y-8 mx-auto">
+      {/* 헤더 섹션 */}
+      <div className="relative overflow-hidden rounded-lg bg-card border border-border p-8">
         <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3">
-          <MessageSquare className="w-48 h-48 text-white/10" />
+          <MessageSquare className="w-48 h-48 text-muted-foreground/10" />
         </div>
         <div className="relative">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            채팅 칭호 업로드
-          </h1>
-          <p className="text-white/80">
-            채팅 칭호 이미지를 업로드하세요. 업로드된 이미지는 검토 후
-            승인됩니다.
-          </p>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+              <MessageSquare className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                채팅 칭호 업로드
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                채팅 칭호 이미지를 업로드하세요. 업로드된 이미지는 검토 후
+                승인됩니다.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 아이템 생성 안내 문구 */}
-      <Alert className="bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800">
-        <Info className="h-4 w-4 stroke-emerald-600 dark:stroke-emerald-400" />
-        <AlertDescription className="text-emerald-800 dark:text-emerald-200">
+      {/* 중요 안내 */}
+      <Alert className="bg-primary/5 border-primary/20">
+        <Info className="h-4 w-4 text-primary" />
+        <AlertDescription className="text-foreground">
           <strong>중요:</strong> 이미지 이름은 아이템 이름으로 사용되며, '이미지이름' 채팅 칭호로 생성됩니다.
         </AlertDescription>
       </Alert>
 
       <div className="grid gap-6">
-        <div className="rounded-lg border bg-card p-6">
-          <h2 className="text-lg font-semibold mb-4">이미지 업로드</h2>
+        {/* 업로드 섹션 */}
+        <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-lg font-semibold text-foreground">이미지 업로드</h2>
+          </div>
+          
           {hasTicket ? (
-            <div className="mb-4 text-sm text-muted-foreground">
-              보유 티켓: <span className="font-bold text-primary">{ticketInfo.amount}</span>장
+            <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <div className="text-sm text-foreground">
+                보유 티켓: <span className="font-bold text-primary">{ticketInfo.amount}</span>장
+              </div>
             </div>
           ) : (
-            <div className="mb-4 text-destructive font-semibold">
-              채팅 칭호 이용권이 부족합니다. 상점에서 구매 후 이용해 주세요.
+            <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <div className="text-sm font-semibold text-destructive">
+                채팅 칭호 이용권이 부족합니다. 상점에서 구매 후 이용해 주세요.
+              </div>
             </div>
           )}
+          
           <ChatTitleUploadForm />
         </div>
 
-        <div className="rounded-lg border bg-card p-6">
-          <h2 className="text-lg font-semibold mb-4">업로드 가이드라인</h2>
-          <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-            <li>이미지는 PNG, WebP, GIF 형식만 허용됩니다.</li>
-            <li className="font-medium text-orange-600 dark:text-orange-400">
-              파일 크기는 200KB 이하여야 합니다.
-            </li>
-            <li className="font-medium text-primary">
-              이미지 크기는 정확히 200px x 50px 이어야 합니다.
-            </li>
-            <li>이미지 이름은 최대 10자까지 입력 가능합니다.</li>
-            <li>채팅창에서의 width는 100px로 고정됩니다.</li>
-            <li>업로드된 이미지는 관리자 검토 후 게임에 적용됩니다.</li>
-          </ul>
+        {/* 가이드라인 섹션 */}
+        <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground mb-4">업로드 가이드라인</h2>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span className="text-sm text-foreground">이미지는 PNG, WebP, GIF 형식만 허용됩니다.</span>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span className="text-sm text-foreground">
+                <span className="font-medium text-primary">파일 크기는 200KB 이하</span>여야 합니다.
+              </span>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span className="text-sm text-foreground">
+                <span className="font-medium text-primary">이미지 크기는 정확히 200px x 50px</span> 이어야 합니다.
+              </span>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span className="text-sm text-foreground">이미지 이름은 최대 10자까지 입력 가능합니다.</span>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span className="text-sm text-foreground">채팅창에서의 width는 100px로 고정됩니다.</span>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span className="text-sm text-foreground">업로드된 이미지는 관리자 검토 후 게임에 적용됩니다.</span>
+            </div>
+          </div>
         </div>
       </div>
     </main>

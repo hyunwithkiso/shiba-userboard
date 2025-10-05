@@ -38,7 +38,7 @@ export default async function PaymentCancelPage() {
   }
 
   return (
-    <div className="container mx-auto flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] text-center px-4 py-10">
+    <div className="container mx-auto flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] text-center px-4 py-24">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader>
           <AlertTriangle className="h-12 w-12 mx-auto text-orange-500 mb-4" />

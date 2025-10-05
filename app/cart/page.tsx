@@ -107,7 +107,7 @@ async function CartPageContent() {
 
 export default function CartPage() {
   return (
-    <div className="container mx-auto px-4 py-8 md:px-6 lg:px-8">
+    <div className="container mx-auto px-4 py-24 md:px-6 lg:px-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">장바구니</h1>
         <Button asChild variant="ghost" size="sm" className="gap-1">

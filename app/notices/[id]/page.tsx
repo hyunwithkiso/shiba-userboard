@@ -82,7 +82,7 @@ export default async function NoticeDetailPage({
   const canEdit = isAdmin; // 실제 관리자 권한으로 수정 버튼 표시 여부 결정
 
   return (
-    <main className="flex-1 py-8 md:py-12">
+    <main className="flex-1 py-24 md:py-24">
       <ViewCounter type="notice" itemId={id} />
       <div className="container mx-auto max-w-4xl px-4">
         {/* 상단 네비게이션 */}

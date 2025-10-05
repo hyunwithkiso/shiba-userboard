@@ -62,7 +62,7 @@ export default function MyUploadsClient({ submissions }: MyUploadsClientProps) {
   const paginatedSubmissions = submissions.slice(startIndex, endIndex);
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-8 md:py-12 space-y-8">
+    <div className="container mx-auto max-w-6xl px-4 py-24 md:py-24 space-y-8">
       <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 p-8">
         <div className="relative">
           <h1 className="text-3xl font-bold text-white mb-2">내 업로드 내역</h1>

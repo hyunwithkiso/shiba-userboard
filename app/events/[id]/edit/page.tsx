@@ -88,7 +88,7 @@ export default async function EditEventPage({
   };
 
   return (
-    <main className="flex-1 py-8 md:py-12">
+    <main className="flex-1 py-24 md:py-24">
       <div className="container mx-auto max-w-3xl">
         <h1 className="text-3xl font-bold mb-8">이벤트 수정</h1>
         <EventForm mode="edit" eventId={id} initialData={initialFormData} />
