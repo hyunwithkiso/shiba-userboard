@@ -160,7 +160,7 @@ export const HomeClientContent = ({
                   게임 접속하기
                 </Button>
               </Link>
-              <Link href="https://discord.gg/shiba" target="_blank">
+              <Link href="https://discord.gg/shibarp" target="_blank">
                 <Button
                   variant="outline"
                   size="lg"
