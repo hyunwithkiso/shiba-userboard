@@ -38,15 +38,35 @@ export default function AdminImageEditDialog({
   const [name, setName] = useState(initialName);
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleClickUpload = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const selectedFile = files[0];
+      await processFile(selectedFile);
+    }
+  };
+
+  const processFile = async (selectedFile: File) => {
 
     try {
       // image-upload-utils의 검증 로직 사용
@@ -97,6 +117,12 @@ export default function AdminImageEditDialog({
       console.error("파일 처리 오류:", error);
       toast.error("파일 처리 중 오류가 발생했습니다.");
     }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+    await processFile(selectedFile);
   };
 
   const handleRemoveImage = () => {
@@ -177,17 +203,22 @@ export default function AdminImageEditDialog({
             <Label className="text-sm font-medium">새 이미지</Label>
             <div className="mt-2">
               <div
-                className={cn(
-                  "relative flex h-[120px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-colors",
-                  imagePreview
-                    ? "border-primary/20 bg-primary/5 hover:border-primary/30"
-                    : "border-neutral-200 bg-neutral-50 hover:bg-neutral-100"
-                )}
-                onClick={handleClickUpload}
-                role="button"
-                tabIndex={0}
-                aria-label="이미지 업로드"
-              >
+            className={cn(
+              "relative flex h-[120px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-colors",
+              isDragOver
+                ? "border-blue-500 bg-blue-50"
+                : imagePreview
+                ? "border-primary/20 bg-primary/5 hover:border-primary/30"
+                : "border-neutral-200 bg-neutral-50 hover:bg-neutral-100"
+            )}
+            onClick={handleClickUpload}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            role="button"
+            tabIndex={0}
+            aria-label="이미지 업로드"
+          >
                 {imagePreview ? (
                   /* 이미지 미리보기 */
                   <div className="relative h-full w-full">
@@ -227,7 +258,7 @@ export default function AdminImageEditDialog({
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-medium text-neutral-700">
-                        이미지 선택
+                        {isDragOver ? '파일을 여기에 놓으세요' : '이미지를 선택하거나 드래그하여 업로드'}
                       </p>
                       <p className="text-xs text-neutral-500">
                         PNG, WebP, GIF ({type === "killfeed" ? "최대 500KB" : "최대 200KB"})
