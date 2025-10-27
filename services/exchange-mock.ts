@@ -350,6 +350,7 @@ export function getTradeHistory(itemId: string): Trade[] {
     date.setMinutes(date.getMinutes() - i * 30);
     
     return {
+      id: `trade-${itemId}-${i}`,
       time: date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
       price: Math.round(basePrice * (0.9 + Math.random() * 0.2)),
       quantity: Math.floor(Math.random() * 5) + 1,
