@@ -97,7 +97,7 @@ export default function GalleryUploader({ onUploaded }: { onUploaded?: () => voi
         ) : (
           <div className="text-sm text-muted-foreground text-center px-6">
             <div className="font-semibold mb-1">이미지를 드래그하거나 클릭하여 선택</div>
-            <div>16:9 비율 권장, 최대 5MB</div>
+            <div>16:9 비율 권장, 용량 제한 없음</div>
           </div>
         )}
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && onFile(e.target.files[0])} />

@@ -131,14 +131,15 @@ export class UploadService {
    * 갤러리 파일 업로드 (외부 스토리지의 gallery 폴더)
    */
   static async uploadGalleryFile(file: File): Promise<UploadResult> {
-    // 기본 파일 검증: 5MB, 이미지 포맷
-    const basicValidation = validateImageFile(
-      file,
-      5 * 1024 * 1024,
-      this.ALLOWED_TYPES
-    );
-    if (!basicValidation.valid) {
-      return { success: false, error: basicValidation.message };
+    // 기본 파일 타입 검증만 수행 (크기 제한 제거)
+    if (!this.ALLOWED_TYPES.includes(file.type)) {
+      const formats = this.ALLOWED_TYPES
+        .map((type) => type.split("/")[1].toUpperCase())
+        .join(", ");
+      return { 
+        success: false, 
+        error: `지원되는 파일 형식은 ${formats}입니다.` 
+      };
     }
 
     try {
