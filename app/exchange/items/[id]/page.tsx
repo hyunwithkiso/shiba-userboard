@@ -12,9 +12,9 @@ export default async function ItemDetailPage({ params }: { params: Promise<{ id:
   const item = getItemById(id);
   if (!item) return notFound();
 
-  const history = getPriceSeries(id, "day", 30);
-  const listings = getRecentListings(id, 10);
-  const trades = getTradeHistory(id, 12);
+  const history = getPriceSeries(id, "1d");
+  const listings = getRecentListings(id);
+  const trades = getTradeHistory(id);
 
   return (
     <div className="container max-w-8xl mx-auto py-24">

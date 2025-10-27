@@ -3,10 +3,10 @@ import { galleryService } from "@/services/gallery-service";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const id = await params.then((p) => p.id);
     const item = await galleryService.getById(id);
     if (!item) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -25,10 +25,10 @@ export async function GET(
       const u = new URL(item.url);
       const last = u.pathname.split("/").filter(Boolean).pop();
       if (last) fileName = last;
-    } catch {}
+    } catch { }
 
     // 다운로드 카운트는 비동기 업데이트
-    galleryService.incrementDownload(id).catch(() => {});
+    galleryService.incrementDownload(id).catch(() => { });
 
     const arrayBuf = await res.arrayBuffer();
     const buf = Buffer.from(arrayBuf);

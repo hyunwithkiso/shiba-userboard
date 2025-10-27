@@ -38,7 +38,18 @@ export default function ItemDetailClient({
   const [buyOpen, setBuyOpen] = useState(false);
   const [activeListing, setActiveListing] = useState<Listing | null>(null);
   const [buyQty, setBuyQty] = useState(1);
-  const series = useMemo(() => getPriceSeries(item.id, granularity), [item.id, granularity]);
+  
+  // Granularity를 getPriceSeries 매개변수로 매핑하는 함수
+  const mapGranularityToPeriod = (g: Granularity): '1h' | '1d' | '1w' | '1m' => {
+    switch (g) {
+      case 'hour': return '1h';
+      case 'day': return '1d';
+      case 'month': return '1m';
+      default: return '1d';
+    }
+  };
+  
+  const series = useMemo(() => getPriceSeries(item.id, mapGranularityToPeriod(granularity)), [item.id, granularity]);
   const prices = series.map((h) => h.price);
   const min = Math.min(...prices);
   const max = Math.max(...prices);
@@ -124,12 +135,12 @@ export default function ItemDetailClient({
                 {(["hour","day","month"] as Granularity[]).map((g) => (
                   <Button
                     key={g}
-                    size="sm"
                     variant={granularity === g ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
                     onClick={() => setGranularity(g)}
-                    className="px-3"
                   >
-                    {g === "hour" ? "시간별" : g === "day" ? "일별" : "월별"}
+                    {g === "hour" ? "1시간" : g === "day" ? "1일" : "1개월"}
                   </Button>
                 ))}
               </div>

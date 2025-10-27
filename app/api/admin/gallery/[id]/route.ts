@@ -12,13 +12,13 @@ async function tryDeleteFromStorage(url: string) {
     await fetch(
       `https://screenshot.dokku.co.kr/delete?type=gallery&path=${encodeURIComponent(name)}`,
       { method: "GET", cache: "no-store" }
-    ).catch(() => {});
-  } catch {}
+    ).catch(() => { });
+  } catch { }
 }
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -30,7 +30,7 @@ export async function DELETE(
       return NextResponse.json({ error: "관리자만 가능합니다." }, { status: 403 });
     }
 
-    const id = params.id;
+    const id = await params.then((p) => p.id);
     const item = await galleryService.getById(id);
     if (!item) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -38,7 +38,7 @@ export async function DELETE(
 
     // 스토리지 삭제는 베스트 에포트
     if (item.url) {
-      tryDeleteFromStorage(item.url).catch(() => {});
+      tryDeleteFromStorage(item.url).catch(() => { });
     }
 
     // DB에서 제거
