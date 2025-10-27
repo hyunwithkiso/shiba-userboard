@@ -23,7 +23,7 @@ export default async function ImageToolsPage() {
     if (!userData?.nickname) redirect("/init");
 
     return (
-      <main className="container max-w-5xl py-24 space-y-8 mx-auto">
+      <main className="container max-w-8xl py-24 space-y-8 mx-auto">
         <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-emerald-600 to-sky-600 p-8">
           <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3">
             <Wand2 className="w-48 h-48 text-white/10" />

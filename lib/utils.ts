@@ -65,18 +65,43 @@ export function formatDate(date: string | Date) {
     minute: "2-digit",
   });
 }
-/**
- * 랜덤한 5글자 소문자 영어 문자열을 생성합니다.
- * @returns 5글자 소문자 영어 문자열
- */
 export function generateRandomCode(): string {
-  const characters = "abcdefghijklmnopqrstuvwxyz";
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let result = "";
-
-  for (let i = 0; i < 5; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    result += characters[randomIndex];
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-
   return result;
+}
+
+/**
+ * 숫자를 한국어 단위로 포맷팅합니다.
+ * @param amount 포맷팅할 숫자
+ * @returns 포맷팅된 가격 문자열 (예: "982억원", "4050만4050원", "10조원")
+ */
+export function formatKoreanPrice(amount: number): string {
+  if (amount === 0) return "0원";
+  
+  const units = [
+    { value: 1000000000000, unit: "조" },
+    { value: 100000000, unit: "억" },
+    { value: 10000, unit: "만" }
+  ];
+
+  let result = "";
+  let remaining = amount;
+
+  for (const { value, unit } of units) {
+    if (remaining >= value) {
+      const quotient = Math.floor(remaining / value);
+      result += `${quotient}${unit}`;
+      remaining = remaining % value;
+    }
+  }
+  
+  if (remaining > 0) {
+    result += remaining.toString();
+  }
+  
+  return result + "원";
 }

@@ -228,7 +228,7 @@ export default function AdminUsersClient({ userList, currentUserUserId }: AdminU
   };
 
   return (
-    <div className="container max-w-6xl py-6 space-y-8">
+    <div className="container max-w-8xl py-6 space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">유저 관리</h1>
         <p className="text-muted-foreground">총 {uniqueUserList.length}명의 유저</p>

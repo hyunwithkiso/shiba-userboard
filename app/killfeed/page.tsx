@@ -52,7 +52,7 @@ export default async function KillfeedPage() {
     const hasTicket = ticketInfo.amount > 0;
 
   return (
-    <main className="container max-w-5xl py-24 space-y-8 mx-auto">
+    <main className="container max-w-8xl py-24 space-y-8 mx-auto">
       {/* 헤더 섹션 */}
       <div className="relative overflow-hidden rounded-lg bg-card border border-border p-8">
         <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3">

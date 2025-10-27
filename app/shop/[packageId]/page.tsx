@@ -89,7 +89,7 @@ export default async function PackageDetailPage({ params }: Props) {
 
   return (
     // 가운데 정렬 및 최대 너비 설정
-    <div className="container mx-auto max-w-6xl px-4 py-24 md:py-24">
+    <div className="container mx-auto max-w-8xl px-4 py-24 md:py-24">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* 상품 이미지 */}
         <div className="lg:col-span-2">

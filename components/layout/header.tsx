@@ -38,14 +38,16 @@ import { getCurrentUserInfo } from "@/actions/user-action";
 const navLinks = [
   { href: "/notices", label: "공지사항" },
   { href: "/events", label: "이벤트" },
+  { href: "/gallery", label: "갤러리" },
   { href: "/killfeed", label: "킬피드 업로드" },
   { href: "/chat-title", label: "채팅 칭호 업로드" },
+  { href: "/exchange", label: "거래소" },
   { href: "/shop", label: "상점" },
   { href: "/image-tools", label: "이미지 압축" },
 ];
 
 // 보호된 라우트들
-const protectedRoutes = ["/killfeed", "/chat-title", "/shop", "/image-tools"];
+const protectedRoutes = ["/killfeed", "/chat-title", "/exchange", "/shop", "/image-tools"];
 
 // 보호된 링크 컴포넌트
 function ProtectedLink({ 
@@ -171,6 +173,12 @@ export const Header = () => {
   }, [isAuthenticated]);
 
   const filteredNavLinks = navLinks.filter((link) => {
+    // 거래소는 관리자만 접근 가능
+    if (link.href === "/exchange") {
+      return userData.isAdmin;
+    }
+    
+    // 다른 보호된 라우트들은 기존 로직 유지
     const isProtected = protectedRoutes.includes(link.href);
     const hasAccess = userData.hasUserId || userData.isAdmin;
     return !isProtected || hasAccess;
@@ -268,6 +276,12 @@ export const Header = () => {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
+                          <Link href="/admin/gallery">
+                            <ImageIcon className="mr-2 h-4 w-4" />
+                            <span>갤러리 관리</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
                           <Link href="/admin/images">
                             <ImageIcon className="mr-2 h-4 w-4" />
                             <span>이미지 관리</span>
@@ -359,6 +373,14 @@ export const Header = () => {
                                 className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                               >
                                 <Settings className="h-5 w-5" /> 유저 관리
+                              </Link>
+                            </SheetClose>
+                            <SheetClose asChild>
+                              <Link
+                                href="/admin/gallery"
+                                className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                              >
+                                <ImageIcon className="h-5 w-5" /> 갤러리 관리
                               </Link>
                             </SheetClose>
                             <SheetClose asChild>

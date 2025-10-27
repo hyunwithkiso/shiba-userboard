@@ -13,7 +13,7 @@ interface UploadOptions {
 }
 
 export class UploadService {
-  private static readonly ALLOWED_TYPES = ["image/png", "image/webp", "image/gif"];
+  private static readonly ALLOWED_TYPES = ["image/png", "image/webp", "image/gif", "image/jpeg", "image/jpg"];
   
   // 정확한 이미지 크기 설정
   private static readonly VALIDATION_OPTIONS: Record<string, ImageValidationOptions> = {
@@ -124,6 +124,43 @@ export class UploadService {
         success: false,
         error: "이미지 업로드 중 네트워크 오류가 발생했습니다."
       };
+    }
+  }
+
+  /**
+   * 갤러리 파일 업로드 (외부 스토리지의 gallery 폴더)
+   */
+  static async uploadGalleryFile(file: File): Promise<UploadResult> {
+    // 기본 파일 검증: 5MB, 이미지 포맷
+    const basicValidation = validateImageFile(
+      file,
+      5 * 1024 * 1024,
+      this.ALLOWED_TYPES
+    );
+    if (!basicValidation.valid) {
+      return { success: false, error: basicValidation.message };
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("files", file);
+      formData.append("bucket", "game");
+      formData.append("folder", "gallery");
+
+      const uploadUrl = `https://screenshot.dokku.co.kr/files?type=gallery`;
+      const response = await fetch(uploadUrl, { method: "POST", body: formData });
+      if (!response.ok) {
+        let errorData: any = {};
+        try { errorData = await response.json(); } catch {}
+        return { success: false, error: errorData.error || "이미지 업로드에 실패했습니다." };
+      }
+      const data = await response.json();
+      let fileName = data.fileName;
+      if (!fileName && data.url) fileName = data.url.split('/').pop() || 'uploaded_file';
+      return { success: true, url: data.url, fileName };
+    } catch (e) {
+      console.error("[UploadService] Gallery upload error:", e);
+      return { success: false, error: "이미지 업로드 중 오류가 발생했습니다." };
     }
   }
 }

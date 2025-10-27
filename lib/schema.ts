@@ -306,6 +306,33 @@ export const payments = pgTable(
   })
 );
 
+// 갤러리: URL 기반 이미지 컬렉션 (업로드는 어드민만 가능)
+export const gallery = pgTable(
+  "gallery",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    url: text("url").notNull(),
+    title: text("title"),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    width: integer("width"),
+    height: integer("height"),
+    downloadCount: integer("download_count").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    galleryCreatedByIdx: index("gallery_created_by_idx").on(table.createdBy),
+    galleryCreatedAtIdx: index("gallery_created_at_idx").on(table.createdAt),
+  })
+);
+
 // 인증 시도 추적을 위한 테이블
 export const authAttempts = pgTable(
   "auth_attempts",
@@ -339,6 +366,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   purchases: many(purchases),
   killfeedSubmissions: many(killfeedSubmission),
   chatTitleSubmissions: many(chatTitleSubmission),
+  galleryItems: many(gallery),
   reviewedKillfeedSubmissions: many(killfeedSubmission, {
     relationName: "KillfeedReviewer",
   }),
@@ -396,6 +424,13 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
 export const authAttemptsRelations = relations(authAttempts, ({ one }) => ({
   user: one(users, {
     fields: [authAttempts.userId],
+    references: [users.id],
+  }),
+}));
+
+export const galleryRelations = relations(gallery, ({ one }) => ({
+  author: one(users, {
+    fields: [gallery.createdBy],
     references: [users.id],
   }),
 }));
