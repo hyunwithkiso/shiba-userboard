@@ -295,8 +295,8 @@ export default function ChatTitleUploadForm({
                 id="marginTop-slider"
                 value={[marginTop]}
                 onValueChange={(value) => setMarginTop(value[0])}
-                min={-15}
-                max={15}
+                min={-40}
+                max={40}
                 step={1}
                 disabled={isUploading}
                 className="mb-2"
@@ -305,9 +305,9 @@ export default function ChatTitleUploadForm({
                 id="marginTop"
                 type="number"
                 value={marginTop}
-                onChange={(e) => setMarginTop(Math.max(-15, Math.min(15, parseInt(e.target.value) || 0)))}
-                min={-15}
-                max={15}
+                onChange={(e) => setMarginTop(Math.max(-40, Math.min(40, parseInt(e.target.value) || 0)))}
+                min={-40}
+                max={40}
                 disabled={isUploading}
                 className="text-xs h-8"
               />
@@ -323,8 +323,8 @@ export default function ChatTitleUploadForm({
                 id="marginSide-slider"
                 value={[marginSide]}
                 onValueChange={(value) => setMarginSide(value[0])}
-                min={-15}
-                max={15}
+                min={-40}
+                max={40}
                 step={1}
                 disabled={isUploading}
                 className="mb-2"
@@ -333,9 +333,9 @@ export default function ChatTitleUploadForm({
                 id="marginSide"
                 type="number"
                 value={marginSide}
-                onChange={(e) => setMarginSide(Math.max(-15, Math.min(15, parseInt(e.target.value) || 0)))}
-                min={-15}
-                max={15}
+                onChange={(e) => setMarginSide(Math.max(-40, Math.min(40, parseInt(e.target.value) || 0)))}
+                min={-40}
+                max={40}
                 disabled={isUploading}
                 className="text-xs h-8"
               />
