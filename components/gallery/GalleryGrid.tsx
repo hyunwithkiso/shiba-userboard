@@ -41,17 +41,21 @@ export default function GalleryGrid({ items }: GalleryGridProps) {
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {items.map((item) => (
-          <div
-            key={item.id}
-            className="relative w-full pt-[56.25%] bg-muted cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => handleImageClick(item)}
-          >
-            <img
-              src={item.url}
-              alt={item.title || "gallery image"}
-              className="absolute inset-0 w-full h-full object-cover"
-              loading="lazy"
-            />
+          <div key={item.id} className="space-y-1">
+            <div
+              className="relative w-full pt-[56.25%] bg-muted cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => handleImageClick(item)}
+            >
+              <img
+                src={item.url}
+                alt={item.title || "gallery image"}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+            <div className="text-sm text-muted-foreground truncate">
+              {item.title || "이미지"}
+            </div>
           </div>
         ))}
       </div>

@@ -2,6 +2,9 @@ import { Metadata } from "next";
 import { galleryService } from "@/services/gallery-service";
 import GalleryGrid from "@/components/gallery/GalleryGrid";
 
+// 갤러리 페이지는 항상 최신 데이터를 보여주도록 SSR 강제
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "갤러리",
   description: "SHIBA 서버 갤러리",
@@ -25,4 +28,3 @@ export default async function GalleryPage() {
     </main>
   );
 }
-
