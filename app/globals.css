@@ -80,6 +80,10 @@
 }
 
 @layer base {
+  html {
+    /* Reserve scrollbar space to prevent header/content shift when dialogs open */
+    scrollbar-gutter: stable both-edges;
+  }
   * {
     @apply border-border outline-ring/50;
   }

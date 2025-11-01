@@ -185,7 +185,7 @@ export const Header = () => {
   });
 
   return (
-    <header className="fixed top-0 z-50 w-full bg-background/20 backdrop-blur-md supports-[backdrop-filter]:bg-background/20">
+    <header className="fixed top-0 z-50 w-full bg-background/20 backdrop-blur-md supports-[backdrop-filter]:bg-background/20 pr-[var(--removed-body-scroll-bar-size,0px)]">
       <div className="container flex h-18 items-center mx-auto">
         <Link
           href="/"
