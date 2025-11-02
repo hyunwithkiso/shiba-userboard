@@ -223,7 +223,7 @@ export const HomeClientContent = ({
               </CardHeader>
               
               <CardContent className="pt-0">
-                <div className="h-96 overflow-y-auto pr-2">
+                <div className="h-96 overflow-y-auto pr-2 player-scrollbar">
                   {filteredPlayers.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full space-y-3">
                       <div className="p-4 rounded-full bg-muted">
