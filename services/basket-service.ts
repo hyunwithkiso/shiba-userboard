@@ -329,7 +329,7 @@ export class BasketService {
       `[BasketService] Applying coupon ${couponCode} to basket ${basketIdent}`
     );
     // Use internal fetch helper as there's no dedicated exported function
-    return this.fetchTebexApiInternal<any>(
+    const result = await this.fetchTebexApiInternal<any>(
       `/baskets/${basketIdent}/coupons`,
       {
         method: "POST",
@@ -338,6 +338,9 @@ export class BasketService {
       true, // Applying coupon likely needs auth
       false
     );
+    // Invalidate basket cache so UI reflects discounted totals immediately
+    try { TebexCacheUtils.invalidateBasket(basketIdent); } catch {}
+    return result;
   }
 
   /**
@@ -350,7 +353,7 @@ export class BasketService {
       `[BasketService] Applying creator code ${creatorCode} to basket ${basketIdent}`
     );
     // Use internal fetch helper
-    return this.fetchTebexApiInternal<any>(
+    const result = await this.fetchTebexApiInternal<any>(
       `/baskets/${basketIdent}/creator-codes`,
       {
         method: "POST",
@@ -359,6 +362,9 @@ export class BasketService {
       true, // Applying creator code likely needs auth
       false
     );
+    // Invalidate basket cache to ensure updated creator-code discount is visible
+    try { TebexCacheUtils.invalidateBasket(basketIdent); } catch {}
+    return result;
   }
 
   /**

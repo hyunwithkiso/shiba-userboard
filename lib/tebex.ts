@@ -408,7 +408,7 @@ export async function createBasket(
 export async function getBasket(
   basketIdent: string
 ): Promise<TebexBasket | null> {
-  // 캐시 확인 (짧은 캐시 시간 - 2분)
+  // 캐시 확인 (짧은 캐시 시간 - 5초)
   const cached = tebexCache.get<TebexBasket>('basket', basketIdent);
   if (cached) {
     return cached;
@@ -692,8 +692,15 @@ export const TebexCacheUtils = {
    * 모든 캐시를 강제로 정리합니다
    */
   clearAll() {
-    tebexCache.cleanup();
-    console.log(`[TebexCache] Cleared all cache`);
+    const cache = (tebexCache as any).cache as Map<string, any>;
+    const pending = (tebexCache as any).pendingRequests as Map<string, any>;
+    const beforeCache = cache.size;
+    const beforePending = pending.size;
+    cache.clear();
+    pending.clear();
+    console.log(
+      `[TebexCache] Cleared all cache entries (${beforeCache}) and pending requests (${beforePending})`
+    );
   },
 
   /**
