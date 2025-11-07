@@ -103,14 +103,3 @@ export async function PUT(
     );
   }
 }
-
-// 디버그용: 라우트 매칭/환경 확인을 위한 임시 GET 핸들러
-export async function GET(_request: NextRequest, { params }: { params: { userId: string } }) {
-  const { userId } = params;
-  return NextResponse.json({
-    ok: true,
-    route: "/api/user/changeUserId/[userId]",
-    userId,
-    hasEnvKey: !!process.env.EXTERNAL_API_KEY,
-  });
-}
