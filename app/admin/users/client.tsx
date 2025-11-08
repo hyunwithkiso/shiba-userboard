@@ -16,6 +16,15 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 import { Shield, ShieldAlert, Trash2, ArrowUpDown, Edit, MoreHorizontal } from "lucide-react";
 import {
   AlertDialog,
@@ -70,10 +79,15 @@ interface AdminUsersPageProps {
     isAdmin: boolean | null;
     createdAt: Date;
   }>;
+  isAdmin: boolean;
   currentUserUserId?: string | null;
+  currentUserDiscordId?: string | null;
+  page: number;
+  pageSize: number;
+  totalCount: number;
 }
 
-export default function AdminUsersClient({ userList, currentUserUserId }: AdminUsersPageProps) {
+export default function AdminUsersClient({ userList, isAdmin, currentUserUserId, currentUserDiscordId, page, pageSize, totalCount }: AdminUsersPageProps) {
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [search, setSearch] = useState("");
@@ -85,9 +99,72 @@ export default function AdminUsersClient({ userList, currentUserUserId }: AdminU
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [newUserId, setNewUserId] = useState("");
   const [isUserIdDialogOpen, setIsUserIdDialogOpen] = useState(false);
+  // 동기화 프리뷰용 상태
+  const [isSyncDialogOpen, setIsSyncDialogOpen] = useState(false);
+  const [syncPreview, setSyncPreview] = useState<any | null>(null);
 
-  // 마스터 권한 체크 (userId가 "1"인 사용자만)
-  const isMaster = currentUserUserId === "1";
+  // 슈퍼 마스터 권한 체크: userId 또는 discordId가 "1" 또는 "2"
+  const isSuperMaster =
+    currentUserUserId === "1" ||
+    currentUserUserId === "2" ||
+    currentUserDiscordId === "1" ||
+    currentUserDiscordId === "2";
+  // 동기화 권한: 관리자라면 허용
+  const canSync = isAdmin || isSuperMaster;
+
+  // 동기화 프리뷰: 변경 예정 항목만 확인
+  const handleSyncPreview = async () => {
+    try {
+      setIsProcessing(true);
+      console.log("[SyncPreview] 변경 예정 항목 조회 시작");
+      const res = await fetch("/api/admin/users/sync-user-ids", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apply: false }),
+      });
+      const json = await res.json();
+      console.log("[SyncPreview] 결과", json);
+      if (res.ok) {
+        setSyncPreview(json);
+        setIsSyncDialogOpen(true);
+      } else {
+        toast.error(json?.error || "프리뷰 조회 실패");
+      }
+    } catch (error) {
+      console.error("[SyncPreview] 오류", error);
+      toast.error("프리뷰 조회 중 오류가 발생했습니다.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // 동기화 적용: 200건 단위 배치 업데이트
+  const handleSyncApply = async () => {
+    try {
+      setIsProcessing(true);
+      console.log("[SyncApply] 동기화 적용 시작 (200/배치)");
+      const res = await fetch("/api/admin/users/sync-user-ids", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apply: true, limit: 200 }),
+      });
+      const json = await res.json();
+      console.log("[SyncApply] 적용 결과", json);
+      if (res.ok) {
+        toast.success(`적용 완료 ${json?.counts?.updated ?? 0}건`);
+        setIsSyncDialogOpen(false);
+        setSyncPreview(null);
+        router.refresh();
+      } else {
+        toast.error(json?.error || "적용 실패");
+      }
+    } catch (error) {
+      console.error("[SyncApply] 오류", error);
+      toast.error("동기화 적용 중 오류가 발생했습니다.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // 중복 제거된 유저 목록 (클라이언트 사이드에서도 안전장치)
   const uniqueUserList = userList.filter((user, index, self) => 
@@ -105,7 +182,7 @@ export default function AdminUsersClient({ userList, currentUserUserId }: AdminU
     return String(value).toLowerCase().includes(searchLower);
   });
 
-  // 정렬된 유저 목록
+  // 정렬된 유저 목록 (userId는 숫자 기준으로 정렬)
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     const aValue = a[sort as keyof typeof a];
     const bValue = b[sort as keyof typeof b];
@@ -114,7 +191,21 @@ export default function AdminUsersClient({ userList, currentUserUserId }: AdminU
     if (!aValue) return 1;
     if (!bValue) return -1;
 
-    const comparison = String(aValue).localeCompare(String(bValue));
+    let comparison = 0;
+    if (sort === "userId") {
+      const toNum = (v: unknown) => {
+        const s = String(v);
+        return /^\d+$/.test(s) ? Number(s) : Number.POSITIVE_INFINITY;
+      };
+      comparison = toNum(aValue) - toNum(bValue);
+      if (comparison === 0) {
+        // 숫자가 아닌 값 혹은 동일 숫자일 경우 문자열 비교로 보조 정렬
+        comparison = String(aValue).localeCompare(String(bValue));
+      }
+    } else {
+      comparison = String(aValue).localeCompare(String(bValue));
+    }
+
     return order === "asc" ? comparison : -comparison;
   });
 
@@ -125,6 +216,60 @@ export default function AdminUsersClient({ userList, currentUserUserId }: AdminU
       setSort(column);
       setOrder("asc");
     }
+  };
+
+  // 페이지네이션 관련 계산 및 이동
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const canPrev = page > 1;
+  const canNext = page < totalPages;
+  const pageHref = (p: number) => `/admin/users?page=${p}`;
+
+  // 표시할 페이지 번호 계산 (최대 7개 + 양쪽 Ellipsis)
+  const getPageNumbers = () => {
+    const pages: (number | "ellipsis")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+      return pages;
+    }
+    // 항상 첫 페이지 표시
+    pages.push(1);
+    // 앞쪽 구간
+    if (page <= 4) {
+      pages.push(2, 3, 4, 5);
+      pages.push("ellipsis");
+    } else {
+      pages.push("ellipsis");
+      pages.push(page - 1, page, page + 1);
+      // 중간 구간에서 범위 벗어나면 정리
+      pages[pages.length - 1] = Math.min(pages[pages.length - 1] as number, totalPages - 1);
+    }
+    // 뒤쪽 구간
+    if (page >= totalPages - 3) {
+      // 뒤쪽 근접: 마지막 4개 표시
+      pages.push(totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1);
+    } else {
+      pages.push("ellipsis");
+    }
+    // 마지막 페이지 표시
+    pages.push(totalPages);
+    // 중복 및 범위 정리
+    const normalized: (number | "ellipsis")[] = [];
+    let lastAdded: number | "ellipsis" | null = null;
+    for (const p of pages) {
+      if (p === "ellipsis") {
+        if (lastAdded !== "ellipsis") normalized.push("ellipsis");
+        lastAdded = "ellipsis";
+      } else {
+        const num = Math.max(1, Math.min(totalPages, p));
+        if (lastAdded !== num) normalized.push(num);
+        lastAdded = num;
+      }
+    }
+    return normalized.filter((v, i, arr) => {
+      if (v === "ellipsis") return true;
+      // 제거: 첫/마지막이 중복되거나 역순 생성된 값
+      return arr.indexOf(v) === i;
+    });
   };
 
   const handleSearch = (value: string) => {
@@ -231,7 +376,16 @@ export default function AdminUsersClient({ userList, currentUserUserId }: AdminU
     <div className="container max-w-8xl py-6 space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">유저 관리</h1>
-        <p className="text-muted-foreground">총 {uniqueUserList.length}명의 유저</p>
+        <div className="flex items-center gap-2">
+          <p className="text-muted-foreground">총 {totalCount}명의 유저</p>
+          {canSync && (
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={handleSyncPreview} disabled={isProcessing}>
+                동기화 프리뷰
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       <Card>
@@ -317,7 +471,7 @@ export default function AdminUsersClient({ userList, currentUserUserId }: AdminU
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <span>{user.userId || "-"}</span>
-                      {isMaster && (
+                      {isSuperMaster && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -342,7 +496,7 @@ export default function AdminUsersClient({ userList, currentUserUserId }: AdminU
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-center">
-                      {isMaster && user.userId !== "1" && (
+                      {isSuperMaster && user.userId !== "1" && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -470,8 +624,84 @@ export default function AdminUsersClient({ userList, currentUserUserId }: AdminU
               ))}
             </TableBody>
           </Table>
+          {/* 번호형 페이지네이션 */}
+          <div className="pt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href={canPrev ? pageHref(page - 1) : undefined}
+                    className={!canPrev ? "pointer-events-none opacity-50" : undefined}
+                  />
+                </PaginationItem>
+                {getPageNumbers().map((p, idx) => (
+                  p === "ellipsis" ? (
+                    <PaginationItem key={`ellipsis-${idx}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={`page-${p}`}>
+                      <PaginationLink
+                        href={pageHref(p)}
+                        isActive={p === page}
+                        size="default"
+                      >
+                        {p}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href={canNext ? pageHref(page + 1) : undefined}
+                    className={!canNext ? "pointer-events-none opacity-50" : undefined}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+            <div className="mt-2 text-xs text-muted-foreground text-center">
+              총 {totalCount}명 • 페이지 {page} / {totalPages} • 페이지당 {pageSize}명
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      {/* 동기화 프리뷰 다이얼로그 */}
+      <Dialog open={isSyncDialogOpen} onOpenChange={setIsSyncDialogOpen}>
+        <DialogContent className="sm:max-w-3xl w-[min(92vw,56rem)] max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>고유번호 동기화 프리뷰</DialogTitle>
+            <DialogDescription>
+              VRP 매핑과 사이트 계정을 비교하여 변경 예정 목록을 요약합니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <div className="text-sm">
+              예정 변경: {syncPreview?.counts?.willUpdate ?? 0}건 • 배치 적용 크기: {syncPreview?.counts?.batchSize ?? 0}건
+            </div>
+            <div className="max-h-[50vh] overflow-auto border rounded p-2 text-sm">
+              {(syncPreview?.changes ?? []).slice(0, 20).map((c: any) => (
+                <div key={`${c.siteUid}-${c.discordId}`} className="flex gap-2 justify-between py-1">
+                  <span className="w-40 truncate">Discord: {c.discordId}</span>
+                  <span className="w-56 truncate">사용자: {c.email || c.nickname || c.name || c.siteUid}</span>
+                  <span className="w-40 text-right">{c.currentUserId ?? "-"} → {c.newUserId}</span>
+                </div>
+              ))}
+              {((syncPreview?.changes ?? []).length || 0) > 20 && (
+                <div className="text-xs text-muted-foreground mt-2">상위 20건만 표시합니다.</div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSyncDialogOpen(false)} disabled={isProcessing}>
+              취소
+            </Button>
+            <Button onClick={handleSyncApply} disabled={isProcessing}>
+              {isProcessing ? "적용 중..." : "적용(200/배치)"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 고유번호 변경 다이얼로그 */}
       <Dialog open={isUserIdDialogOpen} onOpenChange={setIsUserIdDialogOpen}>
