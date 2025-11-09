@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { checkAdmin } from "@/lib/auth-utils";
 import { cn } from "@/lib/utils";
 import { ViewCounter } from "@/components/view-counter";
+import { EventDeleteButton } from "@/components/event-delete-button";
 
 interface EventDetail {
   id: string;
@@ -79,12 +80,15 @@ export default async function EventDetailPage({
             목록으로 돌아가기
           </Link>
           {canEdit && (
-            <Link href={`/events/${id}/edit`}>
-              <Button variant="outline" size="sm">
-                <Pencil className="mr-1 h-4 w-4" />
-                수정
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link href={`/events/${id}/edit`}>
+                <Button variant="outline" size="sm">
+                  <Pencil className="mr-1 h-4 w-4" />
+                  수정
+                </Button>
+              </Link>
+              <EventDeleteButton eventId={id} variant="text" />
+            </div>
           )}
         </div>
 

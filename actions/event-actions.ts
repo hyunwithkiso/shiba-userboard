@@ -274,7 +274,54 @@ export async function updateEventAction(eventId: string, formData: FormData) {
   }
 }
 
-// TODO: 이벤트 삭제 액션 (필요시 추가)
+// --- 이벤트 삭제 액션 ---
+export async function deleteEventAction(eventId: string) {
+  // 1. 관리자 권한 확인
+  const isAdmin = await checkAdmin();
+  if (!isAdmin) {
+    return { success: false, error: "관리자 권한이 없습니다." };
+  }
+
+  // 2. 이벤트 존재 여부 및 썸네일 URL 조회
+  const existing = await db
+    .select({ id: events.id, thumbnailImage: events.thumbnailImage })
+    .from(events)
+    .where(eq(events.id, eventId))
+    .limit(1);
+  if (!existing.length) {
+    return { success: false, error: "삭제할 이벤트를 찾을 수 없습니다." };
+  }
+
+  const thumbUrl = existing[0].thumbnailImage as string | null;
+
+  // 3. 외부 스토리지에서 썸네일 삭제 시도 (갤러리 API와 동일한 방식)
+  if (thumbUrl) {
+    try {
+      const u = new URL(thumbUrl);
+      const name = u.pathname.split("/").filter(Boolean).pop();
+      if (name) {
+        await fetch(
+          `https://screenshot.dokku.co.kr/delete?type=gallery&path=${encodeURIComponent(name)}`,
+          { method: "GET", cache: "no-store" }
+        ).catch(() => {});
+      }
+    } catch (e) {
+      // URL 파싱 실패 시 스토리지 삭제는 건너뜀
+      console.warn("[Action:deleteEvent] Thumbnail delete skipped:", e);
+    }
+  }
+
+  // 4. DB에서 이벤트 삭제
+  try {
+    await db.delete(events).where(eq(events.id, eventId));
+    revalidatePath("/events");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error) {
+    console.error(`[Action:deleteEvent] Error deleting event ${eventId}:`, error);
+    return { success: false, error: "이벤트 삭제 중 오류가 발생했습니다." };
+  }
+}
 
 export async function incrementEventViewCount(id: string) {
   try {

@@ -63,7 +63,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { makeAdminAction, removeAdminAction } from "@/actions/user-action";
 import { updateUserIdAction } from "@/actions/user-action";
@@ -85,15 +85,27 @@ interface AdminUsersPageProps {
   page: number;
   pageSize: number;
   totalCount: number;
+  initialFilter?: string;
+  initialSearch?: string;
+  initialSort?: string;
+  initialOrder?: "asc" | "desc";
 }
 
-export default function AdminUsersClient({ userList, isAdmin, currentUserUserId, currentUserDiscordId, page, pageSize, totalCount }: AdminUsersPageProps) {
+export default function AdminUsersClient({ userList, isAdmin, currentUserUserId, currentUserDiscordId, page, pageSize, totalCount, initialFilter = "", initialSearch = "", initialSort = "userId", initialOrder = "asc" }: AdminUsersPageProps) {
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("");
-  const [sort, setSort] = useState("userId");
-  const [order, setOrder] = useState<"asc" | "desc">("asc");
+  const [search, setSearch] = useState(initialSearch);
+  const [filter, setFilter] = useState(initialFilter);
+  const [sort, setSort] = useState(initialSort);
+  const [order, setOrder] = useState<"asc" | "desc">(initialOrder);
+
+  // URL로부터 넘어온 초기값 변경 시 동기화
+  useEffect(() => {
+    setSearch(initialSearch);
+    setFilter(initialFilter);
+    setSort(initialSort);
+    setOrder(initialOrder);
+  }, [initialSearch, initialFilter, initialSort, initialOrder]);
   
   // 고유번호 변경용 상태
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -171,58 +183,38 @@ export default function AdminUsersClient({ userList, isAdmin, currentUserUserId,
     index === self.findIndex(u => u.id === user.id)
   );
 
-  // 필터링된 유저 목록
-  const filteredUsers = uniqueUserList.filter((user) => {
-    if (!search || !filter) return true;
-
-    const searchLower = search.toLowerCase();
-    const value = user[filter as keyof typeof user];
-
-    if (!value) return false;
-    return String(value).toLowerCase().includes(searchLower);
-  });
-
-  // 정렬된 유저 목록 (userId는 숫자 기준으로 정렬)
-  const sortedUsers = [...filteredUsers].sort((a, b) => {
-    const aValue = a[sort as keyof typeof a];
-    const bValue = b[sort as keyof typeof b];
-
-    if (!aValue && !bValue) return 0;
-    if (!aValue) return 1;
-    if (!bValue) return -1;
-
-    let comparison = 0;
-    if (sort === "userId") {
-      const toNum = (v: unknown) => {
-        const s = String(v);
-        return /^\d+$/.test(s) ? Number(s) : Number.POSITIVE_INFINITY;
-      };
-      comparison = toNum(aValue) - toNum(bValue);
-      if (comparison === 0) {
-        // 숫자가 아닌 값 혹은 동일 숫자일 경우 문자열 비교로 보조 정렬
-        comparison = String(aValue).localeCompare(String(bValue));
-      }
-    } else {
-      comparison = String(aValue).localeCompare(String(bValue));
-    }
-
-    return order === "asc" ? comparison : -comparison;
-  });
+  // 서버에서 필터/정렬을 처리하므로 클라이언트에서는 그대로 출력
+  const sortedUsers = uniqueUserList;
 
   const handleSort = (column: string) => {
+    let nextOrder: "asc" | "desc" = "asc";
     if (column === sort) {
-      setOrder(order === "asc" ? "desc" : "asc");
-    } else {
-      setSort(column);
-      setOrder("asc");
+      nextOrder = order === "asc" ? "desc" : "asc";
     }
+    setSort(column);
+    setOrder(nextOrder);
+    const params = new URLSearchParams();
+    if (filter) params.set("filter", filter);
+    if (search) params.set("q", search);
+    params.set("sort", column);
+    params.set("order", nextOrder);
+    params.set("page", "1");
+    router.push(`/admin/users?${params.toString()}`);
   };
 
   // 페이지네이션 관련 계산 및 이동
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const canPrev = page > 1;
   const canNext = page < totalPages;
-  const pageHref = (p: number) => `/admin/users?page=${p}`;
+  const pageHref = (p: number) => {
+    const params = new URLSearchParams();
+    params.set("page", String(p));
+    if (filter) params.set("filter", filter);
+    if (search) params.set("q", search);
+    if (sort) params.set("sort", sort);
+    if (order) params.set("order", order);
+    return `/admin/users?${params.toString()}`;
+  };
 
   // 표시할 페이지 번호 계산 (최대 7개 + 양쪽 Ellipsis)
   const getPageNumbers = () => {
@@ -274,6 +266,16 @@ export default function AdminUsersClient({ userList, isAdmin, currentUserUserId,
 
   const handleSearch = (value: string) => {
     setSearch(value);
+  };
+
+  const pushSearch = () => {
+    const params = new URLSearchParams();
+    if (filter) params.set("filter", filter);
+    if (search) params.set("q", search);
+    if (sort) params.set("sort", sort);
+    if (order) params.set("order", order);
+    params.set("page", "1");
+    router.push(`/admin/users?${params.toString()}`);
   };
 
   // 고유번호 변경 다이얼로그 열기
@@ -397,7 +399,19 @@ export default function AdminUsersClient({ userList, isAdmin, currentUserUserId,
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-4">
-            <Select value={filter} onValueChange={setFilter}>
+            <Select
+              value={filter}
+              onValueChange={(v) => {
+                setFilter(v);
+                const params = new URLSearchParams();
+                if (v) params.set("filter", v);
+                if (search) params.set("q", search);
+                if (sort) params.set("sort", sort);
+                if (order) params.set("order", order);
+                params.set("page", "1");
+                router.push(`/admin/users?${params.toString()}`);
+              }}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="필터 선택" />
               </SelectTrigger>
@@ -413,7 +427,13 @@ export default function AdminUsersClient({ userList, isAdmin, currentUserUserId,
                 placeholder="검색어를 입력하세요"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") pushSearch();
+                }}
               />
+              <Button variant="outline" onClick={pushSearch}>
+                검색
+              </Button>
             </div>
           </div>
 
