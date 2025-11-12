@@ -311,8 +311,8 @@ export const Header = () => {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left">
-                <nav className="grid gap-6 text-lg font-medium mt-6">
+              <SheetContent side="left" className="min-h-[100dvh] overflow-y-auto">
+                <nav className="grid gap-6 text-lg font-medium mt-6 pb-16 pb-[env(safe-area-inset-bottom)]">
                   <Link
                     href="/"
                     className="flex items-center gap-2 text-lg font-semibold mb-4"
@@ -324,13 +324,13 @@ export const Header = () => {
                     <ProtectedLink
                       key={link.href}
                       href={link.href}
-                      className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                      className={"flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground" + (link.href === "/image-tools" ? " mb-16" : "")}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       {link.label}
                     </ProtectedLink>
                   ))}
-                  <div className="mt-auto pt-6 border-t">
+                  <div className="mt-auto pt-6 border-t pb-16 pb-[env(safe-area-inset-bottom)]">
                     {status === "authenticated" ? (
                       <div className="space-y-4">
                         <SheetClose asChild>
@@ -400,7 +400,7 @@ export const Header = () => {
                         >
                           <button
                             type="submit"
-                            className="w-full flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                            className="w-full flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground mb-20"
                           >
                             <LogOut className="h-5 w-5" /> 로그아웃
                           </button>
