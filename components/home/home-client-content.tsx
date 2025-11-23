@@ -19,6 +19,7 @@ import {
   Clock,
   PinIcon,
   Bell,
+  Trophy,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -174,6 +175,99 @@ export const HomeClientContent = ({
         </div>
       </section>
 
+      {/* Featured Events Section */}
+      {events.length > 0 && (
+        <section className="py-12 bg-muted/30 border-y border-border/50">
+          <div className="container mx-auto max-w-7xl px-6">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                  <Trophy className="h-6 w-6 text-yellow-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                    진행 중인 이벤트
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    지금 참여하고 특별한 보상을 받아보세요!
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/events"
+                className="flex items-center space-x-1 px-4 py-2 rounded-full bg-background border border-border hover:bg-muted hover:border-primary/50 transition-all text-sm font-medium group"
+              >
+                <span>전체보기</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {events.map((event) => {
+                const status = getEventStatus(event.startDate, event.endDate);
+                return (
+                  <Link
+                    key={event.id}
+                    href={`/events/${event.id}`}
+                    className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1"
+                  >
+                    {/* Image Container */}
+                    <div className="relative aspect-[2/1] overflow-hidden">
+                      {event.thumbnailImage ? (
+                        <Image
+                          src={event.thumbnailImage}
+                          alt={event.title}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                          <CalendarDays className="h-12 w-12 text-gray-300" />
+                        </div>
+                      )}
+
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />
+
+                      {/* Status Badge */}
+                      <div className="absolute top-3 left-3">
+                        {status === "ongoing" && (
+                          <Badge className="bg-green-500 hover:bg-green-600 border-0 shadow-lg shadow-green-500/20 animate-pulse">
+                            진행중
+                          </Badge>
+                        )}
+                        {status === "upcoming" && (
+                          <Badge className="bg-blue-500 hover:bg-blue-600 border-0 shadow-lg shadow-blue-500/20">
+                            예정
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Content Overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                        <h3 className="text-xl font-bold mb-2 line-clamp-1 group-hover:text-primary-foreground transition-colors">
+                          {event.title}
+                        </h3>
+                        <div className="flex items-center text-sm text-gray-200/90">
+                          <Clock className="h-3.5 w-3.5 mr-1.5" />
+                          <span>
+                            {formatEventDate(event.startDate)} ~ {formatEventDate(event.endDate)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 현재 접속 중과 공지사항을 2 col grid로 배치 */}
       <div className="container mx-auto max-w-7xl py-16 px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -195,7 +289,7 @@ export const HomeClientContent = ({
                   </div>
                 </div>
               </div>
-              
+
               {/* Simple player count badge */}
               <div className="bg-background border border-border rounded-lg px-4 py-2 shadow-sm">
                 <div className="flex items-center space-x-2">
@@ -221,7 +315,7 @@ export const HomeClientContent = ({
                   />
                 </div>
               </CardHeader>
-              
+
               <CardContent className="pt-0">
                 <div className="h-96 overflow-y-auto pr-2 player-scrollbar">
                   {filteredPlayers.length === 0 ? (
@@ -254,7 +348,7 @@ export const HomeClientContent = ({
                               {player.name?.charAt(0).toUpperCase() || "?"}
                             </AvatarFallback>
                           </Avatar>
-                          
+
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-foreground truncate">
                               {player.name || "Unknown"}
@@ -263,7 +357,7 @@ export const HomeClientContent = ({
                               ID: {player.user_id}
                             </p>
                           </div>
-                          
+
                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         </div>
                       ))}
@@ -298,7 +392,7 @@ export const HomeClientContent = ({
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </Link>
             </div>
-            
+
             <Card className="border border-border shadow-sm">
               <CardContent className="p-6">
                 {notices.length === 0 ? (
