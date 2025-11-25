@@ -42,6 +42,7 @@ export const users = pgTable("user", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
+  lastSyncedAt: timestamp("last_synced_at", { mode: "date" }),
 });
 
 export const accounts = pgTable(

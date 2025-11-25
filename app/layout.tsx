@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import ProviderWrapper from "@/components/wrapper/provider-wrapper";
 // ✅ 캐시 동기화 시스템 초기화 (클라이언트에서만 동작)
 import "@/lib/cache-sync";
+import { UserSyncListener } from "@/components/auth/user-sync-listener";
 
 export const metadata: Metadata = {
   title: "SHIBA 유저보드",
@@ -30,6 +31,7 @@ export default function RootLayout({
             <div className="flex-grow flex-1">{children}</div>
             <Footer />
           </div>
+          <UserSyncListener />
         </ProviderWrapper>
       </body>
     </html>
