@@ -13,7 +13,9 @@ export function UserSyncListener() {
             syncUserProfileWithDiscord()
                 .then((result) => {
                     if (result.success) {
-                        if (result.updated) {
+                        if (result.error) {
+                            console.warn("[UserSyncListener] Sync completed with error:", result.error);
+                        } else if (result.updated) {
                             console.log("[UserSyncListener] Profile synced successfully");
                         } else if (result.skipped) {
                             // console.log("[UserSyncListener] Sync skipped (recently synced)");

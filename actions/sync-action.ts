@@ -64,6 +64,9 @@ export async function syncUserProfileWithDiscord() {
         const newRoleNames = result.profile.roles.map((r) => r.name);
         const currentRoleNames = user.roles || [];
 
+        console.log(`[Sync] Fetched Discord Profile: ${result.profile.nickname}, Roles: ${newRoleNames.join(", ")}`);
+        console.log(`[Sync] Current DB Profile: ${user.nickname}, Roles: ${currentRoleNames.join(", ")}`);
+
         // 닉네임과 역할이 같은지 비교
         const isNicknameSame = user.nickname === result.profile.nickname;
         const isRolesSame =
