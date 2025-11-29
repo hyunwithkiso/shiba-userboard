@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { db, events, users } from "@/lib/schema"; // users 테이블 import 추가
+import { events, users } from "@/lib/schema";
+import { db } from "@/lib/db"; // users 테이블 import 추가
 import { eq, sql } from "drizzle-orm";
 import { checkAdmin } from "@/lib/auth-utils";
 import { auth } from "@/lib/auth";

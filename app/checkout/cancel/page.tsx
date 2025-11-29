@@ -13,7 +13,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, ShoppingCart, Home } from "lucide-react";
 import { Metadata } from "next";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db, users } from "@/lib/schema";
+import { users } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 

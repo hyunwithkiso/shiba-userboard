@@ -3,8 +3,8 @@ import { eq } from "drizzle-orm";
 import mysqlPool from "@/lib/mysql"; // VRP MySQL (default export)
 import type { RowDataPacket } from "mysql2/promise"; // MySQL row typing
 import { checkCurrentUserAdmin } from "@/lib/user-validation"; // admin check
+import { db as pg } from "@/lib/db";
 import {
-  db as pg,
   users,
   accounts,
 } from "@/lib/schema"; // Site Postgres

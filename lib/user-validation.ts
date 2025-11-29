@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { db, users, accounts } from "@/lib/schema";
+import { users, accounts } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 
 /**

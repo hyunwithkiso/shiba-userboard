@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { db } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { events } from "@/lib/schema";
 import { eq, sql } from "drizzle-orm";
 import ReactMarkdown from "react-markdown";

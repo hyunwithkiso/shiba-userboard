@@ -1,4 +1,5 @@
-import { db, purchases, users } from "@/lib/schema";
+import { purchases, users } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { eq, desc } from "drizzle-orm";
 
 // 구매 내역 상세 타입 (스키마 기반, 필요시 확장)

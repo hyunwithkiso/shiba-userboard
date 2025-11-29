@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { db, users, purchases } from "@/lib/schema";
+import { users, purchases } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import type {

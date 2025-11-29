@@ -2,7 +2,8 @@
 import { Metadata } from "next";
 import { HomeClientContent } from "@/components/home/home-client-content";
 import { realtimeService } from "@/services/realtime-service";
-import { db, notices, events } from "@/lib/schema";
+import { notices, events } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { desc, eq, and, gte, lte } from "drizzle-orm";
 import { auth } from "@/lib/auth"; 
 import { getCurrentUserData } from "@/lib/user-validation";

@@ -2,7 +2,8 @@
 
 import { auth } from "@/lib/auth";
 import { userService } from "@/services/user-service";
-import { db, users } from "@/lib/schema";
+import { users } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 

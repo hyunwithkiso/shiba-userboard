@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -177,11 +178,12 @@ export default function GalleryClient({ items }: { items: GalleryItem[] }) {
                 className="group relative rounded-lg border border-border overflow-hidden bg-card"
               >
                 <AspectRatio ratio={16 / 9}>
-                  <img
+                  <Image
                     src={it.url}
                     alt={(it.title ?? "gallery image") as string}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    loading="lazy"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                 </AspectRatio>
 

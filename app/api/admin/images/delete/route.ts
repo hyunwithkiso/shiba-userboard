@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
-import { db, killfeedSubmission, chatTitleSubmission } from "@/lib/schema";
+import { killfeedSubmission, chatTitleSubmission } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { userService } from "@/services/user-service";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";

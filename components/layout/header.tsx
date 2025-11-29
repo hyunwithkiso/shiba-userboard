@@ -28,6 +28,7 @@ import {
   ShoppingCart,
   Settings,
   ImageIcon,
+  Key,
 } from "lucide-react";
 import { MiniCart } from "../cart/mini-cart";
 import { useRouter } from "next/navigation";
@@ -50,14 +51,14 @@ const navLinks = [
 const protectedRoutes = ["/killfeed", "/chat-title", "/exchange", "/shop", "/image-tools"];
 
 // 보호된 링크 컴포넌트
-function ProtectedLink({ 
-  href, 
-  children, 
-  className, 
-  onClick 
-}: { 
-  href: string; 
-  children: React.ReactNode; 
+function ProtectedLink({
+  href,
+  children,
+  className,
+  onClick
+}: {
+  href: string;
+  children: React.ReactNode;
   className?: string;
   onClick?: () => void;
 }) {
@@ -65,7 +66,7 @@ function ProtectedLink({
 
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
-    
+
     if (protectedRoutes.includes(href)) {
       try {
         const response = await fetch("/api/user/check-userid");
@@ -177,7 +178,7 @@ export const Header = () => {
     if (link.href === "/exchange") {
       return userData.isAdmin;
     }
-    
+
     // 다른 보호된 라우트들은 기존 로직 유지
     const isProtected = protectedRoutes.includes(link.href);
     const hasAccess = userData.hasUserId || userData.isAdmin;
@@ -207,7 +208,7 @@ export const Header = () => {
               </ProtectedLink>
             ))}
           </nav>
-          
+
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center space-x-4">
               {status === "authenticated" ? (
@@ -287,6 +288,12 @@ export const Header = () => {
                             <span>이미지 관리</span>
                           </Link>
                         </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin/api-keys">
+                            <Key className="mr-2 h-4 w-4" />
+                            <span>API 키 관리</span>
+                          </Link>
+                        </DropdownMenuItem>
                       </>
                     )}
                     <DropdownMenuSeparator />
@@ -305,126 +312,134 @@ export const Header = () => {
               )}
             </div>
             <div className="md:hidden flex items-center">
-            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="메뉴 열기">
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="min-h-[100dvh] overflow-y-auto">
-                <nav className="grid gap-6 text-lg font-medium mt-6 pb-16 pb-[env(safe-area-inset-bottom)]">
-                  <Link
-                    href="/"
-                    className="flex items-center gap-2 text-lg font-semibold mb-4"
-                    aria-label="SHIBA 유저보드 홈"
-                  >
-                    <Logo className="w-12 h-12" />
-                  </Link>
-                  {filteredNavLinks.map((link) => (
-                    <ProtectedLink
-                      key={link.href}
-                      href={link.href}
-                      className={"flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground" + (link.href === "/image-tools" ? " mb-16" : "")}
-                      onClick={() => setIsMobileMenuOpen(false)}
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="메뉴 열기">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="min-h-[100dvh] overflow-y-auto">
+                  <nav className="grid gap-6 text-lg font-medium mt-6 pb-16 pb-[env(safe-area-inset-bottom)]">
+                    <Link
+                      href="/"
+                      className="flex items-center gap-2 text-lg font-semibold mb-4"
+                      aria-label="SHIBA 유저보드 홈"
                     >
-                      {link.label}
-                    </ProtectedLink>
-                  ))}
-                  <div className="mt-auto pt-6 border-t pb-16 pb-[env(safe-area-inset-bottom)]">
-                    {status === "authenticated" ? (
-                      <div className="space-y-4">
-                        <SheetClose asChild>
-                          <Link
-                            href="/profile"
-                            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                          >
-                            <User className="h-5 w-5" /> 내 프로필
-                          </Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                          <Link
-                            href="/my-uploads"
-                            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                          >
-                            <UploadCloud className="h-5 w-5" /> 내 업로드 현황
-                          </Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                          <Link
-                            href="/purchases"
-                            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                          >
-                            <History className="h-5 w-5" /> 구매 내역
-                          </Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                          <Link
-                            href="/cart"
-                            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                          >
-                            <ShoppingCart className="h-5 w-5" /> 장바구니
-                          </Link>
-                        </SheetClose>
-                        {userData.isAdmin && (
-                          <>
-                            <SheetClose asChild>
-                              <Link
-                                href="/admin/users"
-                                className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                              >
-                                <Settings className="h-5 w-5" /> 유저 관리
-                              </Link>
-                            </SheetClose>
-                            <SheetClose asChild>
-                              <Link
-                                href="/admin/gallery"
-                                className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                              >
-                                <ImageIcon className="h-5 w-5" /> 갤러리 관리
-                              </Link>
-                            </SheetClose>
-                            <SheetClose asChild>
-                              <Link
-                                href="/admin/images"
-                                className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                              >
-                                <ImageIcon className="h-5 w-5" /> 이미지 관리
-                              </Link>
-                            </SheetClose>
-                          </>
-                        )}
-                        <form
-                          action={async () => {
-                            await signOut({ callbackUrl: "/login" });
-                          }}
-                        >
-                          <button
-                            type="submit"
-                            className="w-full flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground mb-20"
-                          >
-                            <LogOut className="h-5 w-5" /> 로그아웃
-                          </button>
-                        </form>
-                      </div>
-                    ) : (
-                      status !== "loading" && (
-                        <SheetClose asChild>
-                          <Link href="/login" className="w-full">
-                            <Button
-                              variant="outline"
-                              className="w-full justify-start font-semibold"
+                      <Logo className="w-12 h-12" />
+                    </Link>
+                    {filteredNavLinks.map((link) => (
+                      <ProtectedLink
+                        key={link.href}
+                        href={link.href}
+                        className={"flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground" + (link.href === "/image-tools" ? " mb-16" : "")}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        {link.label}
+                      </ProtectedLink>
+                    ))}
+                    <div className="mt-auto pt-6 border-t pb-16 pb-[env(safe-area-inset-bottom)]">
+                      {status === "authenticated" ? (
+                        <div className="space-y-4">
+                          <SheetClose asChild>
+                            <Link
+                              href="/profile"
+                              className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
                             >
-                              로그인
-                            </Button>
-                          </Link>
-                        </SheetClose>
-                      )
-                    )}
-                  </div>
-                </nav>
-              </SheetContent>
-            </Sheet>
-          </div>
+                              <User className="h-5 w-5" /> 내 프로필
+                            </Link>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Link
+                              href="/my-uploads"
+                              className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                            >
+                              <UploadCloud className="h-5 w-5" /> 내 업로드 현황
+                            </Link>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Link
+                              href="/purchases"
+                              className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                            >
+                              <History className="h-5 w-5" /> 구매 내역
+                            </Link>
+                          </SheetClose>
+                          <SheetClose asChild>
+                            <Link
+                              href="/cart"
+                              className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                            >
+                              <ShoppingCart className="h-5 w-5" /> 장바구니
+                            </Link>
+                          </SheetClose>
+                          {userData.isAdmin && (
+                            <>
+                              <SheetClose asChild>
+                                <Link
+                                  href="/admin/users"
+                                  className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                                >
+                                  <Settings className="h-5 w-5" /> 유저 관리
+                                </Link>
+                              </SheetClose>
+                              <SheetClose asChild>
+                                <Link
+                                  href="/admin/gallery"
+                                  className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                                >
+                                  <ImageIcon className="h-5 w-5" /> 갤러리 관리
+                                </Link>
+                              </SheetClose>
+                              <SheetClose asChild>
+                                <Link
+                                  href="/admin/images"
+                                  className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                                >
+                                  <ImageIcon className="h-5 w-5" /> 이미지 관리
+                                </Link>
+                              </SheetClose>
+                              <SheetClose asChild>
+                                <Link
+                                  href="/admin/api-keys"
+                                  className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                                >
+                                  <Key className="h-5 w-5" /> API 키 관리
+                                </Link>
+                              </SheetClose>
+                            </>
+                          )}
+                          <form
+                            action={async () => {
+                              await signOut({ callbackUrl: "/login" });
+                            }}
+                          >
+                            <button
+                              type="submit"
+                              className="w-full flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground mb-20"
+                            >
+                              <LogOut className="h-5 w-5" /> 로그아웃
+                            </button>
+                          </form>
+                        </div>
+                      ) : (
+                        status !== "loading" && (
+                          <SheetClose asChild>
+                            <Link href="/login" className="w-full">
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start font-semibold"
+                              >
+                                로그인
+                              </Button>
+                            </Link>
+                          </SheetClose>
+                        )
+                      )}
+                    </div>
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </div>

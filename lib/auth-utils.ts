@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { userService } from "@/services/user-service";
-import { db, users } from "@/lib/schema"; // Import db and users table
+import { users } from "@/lib/schema";
+import { db } from "@/lib/db"; // Import db and users table
 import { eq } from "drizzle-orm"; // Import eq operator
 
 /**

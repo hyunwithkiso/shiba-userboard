@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { db } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { notices } from "@/lib/schema";
 import { eq, sql } from "drizzle-orm";
 import ReactMarkdown from "react-markdown";

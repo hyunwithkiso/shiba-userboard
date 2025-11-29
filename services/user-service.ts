@@ -1,4 +1,5 @@
-import { db, users, accounts } from "@/lib/schema";
+import { users, accounts } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { createBasket } from "@/lib/tebex"; // Tebex API 함수 임포트
 

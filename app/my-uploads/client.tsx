@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 interface UploadSubmission {
   id: number;
@@ -89,17 +90,18 @@ export default function MyUploadsClient({ submissions }: MyUploadsClientProps) {
               총 {totalItems}개의 업로드 ({currentPage} / {totalPages} 페이지)
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {paginatedSubmissions.map((file) => (
               <Card key={file.id} className="overflow-hidden flex flex-col">
                 {/* 이미지 썸네일 */}
                 <div className="relative w-full h-40 bg-muted flex items-center justify-center">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={file.filePath}
                     alt={file.fileName}
-                    className="object-contain max-h-full max-w-full"
+                    fill
+                    className="object-contain p-2"
+                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
                   />
                 </div>
                 <CardContent className="flex-1 flex flex-col p-4 space-y-2">
@@ -116,25 +118,24 @@ export default function MyUploadsClient({ submissions }: MyUploadsClientProps) {
                   </div>
                   <div className="space-y-1">
                     <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        file.status === "approved"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                          : file.status === "rejected"
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${file.status === "approved"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : file.status === "rejected"
                           ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                           : file.status === "processing"
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                      }`}
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                        }`}
                     >
                       {file.status === "pending"
                         ? "대기중"
                         : file.status === "approved"
-                        ? "승인됨"
-                        : file.status === "rejected"
-                        ? "거절됨"
-                        : file.status === "processing"
-                        ? "처리중"
-                        : file.status}
+                          ? "승인됨"
+                          : file.status === "rejected"
+                            ? "거절됨"
+                            : file.status === "processing"
+                              ? "처리중"
+                              : file.status}
                     </span>
                     {file.reason && (
                       <div className="text-xs text-muted-foreground bg-muted p-2 rounded text-wrap break-words">
@@ -157,7 +158,7 @@ export default function MyUploadsClient({ submissions }: MyUploadsClientProps) {
               >
                 이전
               </Button>
-              
+
               {/* 스마트 페이지네이션 */}
               {(() => {
                 const delta = 2;
@@ -191,7 +192,7 @@ export default function MyUploadsClient({ submissions }: MyUploadsClientProps) {
                       </span>
                     );
                   }
-                  
+
                   return (
                     <Button
                       key={page}
@@ -212,7 +213,7 @@ export default function MyUploadsClient({ submissions }: MyUploadsClientProps) {
               >
                 다음
               </Button>
-              
+
               <div className="text-sm text-muted-foreground ml-4">
                 {currentPage} / {totalPages} 페이지
               </div>

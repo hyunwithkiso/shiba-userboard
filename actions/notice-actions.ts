@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 // import { redirect } from "next/navigation"; // redirect는 현재 사용되지 않으므로 주석 처리 또는 제거
-import { db, notices, users } from "@/lib/schema"; // users는 직접 사용되지 않으므로 제거 가능
+import { notices, users } from "@/lib/schema";
+import { db } from "@/lib/db"; // users는 직접 사용되지 않으므로 제거 가능
 import { eq, sql } from "drizzle-orm";
 import { checkAdmin } from "@/lib/auth-utils";
 import { auth } from "@/lib/auth";

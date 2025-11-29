@@ -2,7 +2,8 @@
 
 import { basketService } from "@/services/basket-service";
 import { auth } from "@/lib/auth";
-import { db, purchases, users } from "@/lib/schema";
+import { purchases, users } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";

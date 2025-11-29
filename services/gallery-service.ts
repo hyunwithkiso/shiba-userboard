@@ -1,4 +1,5 @@
-import { db, gallery } from "@/lib/schema";
+import { gallery } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { desc, eq } from "drizzle-orm";
 
 export interface CreateGalleryItemInput {

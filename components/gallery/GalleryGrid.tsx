@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Download, X } from "lucide-react";
 import { createPortal } from "react-dom";
@@ -61,11 +62,12 @@ export default function GalleryGrid({ items }: GalleryGridProps) {
               className="relative w-full pt-[56.25%] bg-muted cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => handleImageClick(item)}
             >
-              <img
+              <Image
                 src={item.url}
                 alt={item.title || "gallery image"}
-                className="absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 33vw"
               />
             </div>
             <div className="text-sm text-muted-foreground truncate">
@@ -94,12 +96,17 @@ export default function GalleryGrid({ items }: GalleryGridProps) {
               <X className="w-5 h-5" />
             </button>
 
-            <img
-              src={selectedImage.url}
-              alt={selectedImage.title || "gallery image"}
-              className="w-full h-full object-contain select-none"
-              draggable={false}
-            />
+            <div className="relative w-full h-full">
+              <Image
+                src={selectedImage.url}
+                alt={selectedImage.title || "gallery image"}
+                fill
+                className="object-contain select-none"
+                draggable={false}
+                sizes="95vw"
+                priority
+              />
+            </div>
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4">
               <div className="pointer-events-auto rounded-md bg-black/50 text-white backdrop-blur-sm p-3 flex items-center justify-between">

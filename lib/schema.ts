@@ -13,14 +13,8 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
 import type { AdapterAccountType } from "next-auth/adapters";
-import { nanoid } from "nanoid";
 
-const pool = postgres(process.env.DATABASE_URL!, { prepare: false });
-
-export const db = drizzle(pool);
 
 export const users = pgTable("user", {
   id: text("id")
@@ -359,6 +353,38 @@ export const authAttempts = pgTable(
   })
 );
 
+export const apiKeys = pgTable(
+  "api_keys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    key: text("key").notNull().unique(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    apiKeyUserIdx: index("api_key_user_idx").on(table.userId),
+    apiKeyIdx: index("api_key_idx").on(table.key),
+  })
+);
+
+export const userLogs = pgTable("user_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(),
+  details: jsonb("details"),
+  ipAddress: text("ip_address"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
   sessions: many(sessions),
@@ -376,6 +402,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   }),
   payments: many(payments),
   authAttempts: many(authAttempts),
+  apiKeys: many(apiKeys),
+  userLogs: many(userLogs),
 }));
 
 export const killfeedSubmissionRelations = relations(
@@ -432,6 +460,20 @@ export const authAttemptsRelations = relations(authAttempts, ({ one }) => ({
 export const galleryRelations = relations(gallery, ({ one }) => ({
   author: one(users, {
     fields: [gallery.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
+  user: one(users, {
+    fields: [apiKeys.userId],
+    references: [users.id],
+  }),
+}));
+
+export const userLogsRelations = relations(userLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [userLogs.userId],
     references: [users.id],
   }),
 }));

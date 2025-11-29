@@ -1,4 +1,5 @@
-import { db, authAttempts } from "@/lib/schema";
+import { authAttempts } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { eq, and, gte, desc } from "drizzle-orm";
 import { headers } from "next/headers";
 

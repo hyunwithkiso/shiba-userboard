@@ -43,7 +43,8 @@ export async function DELETE(
 
     // DB에서 제거
     // drizzle에 직접 delete가 필요하나, galleryService에 메서드가 없다면 여기서 처리
-    const { db, gallery } = await import("@/lib/schema");
+    const { db } = await import("@/lib/db");
+    const { gallery } = await import("@/lib/schema");
     const { eq } = await import("drizzle-orm");
     await db.delete(gallery).where(eq(gallery.id, id));
 

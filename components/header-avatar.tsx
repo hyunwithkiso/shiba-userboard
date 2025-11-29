@@ -13,7 +13,7 @@ import {
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Users, User, Image as ImageIcon, LogOut } from "lucide-react";
+import { Users, User, Image as ImageIcon, LogOut, Key } from "lucide-react";
 import { getCurrentUserInfo } from "@/actions/user-action";
 
 export default function HeaderAvatar() {
@@ -108,6 +108,12 @@ export default function HeaderAvatar() {
               <Link href="/admin/images" className="flex items-center">
                 <ImageIcon className="mr-2 h-4 w-4" />
                 <span>이미지 관리</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/admin/api-keys" className="flex items-center">
+                <Key className="mr-2 h-4 w-4" />
+                <span>API 키 관리</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />

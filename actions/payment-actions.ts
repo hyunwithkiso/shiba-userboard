@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { db } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { TebexCacheUtils } from "@/lib/tebex";
@@ -34,7 +34,7 @@ export async function resetUserBasketAction(): Promise<{
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
-    
+
     const oldBasketIdent = userData[0]?.basketIdent;
 
     // 2. DB에서 사용자의 basketIdent를 null로 업데이트
@@ -155,8 +155,7 @@ export async function createPurchaseFromCheckout(
     }
 
     console.log(
-      `[Server Action] Attempting to create purchase for basket: ${basketIdent}, user: ${
-        session.user.id
+      `[Server Action] Attempting to create purchase for basket: ${basketIdent}, user: ${session.user.id
       }, transactionId: ${transactionId || "N/A"}`
     );
 
@@ -247,7 +246,8 @@ export async function getPurchaseByIdAction(id: string): Promise<{
     if (!id) {
       return { success: false, error: "유효하지 않은 거래 ID입니다." };
     }
-    const { db, purchases } = await import("@/lib/schema");
+    const { db } = await import("@/lib/db");
+    const { purchases } = await import("@/lib/schema");
     const { eq } = await import("drizzle-orm");
     const rows = await db.select().from(purchases).where(eq(purchases.id, id)).limit(1);
     if (!rows || rows.length === 0) {

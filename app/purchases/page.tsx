@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { db, purchases } from "@/lib/schema";
+import { purchases } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { eq, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";

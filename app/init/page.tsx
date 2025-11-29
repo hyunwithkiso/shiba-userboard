@@ -3,7 +3,8 @@ import InitForm from "@/components/init/init-form";
 import { redirect } from "next/navigation";
 import { checkGuildMembershipAndFetchProfile } from "@/actions/discord-action";
 import { auth } from "@/lib/auth";
-import { accounts, db, users } from "@/lib/schema";
+import { db } from "@/lib/db";
+import { accounts, users } from "@/lib/schema";
 import { and, eq } from "drizzle-orm";
 import { getGameIdByDiscordId } from "@/services/game-service";
 
@@ -37,17 +38,17 @@ export default async function InitPage() {
   const userId = session.user.id;
 
   const userDataResult = await db
-  .select({
-    isInit: users.isInit,
-    discordId: accounts.providerAccountId,
-  })
-  .from(users)
-  .leftJoin(
-    accounts,
-    and(eq(accounts.userId, users.id), eq(accounts.provider, "discord"))
-  )
-  .where(eq(users.id, userId))
-  .limit(1);
+    .select({
+      isInit: users.isInit,
+      discordId: accounts.providerAccountId,
+    })
+    .from(users)
+    .leftJoin(
+      accounts,
+      and(eq(accounts.userId, users.id), eq(accounts.provider, "discord"))
+    )
+    .where(eq(users.id, userId))
+    .limit(1);
   const userData = userDataResult[0];
 
   if (userData?.isInit) {
@@ -107,7 +108,7 @@ export default async function InitPage() {
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-2">유저 정보 확인</h1>
           <p className="text-muted-foreground">
-          인게임 연동 정보를 확인하고 완료해주세요.
+            인게임 연동 정보를 확인하고 완료해주세요.
           </p>
         </div>
         <InitForm

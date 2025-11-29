@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { db, events as eventsTable } from "@/lib/schema";
+import { events as eventsTable } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { count, desc, and, asc, gte, lte, SQL } from "drizzle-orm";
 import { checkAdmin } from "@/lib/auth-utils";
 import { Button } from "@/components/ui/button";

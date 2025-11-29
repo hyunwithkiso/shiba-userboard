@@ -19,7 +19,7 @@ export const Footer = () => {
   ];
 
   // 인증되지 않은 사용자에게는 보호된 링크를 숨김
-  const filteredQuickLinks = quickLinks.filter(link => 
+  const filteredQuickLinks = quickLinks.filter(link =>
     !link.protected || isAuthenticated
   );
 
@@ -113,7 +113,7 @@ export const Footer = () => {
                 </li>
               ))}
             </ul>
-            
+
             {/* Copyright moved here */}
             <div className="mt-6 pt-4 border-t border-foreground/10">
               <p className="text-xs text-foreground/60">

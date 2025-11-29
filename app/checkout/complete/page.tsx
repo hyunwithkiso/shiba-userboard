@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { Hourglass } from "lucide-react";
 import { CheckoutCompleteClient } from "@/components/checkout/checkout-complete-client";
 import { auth } from "@/lib/auth";
-import { db, users } from "@/lib/schema";
+import { users } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 // 페이지 컴포넌트 (서버 컴포넌트)

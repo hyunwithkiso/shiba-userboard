@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { checkCurrentUserAdmin, getCurrentUserData } from "@/lib/user-validation";
-import { db, users, accounts } from "@/lib/schema";
+import { users, accounts } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { asc, desc, eq, and, sql } from "drizzle-orm";
 import AdminUsersClient from "./client";
 

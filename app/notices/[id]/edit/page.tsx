@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { db, notices } from "@/lib/schema";
+import { notices } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { NoticeForm } from "@/components/forms/notice-form";
 import { checkAdmin } from "@/lib/auth-utils";

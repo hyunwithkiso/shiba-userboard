@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getCurrentUserData } from "@/lib/user-validation";
 import pool from "@/lib/mysql";
-import { db, users, accounts } from "@/lib/schema";
+import { users, accounts } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { and, eq } from "drizzle-orm";
 
 /**

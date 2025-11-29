@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -62,7 +63,13 @@ export default function GalleryAdminList() {
           {items.map((it) => (
             <div key={it.id} className="rounded-lg border border-border bg-card overflow-hidden">
               <div className="relative w-full pt-[56.25%] bg-muted">
-                <img src={it.url} alt={it.title || "image"} className="absolute inset-0 w-full h-full object-cover" />
+                <Image
+                  src={it.url}
+                  alt={it.title || "image"}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
               </div>
               <div className="p-3 space-y-2">
                 <div className="text-sm font-medium truncate">{it.title || "이미지"}</div>

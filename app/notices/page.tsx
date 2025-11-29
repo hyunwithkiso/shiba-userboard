@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format, isWithinInterval, parseISO } from "date-fns";
-import { db, notices as noticesTable, users } from "@/lib/schema";
+import { notices as noticesTable, users } from "@/lib/schema";
+import { db } from "@/lib/db";
 import { and, count, desc, eq, gte, lte, asc, sql, SQL } from "drizzle-orm";
 import { checkAdmin } from "@/lib/auth-utils";
 import { Button, buttonVariants } from "@/components/ui/button";

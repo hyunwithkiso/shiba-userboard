@@ -1,6 +1,7 @@
 import { checkAdmin } from "@/lib/auth-utils";
 import { redirect, notFound } from "next/navigation";
-import { db, events } from "@/lib/schema"; // Import events table
+import { events } from "@/lib/schema";
+import { db } from "@/lib/db"; // Import events table
 import { eq } from "drizzle-orm";
 import { EventForm } from "@/components/forms/event-form"; // Import EventForm
 import { Metadata } from "next";
