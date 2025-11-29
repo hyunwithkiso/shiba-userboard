@@ -1,4 +1,6 @@
 import { Metadata } from "next";
+
+export const dynamic = "force-dynamic";
 import { Wand2 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";

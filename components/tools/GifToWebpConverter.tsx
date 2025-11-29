@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -110,8 +111,15 @@ export default function GifToWebpConverter() {
         {file ? (
           <div className="space-y-2">
             <div className="text-foreground">{file.name}</div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={URL.createObjectURL(file)} alt="원본 GIF" className="mx-auto max-h-64 rounded border" />
+            <div className="relative mx-auto h-64 w-full">
+              <Image
+                src={URL.createObjectURL(file)}
+                alt="원본 GIF"
+                fill
+                className="object-contain rounded border"
+                unoptimized
+              />
+            </div>
           </div>
         ) : (
           <div>또는 파일 선택창에서 올려주세요.</div>
@@ -149,8 +157,15 @@ export default function GifToWebpConverter() {
         <Label className="block mb-2">결과 미리보기</Label>
         {outputUrl ? (
           <div className="space-y-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={outputUrl} alt="변환된 WEBP" className="max-h-80 w-auto rounded border" />
+            <div className="relative h-80 w-full">
+              <Image
+                src={outputUrl}
+                alt="변환된 WEBP"
+                fill
+                className="object-contain rounded border"
+                unoptimized
+              />
+            </div>
             <p className="text-sm text-muted-foreground">
               품질 {quality}%로 WEBP 변환 완료
             </p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, DragEvent } from "react";
+import NextImage from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,7 +94,13 @@ export default function GalleryUploader({ onUploaded }: { onUploaded?: () => voi
         tabIndex={0}
       >
         {preview ? (
-          <img src={preview} alt="preview" className="absolute inset-0 w-full h-full object-cover rounded-lg" />
+          <NextImage
+            src={preview}
+            alt="preview"
+            fill
+            className="object-cover rounded-lg"
+            unoptimized
+          />
         ) : (
           <div className="text-sm text-muted-foreground text-center px-6">
             <div className="font-semibold mb-1">이미지를 드래그하거나 클릭하여 선택</div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -28,13 +29,13 @@ export default function ImageConverter() {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
     if (!f) return;
-    
+
     const validTypes = ['image/png', 'image/gif', 'image/webp', 'image/jpeg', 'image/jpg'];
     const validExtensions = ['.png', '.gif', '.webp', '.jpeg', '.jpg'];
-    
-    const isValid = validTypes.includes(f.type) || 
-                   validExtensions.some(ext => f.name.toLowerCase().endsWith(ext));
-    
+
+    const isValid = validTypes.includes(f.type) ||
+      validExtensions.some(ext => f.name.toLowerCase().endsWith(ext));
+
     if (!isValid) {
       toast.error("PNG, GIF, WEBP, JPEG 파일을 드래그해주세요.");
       return;
@@ -50,13 +51,13 @@ export default function ImageConverter() {
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    
+
     const validTypes = ['image/png', 'image/gif', 'image/webp', 'image/jpeg', 'image/jpg'];
     const validExtensions = ['.png', '.gif', '.webp', '.jpeg', '.jpg'];
-    
-    const isValid = validTypes.includes(f.type) || 
-                   validExtensions.some(ext => f.name.toLowerCase().endsWith(ext));
-    
+
+    const isValid = validTypes.includes(f.type) ||
+      validExtensions.some(ext => f.name.toLowerCase().endsWith(ext));
+
     if (!isValid) {
       toast.error("PNG, GIF, WEBP, JPEG 파일을 선택해주세요.");
       e.target.value = "";
@@ -128,8 +129,15 @@ export default function ImageConverter() {
             <div className="text-xs text-muted-foreground">
               {(file.size / 1024 / 1024).toFixed(2)} MB
             </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={URL.createObjectURL(file)} alt="원본 이미지" className="mx-auto max-h-64 rounded border" />
+            <div className="relative mx-auto h-64 w-full">
+              <Image
+                src={URL.createObjectURL(file)}
+                alt="원본 이미지"
+                fill
+                className="object-contain rounded border"
+                unoptimized
+              />
+            </div>
           </div>
         ) : (
           <div>또는 파일 선택창에서 올려주세요.</div>
@@ -167,8 +175,15 @@ export default function ImageConverter() {
         <Label className="block mb-2">결과 미리보기</Label>
         {outputUrl ? (
           <div className="space-y-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={outputUrl} alt="변환된 WEBP" className="max-h-80 w-auto rounded border" />
+            <div className="relative h-80 w-full">
+              <Image
+                src={outputUrl}
+                alt="변환된 WEBP"
+                fill
+                className="object-contain rounded border"
+                unoptimized
+              />
+            </div>
             <p className="text-sm text-muted-foreground">
               품질 {quality}%로 WEBP 변환 완료
             </p>

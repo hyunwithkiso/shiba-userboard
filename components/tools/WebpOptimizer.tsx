@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -36,7 +37,7 @@ export default function WebpOptimizer() {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
     if (!f) return;
-    
+
     const isWebp = f.type === 'image/webp' || f.name.toLowerCase().endsWith('.webp');
     if (!isWebp) {
       toast.error("WEBP 파일을 드래그해주세요.");
@@ -54,7 +55,7 @@ export default function WebpOptimizer() {
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    
+
     const isWebp = f.type === 'image/webp' || f.name.toLowerCase().endsWith('.webp');
     if (!isWebp) {
       toast.error("WEBP 파일을 선택해주세요.");
@@ -88,18 +89,18 @@ export default function WebpOptimizer() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "서버 최적화 실패");
       }
-      
+
       // Extract compression info from headers
       const originalSize = parseInt(res.headers.get("X-Original-Size") || "0");
       const optimizedSize = parseInt(res.headers.get("X-Optimized-Size") || "0");
       const compressionRatio = res.headers.get("X-Compression-Ratio") || "0";
-      
+
       setCompressionInfo({
         originalSize,
         optimizedSize,
         compressionRatio
       });
-      
+
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       setOutputUrl(url);
@@ -146,8 +147,15 @@ export default function WebpOptimizer() {
             <div className="text-xs text-muted-foreground">
               {formatFileSize(file.size)}
             </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={URL.createObjectURL(file)} alt="원본 WEBP" className="mx-auto max-h-64 rounded border" />
+            <div className="relative mx-auto h-64 w-full">
+              <Image
+                src={URL.createObjectURL(file)}
+                alt="원본 WEBP"
+                fill
+                className="object-contain rounded border"
+                unoptimized
+              />
+            </div>
           </div>
         ) : (
           <div>또는 파일 선택창에서 올려주세요.</div>
@@ -225,8 +233,15 @@ export default function WebpOptimizer() {
         <Label className="block mb-2">결과 미리보기</Label>
         {outputUrl ? (
           <div className="space-y-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={outputUrl} alt="최적화된 WEBP" className="max-h-80 w-auto rounded border" />
+            <div className="relative h-80 w-full">
+              <Image
+                src={outputUrl}
+                alt="최적화된 WEBP"
+                fill
+                className="object-contain rounded border"
+                unoptimized
+              />
+            </div>
             <p className="text-sm text-muted-foreground">
               {lossless ? "무손실" : `품질 ${quality}%`}로 최적화 완료
             </p>
