@@ -197,40 +197,77 @@
   @apply px-4;
 }
 
-/* Global scrollbar styling: gray thumb on transparent track (cross-browser) */
+/* Global scrollbar styling: neon thumb on subtle dark track (cross-browser) */
 @layer base {
   /* Colors */
   :root {
-    --scrollbar-thumb: rgba(190, 190, 190, 0.45);
-    --scrollbar-thumb-hover: rgba(220, 220, 220, 0.7);
+    --scrollbar-track: rgba(255, 255, 255, 0.04);
+    --scrollbar-thumb: rgba(59, 130, 246, 0.45);
+    --scrollbar-thumb-hover: rgba(59, 130, 246, 0.65);
+    --scrollbar-thumb-active: rgba(59, 130, 246, 0.85);
+  }
+
+  /* Accent selection to match dark theme */
+  ::selection,
+  ::-moz-selection {
+    background: rgba(59, 130, 246, 0.35);
+    color: var(--foreground);
   }
 
   /* Firefox */
+  html,
+  body,
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) transparent;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
 
-  /* WebKit (Chrome, Edge, Safari) */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-    background: transparent;
+  /* WebKit (Chrome, Edge, Brave, Safari, Opera) */
+  *::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+    background: var(--scrollbar-track);
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
+  *::-webkit-scrollbar-track {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.02),
+      rgba(255, 255, 255, 0.05)
+    );
+    border-radius: 9999px;
   }
-  ::-webkit-scrollbar-thumb {
-    background-color: var(--scrollbar-thumb);
+  *::-webkit-scrollbar-thumb {
+    background-image: linear-gradient(
+      180deg,
+      rgba(59, 130, 246, 0.9),
+      rgba(14, 165, 233, 0.85)
+    );
     border-radius: 9999px;
     border: 3px solid transparent; /* create separation while keeping transparency */
     background-clip: padding-box;
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--scrollbar-thumb-hover);
+  *::-webkit-scrollbar-thumb:hover {
+    background-image: linear-gradient(
+      180deg,
+      rgba(59, 130, 246, 1),
+      rgba(56, 189, 248, 0.95)
+    );
   }
-  ::-webkit-scrollbar-corner {
-    background: transparent;
+  *::-webkit-scrollbar-thumb:active {
+    background-image: linear-gradient(
+      180deg,
+      var(--scrollbar-thumb-active),
+      rgba(14, 165, 233, 0.85)
+    );
+    box-shadow:
+      0 4px 12px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  *::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track);
   }
 }
 
@@ -238,23 +275,46 @@
 @layer base {
   .player-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) transparent;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
   .player-scrollbar::-webkit-scrollbar {
     width: 8px;
     height: 8px;
-    background: transparent;
+    background: var(--scrollbar-track);
   }
   .player-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.02),
+      rgba(255, 255, 255, 0.06)
+    );
+    border-radius: 9999px;
   }
   .player-scrollbar::-webkit-scrollbar-thumb {
-    background-color: var(--scrollbar-thumb);
+    background-image: linear-gradient(
+      180deg,
+      rgba(59, 130, 246, 0.8),
+      rgba(14, 165, 233, 0.75)
+    );
     border-radius: 9999px;
     border: 2px solid transparent;
     background-clip: padding-box;
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
   .player-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: var(--scrollbar-thumb-hover);
+    background-image: linear-gradient(
+      180deg,
+      rgba(59, 130, 246, 0.95),
+      rgba(56, 189, 248, 0.9)
+    );
+  }
+  .player-scrollbar::-webkit-scrollbar-thumb:active {
+    background-image: linear-gradient(
+      180deg,
+      var(--scrollbar-thumb-active),
+      rgba(14, 165, 233, 0.8)
+    );
   }
 }
