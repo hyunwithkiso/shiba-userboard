@@ -72,8 +72,6 @@ export class NewLogService {
 
             const result: PartitionLogResponse = await response.json();
 
-            console.log(result);
-
 
             if (!result.success || !result.data) {
                 return { records: [], totalPages: 0, totalRecords: 0 };
