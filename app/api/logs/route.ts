@@ -1,8 +1,9 @@
 import { auth } from "@/lib/auth";
-import { userLogs, apiKeys } from "@/lib/schema";
+import { apiKeys } from "@/lib/schema";
 import { db } from "@/lib/db";
-import { desc, eq, and, gte, lte } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { NewLogService } from "@/services/new-log-service";
 
 export async function GET(request: Request) {
     try {
@@ -37,8 +38,7 @@ export async function GET(request: Request) {
         const type = searchParams.get("type");
         const startDate = searchParams.get("startDate");
         const endDate = searchParams.get("endDate");
-
-        let targetUserId = session.user.id;
+        const message = searchParams.get("message");
 
         // If querying for another user, check if requester is admin
         if (userId && userId !== session.user.id) {
@@ -47,54 +47,49 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: "Forbidden: Can only view own logs" }, { status: 403 });
         }
 
-        const whereConditions = [eq(userLogs.userId, targetUserId)];
+        // Calculate page from offset
+        const page = Math.floor(offset / limit) + 1;
 
-        // Filter by Type
-        if (type) {
-            const allowedTypes = ["ITEM_TRADE", "MONEY_TRADE", "BANK_TRADE", "VEHICLE_TRADE"];
-            if (!allowedTypes.includes(type)) {
-                return NextResponse.json({ error: `Invalid type. Allowed types: ${allowedTypes.join(", ")}` }, { status: 400 });
+        // Helper to format date to YYYY-MM-DD (KST aware)
+        const formatDate = (dateStr: string | null) => {
+            if (!dateStr) return undefined;
+            // If it's already YYYY-MM-DD, return as is
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+
+            // If it's ISO, convert to KST and extract YYYY-MM-DD
+            try {
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return undefined;
+                // Add 9 hours for KST
+                const kstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+                return kstDate.toISOString().split('T')[0];
+            } catch (e) {
+                return undefined;
             }
-            whereConditions.push(eq(userLogs.action, type));
-        }
+        };
 
-        // Filter by Date Range
-        if (startDate) {
-            const start = new Date(startDate);
-            if (isNaN(start.getTime())) {
-                return NextResponse.json({ error: "Invalid startDate format" }, { status: 400 });
-            }
-            whereConditions.push(gte(userLogs.createdAt, start));
-        }
-
-        if (endDate) {
-            const end = new Date(endDate);
-            if (isNaN(end.getTime())) {
-                return NextResponse.json({ error: "Invalid endDate format" }, { status: 400 });
-            }
-            // Adjust end date to include the full day if it's just a date string, or use as is
-            // If user passes "2023-01-01", they usually mean until the end of that day.
-            // But if they pass ISO string, respect it.
-            // For simplicity, let's assume exact timestamp or handle client side, but here we just check LTE.
-            whereConditions.push(lte(userLogs.createdAt, end));
-        }
-
-        const logs = await db
-            .select()
-            .from(userLogs)
-            .where(and(...whereConditions))
-            .orderBy(desc(userLogs.createdAt))
-            .limit(limit)
-            .offset(offset);
+        const logsData = await NewLogService.getPartitionLogs({
+            page,
+            limit,
+            type: (type && type !== "ALL" && type !== "all") ? type : undefined,
+            startDate: formatDate(startDate),
+            endDate: formatDate(endDate),
+            message: message || undefined,
+            // userId: session.user.id, // Removed as per user request
+        });
 
         return NextResponse.json({
-            logs,
-            meta: {
+            ...logsData,
+            appliedFilters: {
+                page,
                 limit,
-                offset,
-                count: logs.length // Note: This is page count, not total count. Total count would require another query.
+                type: (type && type !== "ALL" && type !== "all") ? type : undefined,
+                startDate: formatDate(startDate) || undefined,
+                endDate: formatDate(endDate) || undefined,
+                message: message || undefined,
             }
         });
+
     } catch (error) {
         console.error("Error fetching logs:", error);
         return NextResponse.json(
