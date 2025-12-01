@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-    searchParams: {
+    searchParams: Promise<{
         page?: string;
         limit?: string;
         startDate?: string;
@@ -18,21 +18,22 @@ interface PageProps {
         type?: string;
         message?: string;
         userId?: string;
-    };
+    }>;
 }
 
 export default async function PartitionLogPage({ searchParams }: PageProps) {
-    const page = parseInt(searchParams.page || "1");
-    const limit = parseInt(searchParams.limit || "20");
+    const params = await searchParams;
+    const page = parseInt(params.page || "1");
+    const limit = parseInt(params.limit || "20");
 
     const logsData = await NewLogService.getPartitionLogs({
         page,
         limit,
-        startDate: searchParams.startDate,
-        endDate: searchParams.endDate,
-        type: searchParams.type,
-        message: searchParams.message,
-        userId: searchParams.userId,
+        startDate: params.startDate,
+        endDate: params.endDate,
+        type: params.type,
+        message: params.message,
+        userId: params.userId,
     });
 
     return (
