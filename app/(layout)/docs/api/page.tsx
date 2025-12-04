@@ -29,6 +29,7 @@ export default function ApiDocsPage() {
         message: "",
         startDate: undefined as Date | undefined,
         endDate: undefined as Date | undefined,
+        reverse: false,
     });
 
     useEffect(() => {
@@ -83,6 +84,7 @@ export default function ApiDocsPage() {
             if (params.message) queryParams.set("message", params.message);
             if (params.startDate) queryParams.set("startDate", format(params.startDate, "yyyy-MM-dd"));
             if (params.endDate) queryParams.set("endDate", format(params.endDate, "yyyy-MM-dd"));
+            if (params.reverse) queryParams.set("reverse", "true");
 
             const res = await fetch(`/api/logs?${queryParams.toString()}`, {
                 headers: {
@@ -241,6 +243,24 @@ export default function ApiDocsPage() {
                                                     </SelectContent>
                                                 </Select>
                                                 <p className="text-[10px] text-muted-foreground">로그 타입을 필터링합니다.</p>
+                                            </div>
+
+                                            {/* Reverse Sort */}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="reverse" className="text-xs font-semibold uppercase text-muted-foreground">Sort Order</Label>
+                                                <Select
+                                                    value={params.reverse ? "true" : "false"}
+                                                    onValueChange={(val) => setParams({ ...params, reverse: val === "true" })}
+                                                >
+                                                    <SelectTrigger id="reverse" className="w-full">
+                                                        <SelectValue placeholder="Select Sort Order" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="false">Newest First (Default)</SelectItem>
+                                                        <SelectItem value="true">Oldest First</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <p className="text-[10px] text-muted-foreground">로그 정렬 순서를 변경합니다.</p>
                                             </div>
 
                                             {/* Message */}

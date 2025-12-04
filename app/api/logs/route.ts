@@ -39,6 +39,7 @@ export async function GET(request: Request) {
         const startDate = searchParams.get("startDate");
         const endDate = searchParams.get("endDate");
         const message = searchParams.get("message");
+        const reverse = searchParams.get("reverse") === "true";
 
         // If querying for another user, check if requester is admin
         if (userId && userId !== session.user.id) {
@@ -75,6 +76,7 @@ export async function GET(request: Request) {
             startDate: formatDate(startDate),
             endDate: formatDate(endDate),
             message: message || undefined,
+            reverse,
             // userId: session.user.id, // Removed as per user request
         });
 
@@ -87,6 +89,7 @@ export async function GET(request: Request) {
                 startDate: formatDate(startDate) || undefined,
                 endDate: formatDate(endDate) || undefined,
                 message: message || undefined,
+                reverse,
             }
         });
 

@@ -31,6 +31,7 @@ export interface PartitionLogParams {
     message?: string;
     userId?: string;
     metadata?: string;
+    reverse?: boolean;
 }
 
 export class NewLogService {
@@ -55,6 +56,7 @@ export class NewLogService {
         if (params.level) query.append("level", params.level);
         if (params.message) query.append("message", params.message);
         if (params.metadata) query.append("metadata", params.metadata);
+        if (params.reverse) query.append("reverse", "true");
 
         try {
             const response = await fetch(`${baseUrl}/api/logs?${query.toString()}`, {
@@ -105,7 +107,9 @@ export class NewLogService {
                 let combinedRecords = [...memory.records, ...database.records];
 
                 combinedRecords.sort((a, b) => {
-                    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+                    const dateA = new Date(a.timestamp).getTime();
+                    const dateB = new Date(b.timestamp).getTime();
+                    return params.reverse ? dateA - dateB : dateB - dateA;
                 });
 
                 const limit = params.limit || 50;
